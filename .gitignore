@@ -1,0 +1,6 @@
+*.o
+*.d
+*.map
+*.PAK
+dist/wii/apps/quake/GPL.txt
+dist/wii/apps/quake/QuakeGX.elf
