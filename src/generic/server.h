@@ -105,7 +105,9 @@ typedef struct client_s
 	float			spawn_parms[NUM_SPAWN_PARMS];
 
 // client known data for deltas	
-	int				old_frags;
+	//int				old_frags;
+	int				old_points;
+	int 			old_kills;
 } client_t;
 
 
@@ -123,10 +125,8 @@ typedef struct client_s
 #define	MOVETYPE_NOCLIP			8
 #define	MOVETYPE_FLYMISSILE		9		// extra size to monsters
 #define	MOVETYPE_BOUNCE			10
-#ifdef QUAKE2
 #define MOVETYPE_BOUNCEMISSILE	11		// bounce w/o gravity
 #define MOVETYPE_FOLLOW			12		// track movement of aiment
-#endif
 
 // edict->solid values
 #define	SOLID_NOT				0		// no interaction with other objects
@@ -134,6 +134,7 @@ typedef struct client_s
 #define	SOLID_BBOX				2		// touch on edge, block
 #define	SOLID_SLIDEBOX			3		// touch on edge, but not an onground
 #define	SOLID_BSP				4		// bsp clip, touch on edge, block
+#define	SOLID_CORPSE			5		// bsp clip, touch on edge, block
 
 // edict->deadflag values
 #define	DEAD_NO					0
@@ -166,16 +167,21 @@ typedef struct client_s
 
 // entity effects
 
-#define	EF_BRIGHTFIELD			1
+#define	EF_BLUELIGHT			1
 #define	EF_MUZZLEFLASH 			2
 #define	EF_BRIGHTLIGHT 			4
-#define	EF_DIMLIGHT 			8
-#ifdef QUAKE2
-#define EF_DARKLIGHT			16
-#define EF_DARKFIELD			32
-#define EF_LIGHT				64
-#define EF_NODRAW				128
-#endif
+#define	EF_REDLIGHT 			8
+#define	EF_ORANGELIGHT			16
+#define	EF_GREENLIGHT			32
+#define	EF_PINKLIGHT			64				// formerly EF_LIGHT
+#define	EF_NODRAW				128
+#define EF_LIMELIGHT			256				// formerly EF_BRIGHTFIELD
+#define EF_FULLBRIGHT			512
+#define EF_CYANLIGHT			1024			// formerly EF_DARKLIGHT
+#define EF_YELLOWLIGHT			2048			// formerly EF_DARKFIELD
+#define EF_PURPLELIGHT    		4096
+#define EF_RAYRED	 			8196			// red trail for porter x2
+#define EF_RAYGREEN  			16384			// green trail for ray gun
 
 #define	SPAWNFLAG_NOT_EASY			256
 #define	SPAWNFLAG_NOT_MEDIUM		512
@@ -246,6 +252,7 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink);
 void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg);
 
 void SV_MoveToGoal (void);
+void SV_MoveToOrigin (void);
 
 void SV_CheckForNewClients (void);
 void SV_RunClients (void);

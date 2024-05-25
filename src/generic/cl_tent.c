@@ -45,6 +45,7 @@ CL_ParseTEnt
 */
 void CL_InitTEnts (void)
 {
+	/*
 	cl_sfx_wizhit = S_PrecacheSound ("wizard/hit.wav");
 	cl_sfx_knighthit = S_PrecacheSound ("hknight/hit.wav");
 	cl_sfx_tink1 = S_PrecacheSound ("weapons/tink1.wav");
@@ -56,6 +57,7 @@ void CL_InitTEnts (void)
 	cl_sfx_imp = S_PrecacheSound ("shambler/sattck1.wav");
 	cl_sfx_rail = S_PrecacheSound ("weapons/lstart.wav");
 #endif
+*/
 }
 
 /*

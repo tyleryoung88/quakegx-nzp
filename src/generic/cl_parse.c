@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
+extern double HUD_Change_time;
+
 char *svc_strings[] =
 {
 	"svc_bad",
@@ -35,38 +37,46 @@ char *svc_strings[] =
 	"svc_stufftext",		// [string] stuffed into client's console buffer
 						// the string should be \n terminated
 	"svc_setangle",		// [vec3] set the view angle to this absolute value
-	
+
 	"svc_serverinfo",		// [long] version
 						// [string] signon string
 						// [string]..[0]model cache [string]...[0]sounds cache
 						// [string]..[0]item cache
 	"svc_lightstyle",		// [byte] [string]
 	"svc_updatename",		// [byte] [string]
-	"svc_updatefrags",	// [byte] [short]
+	"svc_updatepoints",	// [byte] [short]
 	"svc_clientdata",		// <shortbits + data>
 	"svc_stopsound",		// <see code>
 	"svc_updatecolors",	// [byte] [byte]
 	"svc_particle",		// [vec3] <variable>
 	"svc_damage",			// [byte] impact [byte] blood [vec3] from
-	
+
 	"svc_spawnstatic",
 	"OBSOLETE svc_spawnbinary",
 	"svc_spawnbaseline",
-	
+
 	"svc_temp_entity",		// <variable>
 	"svc_setpause",
 	"svc_signonnum",
 	"svc_centerprint",
-	"svc_killedmonster",
-	"svc_foundsecret",
 	"svc_spawnstaticsound",
 	"svc_intermission",
 	"svc_finale",			// [string] music [string] text
 	"svc_cdtrack",			// [byte] track [byte] looptrack
 	"svc_sellscreen",
 	"svc_cutscene",
-	"svc_skybox",	//35	   // [string] skyname
-	"svc_fog"    // 36		// [byte] start [byte] end [byte] red [byte] green [byte] blue [float] time
+	"svc_weaponfire",
+	"svc_hitmark",
+	"svc_skybox",		   // [string] skyname
+	"svc_useprint",
+	"svc_updatekills",
+	"svc_limbupdate",
+    "svc_fog",    // 41		// [byte] start [byte] end [byte] red [byte] green [byte] blue [float] time
+    "svc_bspdecal", //42     // [string] name [byte] decal_size [coords] pos
+    "svc_achievement", //43
+	"svc_songegg", //44 			[string] track name
+	"svc_maxammo", //45
+	"svc_pulse" //46
 };
 
 //=============================================================================
@@ -415,7 +425,7 @@ void CL_ParseUpdate (int bits)
 	{
 		if (i > cl.maxclients)
 			Sys_Error ("i >= cl.maxclients");
-		ent->colormap = cl.scores[i-1].translations;
+		//ent->colormap = cl.scores[i-1].translations;
 	}
 
 	if (bits & U_SKIN)
@@ -505,10 +515,12 @@ CL_ParseClientdata
 Server information pertaining to this client only
 ==================
 */
+extern int perk_order[9];
+extern int current_perk_order;
 void CL_ParseClientdata (int bits)
 {
-	int		i, j;
-	
+	int		i, s;
+
 	if (bits & SU_VIEWHEIGHT)
 		cl.viewheight = MSG_ReadChar ();
 	else
@@ -519,8 +531,196 @@ void CL_ParseClientdata (int bits)
 	else
 		cl.idealpitch = 0;
 
-	VectorCopy (cl.mvelocity[0], cl.mvelocity[1]);
 
+	if (bits & SU_PERKS)
+		i = MSG_ReadLong ();
+	else
+		i = 0;
+	if (cl.perks != i)
+	{
+		if (i & 1 && !(cl.perks & 1))
+		{
+			perk_order[current_perk_order] = 1;
+			current_perk_order++;
+		}
+		if (i & 2 && !(cl.perks & 2))
+		{
+			perk_order[current_perk_order] = 2;
+			current_perk_order++;
+		}
+		if (i & 4 && !(cl.perks & 4))
+		{
+			perk_order[current_perk_order] = 4;
+			current_perk_order++;
+		}
+		if (i & 8 && !(cl.perks & 8))
+		{
+			perk_order[current_perk_order] = 8;
+			current_perk_order++;
+		}
+		if (i & 16 && !(cl.perks & 16))
+		{
+			perk_order[current_perk_order] = 16;
+			current_perk_order++;
+		}
+		if (i & 32 && !(cl.perks & 32))
+		{
+			perk_order[current_perk_order] = 32;
+			current_perk_order++;
+		}
+		if (i & 64 && !(cl.perks & 64))
+		{
+			perk_order[current_perk_order] = 64;
+			current_perk_order++;
+		}
+		if (i & 128 && !(cl.perks & 128))
+		{
+			perk_order[current_perk_order] = 128;
+			current_perk_order++;
+		}
+		if (cl.perks & 1 && !(i & 1))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 1)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		if (cl.perks & 2 && !(i & 2))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 2)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		if (cl.perks & 4 && !(i & 4))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 4)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		if (cl.perks & 8 && !(i & 8))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 8)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		if (cl.perks & 16 && !(i & 16))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 16)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		if (cl.perks & 32 && !(i & 32))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 32)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		if (cl.perks & 64 && !(i & 64))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 64)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		if (cl.perks & 128 && !(i & 128))
+		{
+			for (s = 0; s < 9; s++)
+			{
+				if (perk_order[s] == 128)
+				{
+					perk_order[s] = 0;
+					while (perk_order[s+1])
+					{
+						perk_order[s] = perk_order[s+1];
+						perk_order[s+1] = 0;
+					}
+					break;
+				}
+			}
+			current_perk_order--;
+		}
+		cl.perks = i;
+	}
+
+	cl.onground = (bits & SU_ONGROUND) != 0;
+	cl.inwater = (bits & SU_INWATER) != 0;
+
+	VectorCopy (cl.mvelocity[0], cl.mvelocity[1]);
 	for (i=0 ; i<3 ; i++)
 	{
 		if (bits & (SU_PUNCH1<<i) )
@@ -533,88 +733,116 @@ void CL_ParseClientdata (int bits)
 			cl.mvelocity[0][i] = 0;
 	}
 
-// [always sent]	if (bits & SU_ITEMS)
-		i = MSG_ReadLong ();
-
-	if (cl.items != i)
-	{	// set flash times
-		Sbar_Changed ();
-		for (j=0 ; j<32 ; j++)
-			if ( (i & (1<<j)) && !(cl.items & (1<<j)))
-				cl.item_gettime[j] = cl.time;
-		cl.items = i;
-	}
-		
-	cl.onground = (bits & SU_ONGROUND) != 0;
-	cl.inwater = (bits & SU_INWATER) != 0;
-
 	if (bits & SU_WEAPONFRAME)
 		cl.stats[STAT_WEAPONFRAME] = MSG_ReadByte ();
 	else
 		cl.stats[STAT_WEAPONFRAME] = 0;
 
-	if (bits & SU_ARMOR)
-		i = MSG_ReadByte ();
+	if (bits & SU_WEAPONSKIN)
+		cl.stats[STAT_WEAPONSKIN] = MSG_ReadByte ();
 	else
-		i = 0;
-	if (cl.stats[STAT_ARMOR] != i)
-	{
-		cl.stats[STAT_ARMOR] = i;
-		Sbar_Changed ();
-	}
+		cl.stats[STAT_WEAPONSKIN] = 0;
+
 
 	if (bits & SU_WEAPON)
 		i = MSG_ReadByte ();
 	else
 		i = 0;
+
 	if (cl.stats[STAT_WEAPON] != i)
-	{
 		cl.stats[STAT_WEAPON] = i;
-		Sbar_Changed ();
+
+
+	if (bits & SU_GRENADES)
+		i = MSG_ReadLong ();
+	else
+		i = 0;
+
+	if (cl.stats[STAT_GRENADES] != i)
+	{
+		HUD_Change_time = Sys_FloatTime() + 6;
+		cl.stats[STAT_GRENADES] = i;
 	}
-	
+
+	i = MSG_ReadShort ();
+	if (cl.stats[STAT_PRIGRENADES] != i)
+	{
+		HUD_Change_time = Sys_FloatTime() + 6;
+		cl.stats[STAT_PRIGRENADES] = i;
+	}
+
+
+	i = MSG_ReadShort ();
+	if (cl.stats[STAT_SECGRENADES] != i)
+	{
+		HUD_Change_time = Sys_FloatTime() + 6;
+		cl.stats[STAT_SECGRENADES] = i;
+	}
+
 	i = MSG_ReadShort ();
 	if (cl.stats[STAT_HEALTH] != i)
-	{
 		cl.stats[STAT_HEALTH] = i;
-		Sbar_Changed ();
-	}
 
-	i = MSG_ReadByte ();
+	i = MSG_ReadShort ();
 	if (cl.stats[STAT_AMMO] != i)
 	{
+		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_AMMO] = i;
-		Sbar_Changed ();
-	}
-
-	for (i=0 ; i<4 ; i++)
-	{
-		j = MSG_ReadByte ();
-		if (cl.stats[STAT_SHELLS+i] != j)
-		{
-			cl.stats[STAT_SHELLS+i] = j;
-			Sbar_Changed ();
-		}
 	}
 
 	i = MSG_ReadByte ();
+	if (cl.stats[STAT_CURRENTMAG] != i)
+	{
+		HUD_Change_time = Sys_FloatTime() + 6;
+		cl.stats[STAT_CURRENTMAG] = i;
+	}
 
-	if (standard_quake)
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_ZOOM] != i)
+		cl.stats[STAT_ZOOM] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_ACTIVEWEAPON] != i)
 	{
-		if (cl.stats[STAT_ACTIVEWEAPON] != i)
-		{
-			cl.stats[STAT_ACTIVEWEAPON] = i;
-			Sbar_Changed ();
-		}
+		HUD_Change_time = Sys_FloatTime() + 6;
+		cl.stats[STAT_ACTIVEWEAPON] = i;
 	}
-	else
-	{
-		if (cl.stats[STAT_ACTIVEWEAPON] != (1<<i))
-		{
-			cl.stats[STAT_ACTIVEWEAPON] = (1<<i);
-			Sbar_Changed ();
-		}
-	}
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_ROUNDS] != i)
+		cl.stats[STAT_ROUNDS] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_ROUNDCHANGE] != i)
+		cl.stats[STAT_ROUNDCHANGE] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_X2] != i)
+		cl.stats[STAT_X2] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_INSTA] != i)
+		cl.stats[STAT_INSTA] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.progress_bar != i)
+		cl.progress_bar = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_WEAPON2] != i)
+		cl.stats[STAT_WEAPON2] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_WEAPON2SKIN] != i)
+		cl.stats[STAT_WEAPON2SKIN] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_WEAPON2FRAME] != i)
+		cl.stats[STAT_WEAPON2FRAME] = i;
+
+	i = MSG_ReadByte ();
+	if (cl.stats[STAT_CURRENTMAG2] != i)
+		cl.stats[STAT_CURRENTMAG2] = i;
 }
 
 /*
@@ -624,6 +852,7 @@ CL_NewTranslation
 */
 void CL_NewTranslation (int slot)
 {
+	/*
 	int		i, j;
 	int		top, bottom;
 	byte	*dest, *source;
@@ -651,6 +880,7 @@ void CL_NewTranslation (int slot)
 			for (j=0 ; j<16 ; j++)
 				dest[BOTTOM_RANGE+j] = source[bottom+15-j];		
 	}
+	*/
 }
 
 /*
@@ -700,6 +930,30 @@ void CL_ParseStaticSound (void)
 	atten = MSG_ReadByte ();
 	
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
+}
+
+extern double Hitmark_Time;
+extern int crosshair_spread;
+extern double crosshair_spread_time;
+double return_time;
+/*
+===================
+CL_ParseWeaponFire
+===================
+*/
+void CL_ParseWeaponFire (void)
+{
+	vec3_t		kick;
+	return_time = (double)6/MSG_ReadLong ();
+	crosshair_spread_time = return_time + sv.time;
+
+	kick[0] = MSG_ReadCoord()/5;
+	kick[1] = MSG_ReadCoord()/5;
+	kick[2] = MSG_ReadCoord()/5;
+	
+	cl.gun_kick[0] += kick[0];
+	cl.gun_kick[1] += kick[1];
+	cl.gun_kick[2] += kick[2];
 }
 
 
@@ -756,7 +1010,7 @@ void CL_ParseServerMessage (void)
 		switch (cmd)
 		{
 		default:
-			Host_Error ("CL_ParseServerMessage: Illegible server message\n");
+			Host_Error ("CL_ParseServerMessage: Illegible server message: cmd = %d\n", cmd);
 			break;
 			
 		case svc_nop:
@@ -789,6 +1043,41 @@ void CL_ParseServerMessage (void)
 		case svc_centerprint:
 			SCR_CenterPrint (MSG_ReadString ());
 			break;
+
+		case svc_useprint:
+			//SCR_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
+			break;
+
+		case svc_maxammo:
+			//domaxammo = true;
+			break;
+
+		case svc_pulse:
+			//crosshair_pulse_grenade = true;
+			break;
+
+		case svc_doubletap:
+			//doubletap_has_damage_buff = MSG_ReadByte();
+			break;
+
+		case svc_screenflash:
+		/*
+			screenflash_color = MSG_ReadByte();
+			screenflash_duration = sv.time + MSG_ReadByte();
+			screenflash_type = MSG_ReadByte();
+			screenflash_worktime = 0;
+			screenflash_starttime = sv.time;
+			*/
+			break;
+
+		case svc_bettyprompt:
+			//bettyprompt_time = sv.time + 4;
+			break;
+
+		case svc_playername:
+			//nameprint_time = sv.time + 11;
+			//strcpy(player_name, MSG_ReadString());
+			break;
 			
 		case svc_stufftext:
 			Cbuf_AddText (MSG_ReadString ());
@@ -800,7 +1089,7 @@ void CL_ParseServerMessage (void)
 			
 		case svc_serverinfo:
 			CL_ParseServerInfo ();
-			vid.recalc_refdef = TRUE;	// leave intermission full screen
+			vid.recalc_refdef = true;	// leave intermission full screen
 			break;
 			
 		case svc_setangle:
@@ -816,8 +1105,8 @@ void CL_ParseServerMessage (void)
 			i = MSG_ReadByte ();
 			if (i >= MAX_LIGHTSTYLES)
 				Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-			strcpy (cl_lightstyle[i].map,  MSG_ReadString());
-			cl_lightstyle[i].length = strlen(cl_lightstyle[i].map);
+			strlcpy (cl_lightstyle[i].map, MSG_ReadString(), MAX_STYLESTRING);
+			cl_lightstyle[i].length = Q_strlen(cl_lightstyle[i].map);
 			//johnfitz -- save extra info
 			if (cl_lightstyle[i].length)
 			{
@@ -851,22 +1140,13 @@ void CL_ParseServerMessage (void)
 				Host_Error ("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
 			strcpy (cl.scores[i].name, MSG_ReadString ());
 			break;
-			
-		case svc_updatefrags:
-			Sbar_Changed ();
-			i = MSG_ReadByte ();
-			if (i >= cl.maxclients)
-				Host_Error ("CL_ParseServerMessage: svc_updatefrags > MAX_SCOREBOARD");
-			cl.scores[i].frags = MSG_ReadShort ();
-			break;			
 
 		case svc_updatecolors:
 			Sbar_Changed ();
 			i = MSG_ReadByte ();
 			if (i >= cl.maxclients)
 				Host_Error ("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
-			cl.scores[i].colors = MSG_ReadByte ();
-			CL_NewTranslation (i);
+			MSG_ReadByte ();
 			break;
 			
 		case svc_particle:
@@ -891,11 +1171,17 @@ void CL_ParseServerMessage (void)
 
 				if (cl.paused)
 				{
-					CDAudio_Pause ();
+					//CDAudio_Pause ();
+#ifdef _WIN32
+					VID_HandlePause (true);
+#endif
 				}
 				else
 				{
-					CDAudio_Resume ();
+					//CDAudio_Resume ();
+#ifdef _WIN32
+					VID_HandlePause (false);
+#endif
 				}
 			}
 			break;
@@ -908,14 +1194,6 @@ void CL_ParseServerMessage (void)
 			CL_SignonReply ();
 			break;
 
-		case svc_killedmonster:
-			cl.stats[STAT_MONSTERS]++;
-			break;
-
-		case svc_foundsecret:
-			cl.stats[STAT_SECRETS]++;
-			break;
-
 		case svc_updatestat:
 			i = MSG_ReadByte ();
 			if (i < 0 || i >= MAX_CL_STATS)
@@ -924,40 +1202,73 @@ void CL_ParseServerMessage (void)
 			break;
 			
 		case svc_spawnstaticsound:
-			CL_ParseStaticSound ();
+			//CL_ParseStaticSound ();
 			break;
 
 		case svc_cdtrack:
+			/*
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
 			if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
-				CDAudio_Play ((byte)cls.forcetrack, TRUE);
+				CDAudio_Play ((byte)cls.forcetrack, true);
 			else
-				CDAudio_Play ((byte)cl.cdtrack, TRUE);
+				CDAudio_Play ((byte)cl.cdtrack, true);
+			*/
 			break;
 
 		case svc_intermission:
 			cl.intermission = 1;
 			cl.completed_time = cl.time;
-			vid.recalc_refdef = TRUE;	// go to full screen
+			vid.recalc_refdef = true;	// go to full screen
 			break;
 
 		case svc_finale:
 			cl.intermission = 2;
 			cl.completed_time = cl.time;
-			vid.recalc_refdef = TRUE;	// go to full screen
+			vid.recalc_refdef = true;	// go to full screen
 			SCR_CenterPrint (MSG_ReadString ());			
 			break;
 
 		case svc_cutscene:
 			cl.intermission = 3;
 			cl.completed_time = cl.time;
-			vid.recalc_refdef = TRUE;	// go to full screen
+			vid.recalc_refdef = true;	// go to full screen
 			SCR_CenterPrint (MSG_ReadString ());			
 			break;
 
 		case svc_sellscreen:
-			Cmd_ExecuteString ("help", src_command);
+			//Cmd_ExecuteString ("help", src_command);
+			break;
+
+		case svc_achievement:
+			//HUD_Parse_Achievement (MSG_ReadByte());
+			break;
+
+		case svc_hitmark:
+			//Hitmark_Time = sv.time + 0.2;
+			break;
+
+		case svc_weaponfire:
+			CL_ParseWeaponFire();
+			break;
+
+		case svc_limbupdate:
+			//CL_ParseLimbUpdate();
+			break;
+
+		case svc_updatepoints:
+			i = MSG_ReadByte ();
+			if (i >= cl.maxclients)
+				Host_Error ("CL_ParseServerMessage: svc_updatepoints > MAX_SCOREBOARD");
+			cl.scores[i].points = MSG_ReadLong ();
+
+			break;
+
+		case svc_updatekills:
+			i = MSG_ReadByte ();
+			if (i >= cl.maxclients)
+				Host_Error ("CL_ParseServerMessage: svc_updatekills > MAX_SCOREBOARD");
+			cl.scores[i].kills = MSG_ReadShort ();
 			break;
 		}
 	}

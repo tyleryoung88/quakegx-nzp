@@ -496,8 +496,8 @@ void SCR_DrawFPS (void)
 
 	sprintf(st, "%3d FPS", lastfps);
 
-	x = vid.width - strlen(st) * 16 - 16;
-	y = 0 ; //vid.height - (sb_lines * (vid.height/240) )- 16;
+	x = vid.width - strlen(st) * 16 - 2;
+	y = 15 ; //vid.height - (sb_lines * (vid.height/240) )- 16;
 
 //	Draw_TileClear(x, y, strlen(st)*16, 16);
 

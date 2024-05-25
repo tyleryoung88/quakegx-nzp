@@ -703,9 +703,6 @@ void R_DrawViewModel (void)
 	if (!r_drawentities.value)
 		return;
 
-	if (cl.items & IT_INVISIBILITY)
-		return;
-
 	if (cl.stats[STAT_HEALTH] <= 0)
 		return;
 

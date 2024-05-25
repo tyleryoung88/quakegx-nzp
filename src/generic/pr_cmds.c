@@ -385,6 +385,41 @@ void PF_normalize (void)
 
 /*
 =================
+PF_useprint
+
+Print a text depending on what it is fed with
+
+useprint(entity client, float type, float cost, float weapon)
+=================
+*/
+void PF_useprint (void)
+{
+	client_t	*client;
+	int			entnum, type, cost, weapon;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	type = G_FLOAT(OFS_PARM1);
+	cost = G_FLOAT(OFS_PARM2);
+	weapon = G_FLOAT(OFS_PARM3);
+
+
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_Printf ("tried to sprint to a non-client\n");
+		return;
+	}
+
+	client = &svs.clients[entnum-1];
+
+	MSG_WriteByte (&client->message,svc_useprint);
+	MSG_WriteByte (&client->message,type);
+	MSG_WriteShort (&client->message,cost);
+	MSG_WriteByte (&client->message,weapon);
+	//MSG_WriteString (&client->message, s );
+}
+
+/*
+=================
 PF_vlen
 
 scalar vlen(vector)
@@ -676,6 +711,173 @@ void PF_TraceToss (void)
 }
 #endif
 
+int TraceMove(vec3_t start, vec3_t mins, vec3_t maxs, vec3_t end, int type, edict_t *ent)//engine-sides
+{
+	if(start[0] == end[0] && start[1] == end[1] && start[2] == end[2])
+	{
+		return 1;
+	}
+	vec3_t forward, up;
+	float HorDist;
+	vec3_t HorGoal;
+	vec3_t tempHorGoal;
+
+	up[0] = 0; up[1] = 0; up[2] = 1;
+	HorGoal[0] = end[0]; HorGoal[1] = end[1]; HorGoal[2] = start[2];
+
+	VectorSubtract(HorGoal,start,forward);
+	HorDist = VectorLength(forward);
+	VectorNormalize(forward);
+
+	vec3_t CurrentPos;
+
+	VectorCopy(start,CurrentPos);
+	VectorCopy(HorGoal,tempHorGoal);
+
+	float CurrentDist = 0;//2d distance from initial 3d positionvector
+
+	trace_t trace1, trace2;
+	float tempDist;
+	vec3_t tempVec;
+	vec3_t tempVec2;
+	float i;
+	int STEPSIZEB = 18;//other declaration isn't declared yet
+	float SLOPELEN = 10.4;//18/tan(60) = 10.4, the the length of the triangle formed by the max walkable slope of 60 degrees.
+ 	int skip = 0;
+	int LoopBreak = 0;
+
+	while(CurrentDist < HorDist)
+	{
+		if(LoopBreak > 20)//was 50, decreased this quite a bit. now it's 260 meters
+		{
+			//Con_Printf("AI Warning: There is a ledge that is greater than 650 meters.\n");
+			return -1;
+		}
+
+		trace1 = SV_Move(CurrentPos, mins, maxs, tempHorGoal, MOVE_NOMONSTERS, ent);
+
+		VectorSubtract(tempHorGoal,CurrentPos,tempVec);
+		tempDist = trace1.fraction * VectorLength(tempVec);
+		//Check if we fell along the path
+		for(i = (maxs[0] * 1); i < tempDist; i += (maxs[0] * 1))
+		{
+			VectorScale(forward,i,tempVec);
+			VectorAdd(tempVec,CurrentPos,tempVec);
+			VectorScale(up,-500,tempVec2);//500 inches is about 13 meters
+			VectorAdd(tempVec,tempVec2,tempVec2);
+			trace2 = SV_Move(tempVec, mins, maxs, tempVec2, MOVE_NOMONSTERS, ent);
+			if(trace2.fraction > 0)
+			{
+				VectorScale(up,trace2.fraction * -100,tempVec2);
+				VectorAdd(tempVec,tempVec2,CurrentPos);
+				VectorAdd(tempHorGoal,tempVec2,tempHorGoal);
+				skip = 1;
+				CurrentDist += i;
+				if(trace2.fraction == 1)
+				{
+					//We fell the full 13 meters!, we need to be careful here,
+					//because if we're checking over the void, then we could be stuck in an infinite loop and crash the game
+					//So we're going to keep track of how many times we fall 13 meters
+					LoopBreak++;
+				}
+				else
+				{
+					LoopBreak = 0;
+				}
+				break;
+			}
+		}
+		//If we fell at any location along path, then we don't try to step up
+		if(skip == 1)
+		{
+			trace2.fraction = 0;
+			skip = 0;
+			continue;
+		}
+		//We need to advance it as much as possible along path before step up
+		if(trace1.fraction > 0 && trace1.fraction < 1)
+		{
+			VectorCopy(trace1.endpos,CurrentPos);
+			trace1.fraction = 0;
+		}
+		//Check step up
+		if(trace1.fraction < 1)
+		{
+			VectorScale(up,STEPSIZEB,tempVec2);
+			VectorAdd(CurrentPos,tempVec2,tempVec);
+			VectorAdd(tempHorGoal,tempVec2,tempVec2);
+			trace2 = SV_Move(tempVec, mins, maxs, tempVec2, MOVE_NOMONSTERS, ent);
+			//10.4 is minimum length for a slope of 60 degrees, we need to at least advance this much to know the surface is walkable
+			VectorSubtract(tempVec2,tempVec,tempVec2);
+			if(trace2.fraction > (trace1.fraction + (SLOPELEN/VectorLength(tempVec2))) || trace2.fraction == 1)
+			{
+				VectorCopy(tempVec,CurrentPos);
+				tempHorGoal[2] = CurrentPos[2];
+				continue;
+			}
+			else
+			{
+				return 0;//stepping up didn't advance so we've hit a wall, we failed
+			}
+		}
+		if(trace1.fraction == 1)//we've made it horizontally to our goal... so check if we've made it vertically...
+		{
+			if((end[2] - tempHorGoal[2] < STEPSIZEB) && (end[2] - tempHorGoal[2]) > -1 * STEPSIZEB)
+				return 1;
+			else return 0;
+		}
+	}
+	return 0;
+}
+
+void PF_tracemove(void)//progs side
+{
+	float   *start, *end, *mins, *maxs;
+	int      nomonsters;
+	edict_t   *ent;
+
+	start = G_VECTOR(OFS_PARM0);
+	mins = G_VECTOR(OFS_PARM1);
+	maxs = G_VECTOR(OFS_PARM2);
+	end = G_VECTOR(OFS_PARM3);
+	nomonsters = G_FLOAT(OFS_PARM4);
+	ent = G_EDICT(OFS_PARM5);
+
+	Con_DPrintf ("TraceMove start, ");
+	G_INT(OFS_RETURN) = TraceMove(start, mins, maxs, end,nomonsters,ent);
+	Con_DPrintf ("TM end\n");
+	return;
+}
+
+void PF_tracebox (void)
+{
+   float   *v1, *v2, *mins, *maxs;
+   trace_t   trace;
+   int      nomonsters;
+   edict_t   *ent;
+
+   v1 = G_VECTOR(OFS_PARM0);
+   mins = G_VECTOR(OFS_PARM1);
+   maxs = G_VECTOR(OFS_PARM2);
+   v2 = G_VECTOR(OFS_PARM3);
+   nomonsters = G_FLOAT(OFS_PARM4);
+   ent = G_EDICT(OFS_PARM5);
+
+   trace = SV_Move (v1, mins, maxs, v2, nomonsters, ent);
+
+   pr_global_struct->trace_allsolid = trace.allsolid;
+   pr_global_struct->trace_startsolid = trace.startsolid;
+   pr_global_struct->trace_fraction = trace.fraction;
+   pr_global_struct->trace_inwater = trace.inwater;
+   pr_global_struct->trace_inopen = trace.inopen;
+   VectorCopy (trace.endpos, pr_global_struct->trace_endpos);
+   VectorCopy (trace.plane.normal, pr_global_struct->trace_plane_normal);
+   pr_global_struct->trace_plane_dist =  trace.plane.dist;
+   if (trace.ent)
+      pr_global_struct->trace_ent = EDICT_TO_PROG(trace.ent);
+   else
+      pr_global_struct->trace_ent = EDICT_TO_PROG(sv.edicts);
+}
 
 /*
 =================
@@ -1414,6 +1616,38 @@ void PF_aim (void)
 	}
 }
 
+// entity (entity start, .float field, float match) findfloat = #98;
+void PF_FindFloat (void)
+{
+	int		e;
+	int		f;
+	float	s, t;
+	edict_t	*ed;
+
+	e = G_EDICTNUM(OFS_PARM0);
+	f = G_INT(OFS_PARM1);
+	s = G_FLOAT(OFS_PARM2);
+	if (!s)
+		PR_RunError ("PF_FindFloat: bad search float");
+
+	for (e++ ; e < sv.num_edicts ; e++)
+	{
+		ed = EDICT_NUM(e);
+		if (ed->free)
+			continue;
+		t = E_FLOAT(ed,f);
+		if (!t)
+			continue;
+		if (t == s)
+		{
+			RETURN_EDICT(ed);
+			return;
+		}
+	}
+
+	RETURN_EDICT(sv.edicts);
+}
+
 /*
 ==============
 PF_changeyaw
@@ -1675,10 +1909,7 @@ void PF_changelevel (void)
 	Cbuf_AddText (va("changelevel %s\n",s));
 #endif
 }
-
-
 #ifdef QUAKE2
-
 #define	CONTENT_WATER	-3
 #define CONTENT_SLIME	-4
 #define CONTENT_LAVA	-5
@@ -1815,6 +2046,60 @@ void PF_WaterMove (void)
 
 	G_FLOAT(OFS_RETURN) = damage;
 }
+#endif
+/*
+=================
+PF_achievement
+
+unlocks the achievement number for entity
+
+achievement(clientent, value)
+=================
+*/
+void PF_achievement (void)
+{
+	int		ach;
+	client_t	*client;
+	int			entnum;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	ach = G_FLOAT(OFS_PARM1);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+	{
+		Con_DPrintf ("tried to unlock ach to a non-client\n");
+		return;
+	}
+
+	//Con_Printf (va("Achievement? %i\n", ach));	// JPG
+	client = &svs.clients[entnum-1];
+
+	MSG_WriteByte (&client->message,svc_achievement);
+	MSG_WriteByte (&client->message, ach);
+}
+
+/*
+=================
+PF_updateLimb
+
+updates zombies limb
+
+PF_updateLimb(zombieent, value. limbent)
+=================
+*/
+void PF_updateLimb (void)
+{
+	int		limb;
+	int		zombieent, limbent;
+
+	zombieent = G_EDICTNUM(OFS_PARM0);
+	limb = G_FLOAT(OFS_PARM1);
+	limbent = G_EDICTNUM(OFS_PARM2);
+	MSG_WriteByte (&sv.reliable_datagram,   svc_limbupdate);
+	MSG_WriteByte (&sv.reliable_datagram,  limb);
+	MSG_WriteShort (&sv.reliable_datagram,  zombieent);
+	MSG_WriteShort (&sv.reliable_datagram,  limbent);
+}
 
 
 void PF_sin (void)
@@ -1831,7 +2116,6 @@ void PF_sqrt (void)
 {
 	G_FLOAT(OFS_RETURN) = sqrtf(G_FLOAT(OFS_PARM0));
 }
-#endif
 
 void PF_Fixme (void)
 {
@@ -1896,14 +2180,14 @@ PF_traceon,
 PF_traceoff,
 PF_eprint,	// void(entity e) debug print an entire entity
 PF_walkmove, // float(float yaw, float dist) walkmove
-PF_Fixme, // float(float yaw, float dist) walkmove
+PF_updateLimb, // #33
 PF_droptofloor,
 PF_lightstyle,
 PF_rint,
 PF_floor,
 PF_ceil,
 PF_Fixme,
-PF_checkbottom,
+PF_checkbottom, // #40
 PF_pointcontents,
 PF_Fixme,
 PF_fabs,
@@ -1913,7 +2197,7 @@ PF_localcmd,
 PF_nextent,
 PF_particle,
 PF_changeyaw,
-PF_Fixme,
+PF_Fixme, // #50
 PF_vectoangles,
 
 PF_WriteByte,
@@ -1924,30 +2208,19 @@ PF_WriteCoord,
 PF_WriteAngle,
 PF_WriteString,
 PF_WriteEntity,
-
-#ifdef QUAKE2
-PF_sin,
-PF_cos,
-PF_sqrt,
-PF_changepitch,
-PF_TraceToss,
-PF_etos,
-PF_WaterMove,
-#else
+PF_Fixme, // #60
 PF_Fixme,
 PF_Fixme,
 PF_Fixme,
 PF_Fixme,
 PF_Fixme,
 PF_Fixme,
-PF_Fixme,
-#endif
 
 SV_MoveToGoal,
 PF_precache_file,
 PF_makestatic,
 
-PF_changelevel,
+PF_changelevel, // #70
 PF_Fixme,
 
 PF_cvar_set,
@@ -1959,8 +2232,29 @@ PF_precache_model,
 PF_precache_sound,		// precache_sound2 is different only for qcc
 PF_precache_file,
 
-PF_setspawnparms,
-PF_rumble
+PF_setspawnparms, // #78
+PF_achievement, // #79
+PF_Fixme, // #80
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_useprint, // #87
+PF_Fixme,
+PF_Fixme,
+PF_tracebox, // #90
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_Fixme,
+PF_FindFloat, // #98
+PF_tracemove // #99
+//PF_rumble
 };
 
 builtin_t *pr_builtins = pr_builtin;

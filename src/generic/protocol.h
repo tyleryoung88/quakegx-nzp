@@ -32,14 +32,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define U_SIGNAL	(1<<7)		// just differentiates from other updates
 
 // svc_update can pass all of the fast update bits, plus more
-#define	U_ANGLE1	(1<<8)
-#define	U_ANGLE3	(1<<9)
-#define	U_MODEL		(1<<10)
-#define	U_COLORMAP	(1<<11)
-#define	U_SKIN		(1<<12)
-#define	U_EFFECTS	(1<<13)
-#define	U_LONGENTITY	(1<<14)
+#define	U_EXTEND1	    (1<<8)
+#define	U_ANGLE1	(1<<9)
+#define	U_ANGLE3	(1<<10)
+#define	U_MODEL		(1<<11)
+#define	U_COLORMAP	(1<<12)
+#define	U_SKIN		(1<<13)
+#define	U_EFFECTS	(1<<14)
 
+// Tomaz - QC Alpha Scale Glow Control Begin
+#define	U_LONGENTITY (1<<15)//blubs here, U_EXTEND1 used to be here, but it needs to be in the byte above, so moved it to the 1<<8 position, and moved the rest down
+#define	U_RENDERMODE    (1<<16)
+#define	U_RENDERAMT	    (1<<17)
+#define	U_RENDERCOLOR1  (1<<18)
+#define	U_RENDERCOLOR2  (1<<19)
+#define	U_RENDERCOLOR3  (1<<20)
+#define	U_EXTEND2	    (1<<21) // another byte to follow
+#define	U_FRAMETIME	    (1<<22) // another byte to follow
+// Tomaz - QC Alpha Scale Glow Control End
+#define U_SCALE 		(1<<23)
 
 #define	SU_VIEWHEIGHT	(1<<0)
 #define	SU_IDEALPITCH	(1<<1)
@@ -49,19 +60,24 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	SU_VELOCITY1	(1<<5)
 #define	SU_VELOCITY2	(1<<6)
 #define	SU_VELOCITY3	(1<<7)
-//define	SU_AIMENT		(1<<8)  AVAILABLE BIT
-#define	SU_ITEMS		(1<<9)
+#define	SU_WEAPONSKIN	(1<<7)
+#define	SU_PERKS		(1<<9)
 #define	SU_ONGROUND		(1<<10)		// no data follows, the bit is it
 #define	SU_INWATER		(1<<11)		// no data follows, the bit is it
 #define	SU_WEAPONFRAME	(1<<12)
-#define	SU_ARMOR		(1<<13)
 #define	SU_WEAPON		(1<<14)
+#define	SU_PRIGRENADES	(1<<15)
+#define	SU_SECGRENADES	(1<<16)
+#define	SU_GRENADES		(1<<13)
 
 // a sound with no channel is a local only sound
 #define	SND_VOLUME		(1<<0)		// a byte
 #define	SND_ATTENUATION	(1<<1)		// a byte
 #define	SND_LOOPING		(1<<2)		// a long
 
+#define ENTSCALE_DEFAULT	16 // Equivalent to float 1.0f due to byte packing.
+#define ENTSCALE_ENCODE(a)	((a) ? ((a) * ENTSCALE_DEFAULT) : ENTSCALE_DEFAULT) // Convert to byte
+#define ENTSCALE_DECODE(a)	((float)(a) / ENTSCALE_DEFAULT) // Convert to float for rendering
 
 // defaults for clientinfo messages
 #define	DEFAULT_VIEWHEIGHT	22
@@ -99,7 +115,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 						// [string]...[0]sounds cache
 #define	svc_lightstyle		12	// [byte] [string]
 #define	svc_updatename		13	// [byte] [string]
-#define	svc_updatefrags		14	// [byte] [short]
+#define	svc_updatepoints		14	// [byte] [short]
+
 #define	svc_clientdata		15	// <shortbits + data>
 #define	svc_stopsound		16	// <see code>
 #define	svc_updatecolors	17	// [byte] [byte]
@@ -117,9 +134,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	svc_centerprint		26	// [string] to put in center of the screen
 
-#define	svc_killedmonster	27
-#define	svc_foundsecret		28
-
 #define	svc_spawnstaticsound	29	// [coord3] [byte] samp [byte] vol [byte] aten
 
 #define	svc_intermission	30		// [string] music
@@ -129,9 +143,22 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define svc_sellscreen		33
 
 #define svc_cutscene		34
-
-#define	svc_skybox		    35	    // [string] skyname
-#define svc_fog				36		// [byte] start [byte] end [byte] red [byte] green [byte] blue [float] time
+#define svc_weaponfire	    35
+#define svc_hitmark		    36
+#define	svc_skybox		    37	    // [string] skyname
+#define	svc_useprint		38	    // [string] to put in center of the screen
+#define	svc_updatekills		39	    // [string] to put in center of the screen
+#define	svc_limbupdate		40
+#define svc_fog				41		// [byte] start [byte] end [byte] red [byte] green [byte] blue [float] time
+#define	svc_bspdecal        42      // [string] name [byte] decal_size [coords] pos
+#define	svc_achievement     43      // [string] name [byte] decal_size [coords] pos
+#define svc_songegg 		44  	// [string] track name
+#define svc_maxammo 		45
+#define svc_pulse 			46
+#define svc_bettyprompt		47
+#define svc_playername 		48
+#define svc_doubletap		49
+#define svc_screenflash		50		// [byte] color [byte] duration [byte] type
 
 //
 // client to server
@@ -164,7 +191,5 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define TE_BEAM				13
 // PGM 01/21/97 
 
-#ifdef QUAKE2
-#define TE_IMPLOSION		14
-#define TE_RAILTRAIL		15
-#endif
+#define TE_RAYSPLASHGREEN 	14
+#define TE_RAYSPLASHRED 	15

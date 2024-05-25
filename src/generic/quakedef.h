@@ -93,85 +93,89 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //
 #define	MAX_CL_STATS		32
 #define	STAT_HEALTH			0
-#define	STAT_FRAGS			1
+#define	STAT_points			1
 #define	STAT_WEAPON			2
 #define	STAT_AMMO			3
-#define	STAT_ARMOR			4
+#define	STAT_SECGRENADES	4
 #define	STAT_WEAPONFRAME	5
-#define	STAT_SHELLS			6
-#define	STAT_NAILS			7
-#define	STAT_ROCKETS		8
-#define	STAT_CELLS			9
+#define	STAT_CURRENTMAG		6
+#define	STAT_ZOOM			7
+#define	STAT_WEAPONSKIN		8
+#define	STAT_GRENADES		9
 #define	STAT_ACTIVEWEAPON	10
-#define	STAT_TOTALSECRETS	11
-#define	STAT_TOTALMONSTERS	12
-#define	STAT_SECRETS		13		// bumped on client side by svc_foundsecret
-#define	STAT_MONSTERS		14		// bumped by svc_killedmonster
+#define	STAT_ROUNDS			11
+#define	STAT_ROUNDCHANGE	12
+#define	STAT_X2				13
+#define	STAT_INSTA			14
+#define	STAT_PRIGRENADES	15
+#define	STAT_WEAPON2		17
+#define	STAT_WEAPON2SKIN	18
+#define	STAT_WEAPON2FRAME	19
+#define STAT_CURRENTMAG2 	20
 
 // stock defines
 
-#define	IT_SHOTGUN				1
-#define	IT_SUPER_SHOTGUN		2
-#define	IT_NAILGUN				4
-#define	IT_SUPER_NAILGUN		8
-#define	IT_GRENADE_LAUNCHER		16
-#define	IT_ROCKET_LAUNCHER		32
-#define	IT_LIGHTNING			64
-#define IT_SUPER_LIGHTNING      128
-#define IT_SHELLS               256
-#define IT_NAILS                512
-#define IT_ROCKETS              1024
-#define IT_CELLS                2048
-#define IT_AXE                  4096
-#define IT_ARMOR1               8192
-#define IT_ARMOR2               16384
-#define IT_ARMOR3               32768
-#define IT_SUPERHEALTH          65536
-#define IT_KEY1                 131072
-#define IT_KEY2                 262144
-#define	IT_INVISIBILITY			524288
-#define	IT_INVULNERABILITY		1048576
-#define	IT_SUIT					2097152
-#define	IT_QUAD					4194304
-#define IT_SIGIL1               (1<<28)
-#define IT_SIGIL2               (1<<29)
-#define IT_SIGIL3               (1<<30)
-#define IT_SIGIL4               (1<<31)
+#define W_COLT 		1
+#define W_KAR 		2
+#define W_THOMPSON 	3
+#define W_357		4
+#define W_BAR		5
+#define W_BK		6
+#define W_BROWNING	7
+#define W_DB		8
+#define W_FG		9
+#define W_GEWEHR	10
+#define W_KAR_SCOPE	11
+#define W_M1		12
+#define W_M1A1		13
+#define W_M2		14
+#define W_MP40		15
+#define W_MG		16
+#define W_PANZER	17
+#define W_PPSH		18
+#define W_PTRS		19
+#define W_RAY		20
+#define W_SAWNOFF	21
+#define W_STG		22
+#define W_TRENCH	23
+#define W_TYPE		24
 
-//===========================================
-//rogue changed and added defines
+#define W_BIATCH  28
+#define W_KILLU   29 //357
+#define W_COMPRESSOR 30 // Gewehr
+#define W_M1000  31 //garand
+#define W_KOLLIDER  32 // mp5
+#define W_PORTER  33 // Ray
+#define W_WIDDER  34 // M1A1
+#define W_FIW  35 //upgraded flamethrower
+#define W_ARMAGEDDON  36 //Kar
+//#define W_WUNDER  37
+#define W_GIBS  38 // thompson
+#define W_SAMURAI  39 //Type
+#define W_AFTERBURNER  40 //mp40
+#define W_SPATZ  41 // stg
+#define W_SNUFF  42 // sawn off
+#define W_BORE  43 // double barrel
+#define W_IMPELLER  44 //fg
+#define W_BARRACUDA  45 //mg42
+#define W_ACCELERATOR  46 //M1919 browning
+#define W_GUT  47 //trench
+#define W_REAPER  48 //ppsh
+#define W_HEADCRACKER  49 //scoped kar
+#define W_LONGINUS  50 //panzer
+#define W_PENETRATOR  51 //ptrs
+#define W_WIDOW  52 //bar
+//#define W_KRAUS  53 //ballistic
+#define W_MP5   54
+#define W_M14   55
 
-#define RIT_SHELLS              128
-#define RIT_NAILS               256
-#define RIT_ROCKETS             512
-#define RIT_CELLS               1024
-#define RIT_AXE                 2048
-#define RIT_LAVA_NAILGUN        4096
-#define RIT_LAVA_SUPER_NAILGUN  8192
-#define RIT_MULTI_GRENADE       16384
-#define RIT_MULTI_ROCKET        32768
-#define RIT_PLASMA_GUN          65536
-#define RIT_ARMOR1              8388608
-#define RIT_ARMOR2              16777216
-#define RIT_ARMOR3              33554432
-#define RIT_LAVA_NAILS          67108864
-#define RIT_PLASMA_AMMO         134217728
-#define RIT_MULTI_ROCKETS       268435456
-#define RIT_SHIELD              536870912
-#define RIT_ANTIGRAV            1073741824
-#define RIT_SUPERHEALTH         2147483648
+#define W_TESLA  56
+#define W_DG3 	 57 //tesla
 
-//MED 01/04/97 added hipnotic defines
-//===========================================
-//hipnotic added defines
-#define HIT_PROXIMITY_GUN_BIT 16
-#define HIT_MJOLNIR_BIT       7
-#define HIT_LASER_CANNON_BIT  23
-#define HIT_PROXIMITY_GUN   (1<<HIT_PROXIMITY_GUN_BIT)
-#define HIT_MJOLNIR         (1<<HIT_MJOLNIR_BIT)
-#define HIT_LASER_CANNON    (1<<HIT_LASER_CANNON_BIT)
-#define HIT_WETSUIT         (1<<(23+2))
-#define HIT_EMPATHY_SHIELDS (1<<(23+3))
+#define W_SPRING 58
+#define W_PULVERIZER 59
+
+#define W_NOWEP   420
 
 //===========================================
 

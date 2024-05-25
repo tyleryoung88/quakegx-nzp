@@ -206,8 +206,11 @@ void R_TranslatePlayerSkin (int playernum)
 
 	GL_DisableMultitexture();
 
-	top = cl.scores[playernum].colors & 0xf0;
-	bottom = (cl.scores[playernum].colors &15)<<4;
+	//top = cl.scores[playernum].colors & 0xf0;
+	//bottom = (cl.scores[playernum].colors &15)<<4;
+	
+	top = 0xf0;
+	bottom = (15)<<4;
 
 	for (i=0 ; i<256 ; i++)
 		translate[i] = i;

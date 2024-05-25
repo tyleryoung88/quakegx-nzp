@@ -44,9 +44,10 @@ typedef struct
 {
 	char	name[MAX_SCOREBOARDNAME];
 	float	entertime;
-	int		frags;
-	int		colors;			// two 4 bit fields
-	byte	translations[VID_GRADES*256];
+	int		points;
+	int		maxpoints;
+	int		kills;
+	int		headshots;
 } scoreboard_t;
 
 typedef enum
@@ -152,10 +153,6 @@ typedef struct
 
 extern client_static_t	cls;
 
-//
-// the client_state_t structure is wiped completely at every
-// server signon
-//
 typedef struct
 {
 	int			movemessages;	// since connecting to this server
@@ -166,7 +163,8 @@ typedef struct
 
 // information for local display
 	int			stats[MAX_CL_STATS];	// health, etc
-	int			items;			// inventory bit flags
+	int			perks;			// Perk icons.
+	int			progress_bar;			// Perk icons.
 	float	item_gettime[32];	// cl.time of aquiring item, for blinking
 	float		faceanimtime;	// use anim frame if cl.time < this
 
@@ -186,7 +184,8 @@ typedef struct
 	vec3_t		velocity;		// lerped between mvelocity[0] and [1]
 
 	vec3_t		punchangle;		// temporary offset
-	
+	vec3_t		gun_kick;		// temporary kick
+
 // pitch drifting vars
 	float		idealpitch;
 	float		pitchvel;
@@ -210,9 +209,11 @@ typedef struct
 								// a lerp point for other data
 	double		oldtime;		// previous cl.time, time-oldtime is used
 								// to decay light values and smooth step ups
-	
+	double		ctime;			// joe: copy of cl.time, to avoid incidents caused by rewind
+
 
 	float		last_received_message;	// (realtime) for net trouble icon
+    double			laser_point_time;
 
 //
 // information that is static for the entire time connected to a server
@@ -231,6 +232,7 @@ typedef struct
 	int			num_entities;	// held in cl_entities array
 	int			num_statics;	// held in cl_staticentities array
 	entity_t	viewent;			// the gun model
+	entity_t	viewent2;			// the second gun model
 
 	int			cdtrack, looptrack;	// cd audio
 
