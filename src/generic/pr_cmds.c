@@ -21,8 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include <ogc/lwp_watchdog.h>
 #include <wiiuse/wpad.h>
+#include <ctype.h>
 
-
+#define PR_MAX_TEMPSTRING 2048	// 2001-10-25 Enhanced temp string handling by Maddes
 #define	RETURN_EDICT(e) (((int *)pr_globals)[OFS_RETURN] = EDICT_TO_PROG(e))
 
 /*
@@ -37,17 +38,32 @@ extern double time_wpad_off;
 extern int rumble_on;
 extern cvar_t  rumble;
 
+char	pr_varstring_temp[PR_MAX_TEMPSTRING];	// 2001-10-25 Enhanced temp string handling by Maddes
 char *PF_VarString (int	first)
 {
 	int		i;
-	static char out[256];
-	
-	out[0] = 0;
-	for (i=first ; i<pr_argc ; i++)
+// 2001-10-25 Enhanced temp string handling by Maddes  start
+	int		maxlen;
+	char	*add;
+
+	pr_varstring_temp[0] = 0;
+	for (i=first ; i < pr_argc ; i++)
 	{
-		strcat (out, G_STRING((OFS_PARM0+i*3)));
+		maxlen = PR_MAX_TEMPSTRING - strlen(pr_varstring_temp) - 1;	// -1 is EndOfString
+		add = G_STRING((OFS_PARM0+i*3));
+		if (maxlen > strlen(add))
+		{
+			strcat (pr_varstring_temp, add);
+		}
+		else
+		{
+			strncat (pr_varstring_temp, add, maxlen);
+			pr_varstring_temp[PR_MAX_TEMPSTRING-1] = 0;
+			break;	// can stop here
+		}
 	}
-	return out;
+	return pr_varstring_temp;
+// 2001-10-25 Enhanced temp string handling by Maddes  end
 }
 
 
@@ -1161,13 +1177,272 @@ void PF_vtos (void)
 	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
 }
 
-#ifdef QUAKE2
 void PF_etos (void)
 {
 	sprintf (pr_string_temp, "entity %i", G_EDICTNUM(OFS_PARM0));
 	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
 }
-#endif
+
+/*
+=================
+PF_stof
+
+float stof (string)
+=================
+*/
+// thanks Zoid, taken from QuakeWorld
+void PF_stof (void)
+{
+	char	*s;
+
+	s = G_STRING(OFS_PARM0);
+	G_FLOAT(OFS_RETURN) = atof(s);
+}
+
+/*
+=================
+PF_stov
+
+vector stov (string)
+=================
+*/
+void PF_stov (void)
+{
+	char *v;
+	int i;
+	vec3_t d;
+
+	v = G_STRING(OFS_PARM0);
+
+	for (i=0; i<3; i++)
+	{
+		while(v && (v[0] == ' ' || v[0] == '\'')) //skip unneeded data
+			v++;
+		d[i] = atof(v);
+		while (v && v[0] != ' ') // skip to next space
+			v++;
+	}
+	VectorCopy (d, G_VECTOR(OFS_RETURN));
+}
+
+// 2001-09-20 QuakeC string manipulation by FrikaC/Maddes  start
+/*
+=================
+PF_strzone
+
+string strzone (string)
+=================
+*/
+void PF_strzone (void)
+{
+	char *m, *p;
+	m = G_STRING(OFS_PARM0);
+	p = Z_Malloc(strlen(m) + 1);
+	strcpy(p, m);
+
+	G_INT(OFS_RETURN) = p - pr_strings;
+}
+
+/*
+=================
+PF_strunzone
+
+string strunzone (string)
+=================
+*/
+void PF_strunzone (void)
+{
+	Z_Free(G_STRING(OFS_PARM0));
+	G_INT(OFS_PARM0) = OFS_NULL; // empty the def
+};
+
+/*
+=================
+PF_strtrim
+
+string strtrim (string)
+=================
+*/
+void PF_strtrim (void)
+{
+		int		offset, length;
+	int		maxoffset;		// 2001-10-25 Enhanced temp string handling by Maddes
+	char	*str;
+	char 	*end;
+
+	str = G_STRING(OFS_PARM0);
+
+	// figure out the new start
+	while (*str == ' ' || *str == '\t' || *str == '\n' || *str == '\r') {
+		offset++;
+		str++;
+	}
+
+	// figure out the new end.
+	end = str + strlen (str);
+	while (end > str && (end[-1] == ' ' || end[-1] == '\t' || end[-1] == '\n' || end[-1] == '\r'))
+		end--;
+
+	length = end - str;
+
+	if (offset < 0)
+		offset = 0;
+// 2001-10-25 Enhanced temp string handling by Maddes  start
+	if (length >= PR_MAX_TEMPSTRING)
+		length = PR_MAX_TEMPSTRING-1;
+// 2001-10-25 Enhanced temp string handling by Maddes  end
+	if (length < 0)
+		length = 0;
+
+	//str += offset;
+	strncpy(pr_string_temp, str, length);
+	pr_string_temp[length] = 0;
+
+	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+};
+
+/*
+=================
+PF_strlen
+
+float strlen (string)
+=================
+*/
+void PF_strlen (void)
+{
+	char *p = G_STRING(OFS_PARM0);
+	G_FLOAT(OFS_RETURN) = strlen(p);
+}
+
+/*
+=================
+PF_strcat
+
+string strcat (string, string)
+=================
+*/
+
+void PF_strcat (void)
+{
+	char *s1, *s2;
+	int		maxlen;	// 2001-10-25 Enhanced temp string handling by Maddes
+
+	s1 = G_STRING(OFS_PARM0);
+	s2 = PF_VarString(1);
+
+// 2001-10-25 Enhanced temp string handling by Maddes  start
+	pr_string_temp[0] = 0;
+	if (strlen(s1) < PR_MAX_TEMPSTRING)
+	{
+		strcpy(pr_string_temp, s1);
+	}
+	else
+	{
+		strncpy(pr_string_temp, s1, PR_MAX_TEMPSTRING);
+		pr_string_temp[PR_MAX_TEMPSTRING-1] = 0;
+	}
+
+	maxlen = PR_MAX_TEMPSTRING - strlen(pr_string_temp) - 1;	// -1 is EndOfString
+	if (maxlen > 0)
+	{
+		if (maxlen > strlen(s2))
+		{
+			strcat (pr_string_temp, s2);
+		}
+		else
+		{
+			strncat (pr_string_temp, s2, maxlen);
+			pr_string_temp[PR_MAX_TEMPSTRING-1] = 0;
+		}
+	}
+// 2001-10-25 Enhanced temp string handling by Maddes  end
+
+	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+}
+
+/*
+=================
+PF_strtolower
+
+string strtolower (string)
+=================
+*/
+void PF_strtolower(void)
+{
+	char *s;
+
+	s = G_STRING(OFS_PARM0);
+
+	pr_string_temp[0] = 0;
+	if (strlen(s) < PR_MAX_TEMPSTRING)
+	{
+		strcpy(pr_string_temp, s);
+	}
+	else
+	{
+		strncpy(pr_string_temp, s, PR_MAX_TEMPSTRING);
+		pr_string_temp[PR_MAX_TEMPSTRING-1] = 0;
+	}
+
+	for(int i = 0; i < strlen(s); i++)
+  		pr_string_temp[i] = tolower(pr_string_temp[i]);
+
+	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+}
+
+/*
+=================
+PF_crc16
+
+float crc16 (float, string)
+=================
+*/
+void PF_crc16(void)
+{
+	int insens = G_FLOAT(OFS_PARM0);
+	char *s = G_STRING(OFS_PARM1);
+
+	G_FLOAT(OFS_RETURN) = (unsigned short) ((insens ? CRC_Block_CaseInsensitive : CRC_Block) ((unsigned char *) s, strlen(s)));
+}
+
+/*
+=================
+PF_substring
+
+string substring (string, float, float)
+=================
+*/
+void PF_substring (void)
+{
+	int		offset, length;
+	int		maxoffset;		// 2001-10-25 Enhanced temp string handling by Maddes
+	char	*p;
+
+	p = G_STRING(OFS_PARM0);
+	offset = (int)G_FLOAT(OFS_PARM1); // for some reason, Quake doesn't like G_INT
+	length = (int)G_FLOAT(OFS_PARM2);
+
+	// cap values
+	maxoffset = strlen(p);
+	if (offset > maxoffset)
+	{
+		offset = maxoffset;
+	}
+	if (offset < 0)
+		offset = 0;
+// 2001-10-25 Enhanced temp string handling by Maddes  start
+	if (length >= PR_MAX_TEMPSTRING)
+		length = PR_MAX_TEMPSTRING-1;
+// 2001-10-25 Enhanced temp string handling by Maddes  end
+	if (length < 0)
+		length = 0;
+
+	p += offset;
+	strncpy(pr_string_temp, p, length);
+	pr_string_temp[length]=0;
+
+	G_INT(OFS_RETURN) = pr_string_temp - pr_strings;
+}
 
 void PF_Spawn (void)
 {
@@ -1183,7 +1458,6 @@ void PF_Remove (void)
 	ed = G_EDICT(OFS_PARM0);
 	ED_Free (ed);
 }
-
 
 // entity (entity start, .string field, string match) find = #5;
 void PF_Find (void)
@@ -1877,6 +2151,35 @@ void PF_setspawnparms (void)
 }
 
 /*
+=================
+PF_SetPlayerName
+
+sends the name string to
+the client, avoids making
+a protocol extension and
+spamming strings.
+
+nzp_setplayername()
+=================
+*/
+void PF_SetPlayerName(void)
+{
+	client_t	*client;
+	int			entnum;
+	char* 		s;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	s = G_STRING(OFS_PARM1);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_playername);
+	MSG_WriteString (&client->message, s);
+}
+
+/*
 ==============
 PF_changelevel
 ==============
@@ -2208,13 +2511,14 @@ PF_WriteCoord,
 PF_WriteAngle,
 PF_WriteString,
 PF_WriteEntity,
-PF_Fixme, // #60
-PF_Fixme,
-PF_Fixme,
-PF_Fixme,
-PF_Fixme,
-PF_Fixme,
-PF_Fixme,
+
+PF_sin,
+PF_cos,
+PF_sqrt,
+PF_Fixme,//PF_changepitch,
+PF_Fixme,//PF_TraceToss,
+PF_etos,
+PF_Fixme,//PF_WaterMove,
 
 SV_MoveToGoal,
 PF_precache_file,
@@ -2235,7 +2539,7 @@ PF_precache_file,
 PF_setspawnparms, // #78
 PF_achievement, // #79
 PF_Fixme, // #80
-PF_Fixme,
+PF_stof, // #81
 PF_Fixme,
 PF_Fixme,
 PF_Fixme,
@@ -2253,7 +2557,417 @@ PF_Fixme,
 PF_Fixme,
 PF_Fixme,
 PF_FindFloat, // #98
-PF_tracemove // #99
+PF_tracemove, // #99
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #109
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_strlen, // #114
+PF_strcat, // #115
+PF_substring, // #116
+PF_stov, // #117
+PF_strzone, // #118
+PF_strunzone, // #119
+PF_strtrim, // #120
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #129
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #139
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #149
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #159
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #169
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #179
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #189
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #199
+PF_Fixme, // #200
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #210
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #220
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #230
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #240
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #250
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #260
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #270
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #280
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #290
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #300
+PF_Fixme, // #301
+PF_Fixme, // #302
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #312
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #322
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #332
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #342
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #352
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #362
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #372
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #382
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #392
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #402
+PF_Fixme, // #403
+PF_Fixme, //#404
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #413
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #423
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #433
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #443
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #453
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #463
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #473
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #483
+PF_Fixme, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_strtolower, // #480 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #493
+PF_crc16, 
+PF_Fixme,
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, //#500
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, 
+PF_Fixme, // #504
+PF_Fixme, // #505
+PF_Fixme,
+PF_Fixme,
+//PF_SetDoubleTapVersion, // #506
+//PF_ScreenFlash, // #507
+PF_Fixme
 //PF_rumble
 };
 

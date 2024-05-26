@@ -1045,7 +1045,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_useprint:
-			//SCR_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
+			SCR_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
 			break;
 
 		case svc_maxammo:

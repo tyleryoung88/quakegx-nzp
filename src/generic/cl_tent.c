@@ -215,7 +215,7 @@ void CL_ParseTEnt (void)
 
 		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 		break;
-
+/*
 	case TE_LIGHTNING1:				// lightning bolts
 		CL_ParseBeam (Mod_ForName("progs/bolt.mdl", TRUE));
 		break;
@@ -233,7 +233,7 @@ void CL_ParseTEnt (void)
 		CL_ParseBeam (Mod_ForName("progs/beam.mdl", TRUE));
 		break;
 // PGM 01/21/97
-
+*/
 	case TE_LAVASPLASH:	
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
