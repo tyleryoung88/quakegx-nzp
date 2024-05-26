@@ -22,6 +22,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 
 extern double HUD_Change_time;
+qboolean crosshair_pulse_grenade;
+extern char player_name[16];
+extern double nameprint_time;
 
 char *svc_strings[] =
 {
@@ -1053,7 +1056,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_pulse:
-			//crosshair_pulse_grenade = true;
+			crosshair_pulse_grenade = true;
 			break;
 
 		case svc_doubletap:
@@ -1075,8 +1078,8 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_playername:
-			//nameprint_time = sv.time + 11;
-			//strcpy(player_name, MSG_ReadString());
+			nameprint_time = sv.time + 11;
+			strcpy(player_name, MSG_ReadString());
 			break;
 			
 		case svc_stufftext:
@@ -1171,14 +1174,14 @@ void CL_ParseServerMessage (void)
 
 				if (cl.paused)
 				{
-					//CDAudio_Pause ();
+					CDAudio_Pause ();
 #ifdef _WIN32
 					VID_HandlePause (true);
 #endif
 				}
 				else
 				{
-					//CDAudio_Resume ();
+					CDAudio_Resume ();
 #ifdef _WIN32
 					VID_HandlePause (false);
 #endif
@@ -1202,18 +1205,16 @@ void CL_ParseServerMessage (void)
 			break;
 			
 		case svc_spawnstaticsound:
-			//CL_ParseStaticSound ();
+			CL_ParseStaticSound ();
 			break;
 
 		case svc_cdtrack:
-			/*
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
 			if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
 				CDAudio_Play ((byte)cls.forcetrack, true);
 			else
 				CDAudio_Play ((byte)cl.cdtrack, true);
-			*/
 			break;
 
 		case svc_intermission:
@@ -1245,7 +1246,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_hitmark:
-			//Hitmark_Time = sv.time + 0.2;
+			Hitmark_Time = sv.time + 0.2;
 			break;
 
 		case svc_weaponfire:

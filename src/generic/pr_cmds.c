@@ -2426,6 +2426,25 @@ void PF_Fixme (void)
 }
 
 /*
+=================
+PF_SongEgg
+
+plays designated easter egg track
+
+songegg(trackname)
+=================
+*/
+void PF_SongEgg (void)
+{
+	char trackname;
+	
+	trackname = G_STRING(OFS_PARM0);
+
+	//MSG_WriteByte (&sv.reliable_datagram,   svc_songegg);
+	//MSG_WriteString (&sv.reliable_datagram, trackname);
+}
+
+/*
 ===============
 PF_rumble
 
@@ -2957,7 +2976,7 @@ PF_Fixme,
 PF_Fixme, 
 PF_Fixme, 
 PF_Fixme, 
-PF_Fixme, //#500
+PF_SongEgg, // #500
 PF_Fixme, 
 PF_Fixme, 
 PF_Fixme, 
