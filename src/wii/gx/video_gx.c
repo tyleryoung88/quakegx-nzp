@@ -181,10 +181,10 @@ void GL_Init (void)
 	GX_SetCopyFilter(rmode->aa,rmode->sample_pattern,GX_TRUE,rmode->vfilter);
 	GX_SetFieldMode(rmode->field_rendering,((rmode->viHeight==2*rmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
 
-	if (rmode->aa)
-		GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
-	else
-		GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
+	//if (rmode->aa)
+		//GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
+	//else
+		GX_SetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR);
 
 	GX_CopyDisp(framebuffer[fb],GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);

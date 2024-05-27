@@ -743,7 +743,7 @@ void R_DrawViewModel (void)
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
-
+#if 0
 /*
 ============
 R_PolyBlend
@@ -822,6 +822,72 @@ void R_PolyBlend (void)
 	QGX_Blend(FALSE);
 	QGX_Alpha(TRUE);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+}
+#endif
+
+
+/*
+============
+R_PolyBlend
+============
+*/
+void R_PolyBlend (void)
+{
+	if (!gl_polyblend.value)
+		return;
+	if (!v_blend[3])
+		return;
+	
+	Mtx temp;
+
+	GL_DisableMultitexture();
+
+	QGX_Alpha(FALSE);
+	QGX_Blend(TRUE);
+	QGX_ZMode(FALSE);
+	/*
+	GX_SetNumChans(0);
+	GX_SetNumTexGens(0);
+	*/
+	GX_SetVtxDesc(GX_VA_TEX0, GX_NONE);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
+
+	c_guMtxIdentity(view);
+	c_guMtxRotAxisRad(temp, &axis0, DegToRad(-90.0f));		// put Z going up
+	c_guMtxConcat(view, temp, view);
+	c_guMtxRotAxisRad(temp, &axis2, DegToRad(90.0f));		// put Z going up
+	c_guMtxConcat(view, temp, view);
+	GX_LoadPosMtxImm(view, GX_PNMTX0);
+	
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+
+	GX_Position3f32(10.0f, 100.0f, 100.0f);
+	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	GX_TexCoord2f32(1.0f, 1.0f);
+
+	GX_Position3f32(10.0f, -100.0f, 100.0f);
+	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	GX_TexCoord2f32(0.0f, 1.0f);
+
+	GX_Position3f32(10.0f, -100.0f, -100.0f);
+	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	GX_TexCoord2f32(0.0f, 0.0f);
+
+	GX_Position3f32(10.0f, 100.0f, -100.0f);
+	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	GX_TexCoord2f32(1.0f, 0.0f);
+
+	GX_End();
+	/*
+	GX_SetNumChans(1);
+	GX_SetNumTexGens(1);
+	*/
+	QGX_Blend(FALSE);
+	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+ 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	QGX_Alpha(TRUE);
 }
 
 

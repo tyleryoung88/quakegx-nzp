@@ -228,7 +228,6 @@ extern gltexture_t	gltextures[MAX_GLTEXTURES];
 
 void QGX_ZMode(qboolean state);
 void QGX_Alpha(qboolean state);
-void QGX_AlphaMap(qboolean state);
 void QGX_Blend(qboolean state);
 void QGX_BlendMap(qboolean state);
 void QGX_BlendTurb(qboolean state);

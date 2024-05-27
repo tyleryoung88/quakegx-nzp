@@ -485,9 +485,6 @@ void DrawGXPoly (glpoly_t *p)
 {
 	int		i;
 	float	*v;
-	
-	QGX_Alpha(TRUE);
-	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 
 	GX_Begin(GX_TRIANGLEFAN, GX_VTXFMT0, p->numverts);
 	v = p->verts[0];
@@ -498,8 +495,6 @@ void DrawGXPoly (glpoly_t *p)
 		GX_TexCoord2f32 (v[3], v[4]);
 	}
 	GX_End ();
-	
-	QGX_Alpha(FALSE);
 }
 
 /*
@@ -507,7 +502,7 @@ void DrawGXPoly (glpoly_t *p)
 R_BlendLightmaps
 ================
 */
-void R_BlendLightmaps (void)
+void R_BlendLightmaps ()
 {
 	int			i, j;
 	glpoly_t	*p;
@@ -517,9 +512,9 @@ void R_BlendLightmaps (void)
 	if (r_fullbright.value)
 		return;
 
-	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	//QGX_ZMode(FALSE);
-	QGX_BlendMap(TRUE);
+	
+	QGX_BlendTurb(TRUE);
 
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
 	{
@@ -533,8 +528,16 @@ void R_BlendLightmaps (void)
 			theRect = &lightmap_rectchange[i];
 //			GX_LoadAndBind (lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes, BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes, BLOCK_WIDTH, BLOCK_HEIGHT, gx_lightmap_format);
 //			GX_LoadAndBind (lightmaps+(i*BLOCK_HEIGHT+theRect->t)*BLOCK_WIDTH*lightmap_bytes, (BLOCK_HEIGHT+theRect->t)*BLOCK_WIDTH*lightmap_bytes, BLOCK_WIDTH, theRect->h, gx_lightmap_format);
+
+
 			//GX_LoadSubAndBind (lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes, 0, theRect->t, BLOCK_WIDTH, theRect->h, gx_lightmap_format);
+									//      data,													xoffset, yoffset, width, 		height		format
+									
+									
 			GL_UpdateLightmapTextureRegion (lightmap_textures + i, BLOCK_WIDTH, theRect->h, 0, theRect->t, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
+			
+											//     picid, 			width,		height,	  xoffset,  yoffset,		data
+			
 			//GL_LoadLightmapTexture ("", BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
 			//GL_UpdateLightmapTextureRegion (lightmap_textures + i, BLOCK_WIDTH, theRect->h, 0, theRect->t, lightmaps+(i* BLOCK_HEIGHT + theRect->t) *BLOCK_WIDTH*lightmap_bytes);
 			theRect->l = BLOCK_WIDTH;
@@ -561,8 +564,9 @@ void R_BlendLightmaps (void)
 			}
 		}
 	}
-	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
-	QGX_BlendMap(FALSE);
+
+	QGX_Blend(FALSE);
+	
 	//QGX_ZMode(TRUE);
 }
 
@@ -650,6 +654,12 @@ void R_RenderBrushPoly (msurface_t *fa)
 	t = R_TextureAnimation (fa->texinfo->texture);
 	GL_Bind0 (t->gl_texturenum);
 	
+	if (!strncmp(fa->texinfo->texture->name,"{",1)) {
+		QGX_BlendTurb(TRUE);
+		QGX_Alpha(TRUE);
+		GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+	}
+	
 	if (fa->flags & SURF_DRAWTURB)
 	{	// warp texture, no lightmaps
 		EmitWaterPolys (fa);
@@ -660,6 +670,11 @@ void R_RenderBrushPoly (msurface_t *fa)
 		DrawGXWaterPoly (fa->polys);
 	else
 		DrawGXPoly (fa->polys);
+	
+	if (!strncmp(fa->texinfo->texture->name,"{",1)) {
+		QGX_Alpha(FALSE);
+		QGX_BlendTurb(FALSE);
+	}
 
 	// add the poly to the proper lightmap chain
 
@@ -896,13 +911,15 @@ void R_DrawBrushModel (entity_t *e)
 		}
 	}
 
-	c_guMtxIdentity(model);
+	//c_guMtxIdentity(model);
+	guMtxCopy(view, model);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 	R_RotateForEntity (e);
+	GX_LoadPosMtxImm(model, GX_PNMTX0);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 
-	c_guMtxConcat(view,model,modelview);
-	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+	//c_guMtxConcat(view,model,modelview);
+	//GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 
 	//
 	// draw texture
@@ -918,13 +935,14 @@ e->angles[0] = -e->angles[0];	// stupid quake bug
 		if (((psurf->flags & SURF_PLANEBACK) && (dot < -BACKFACE_EPSILON)) ||
 			(!(psurf->flags & SURF_PLANEBACK) && (dot > BACKFACE_EPSILON)))
 		{
-			//R_DrawSequentialPoly (psurf);
 			R_RenderBrushPoly (psurf);
 		}
 	}
-	//TODO get rid of DrawSquentialPoly and do it in seperate passes.
-	//DONE
+
 	R_BlendLightmaps ();
+	
+	//c_guMtxConcat(view,model,modelview);
+	GX_LoadPosMtxImm(view, GX_PNMTX0);
 }
 
 /*
@@ -1028,7 +1046,7 @@ void R_RecursiveWorldNode (mnode_t *node)
 
 				// don't backface underwater surfaces, because they warp
 				if ( !(surf->flags & SURF_UNDERWATER) && ( (dot < 0) ^ !!(surf->flags & SURF_PLANEBACK)) )
-					continue;		// wrong side
+					continue;		// wrong side				
 				
 				if (!mirror
 					|| surf->texinfo->texture != cl.worldmodel->textures[mirrortexturenum])
@@ -1143,7 +1161,7 @@ void R_DrawWorld (void)
 
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
 	
-	//R_AddStaticBrushModelsToChains (); // shpuld
+	R_AddStaticBrushModelsToChains (); // shpuld
 	
 	//Fog_SetupFrame (); //johnfitz
 

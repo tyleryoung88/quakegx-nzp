@@ -149,16 +149,6 @@ void QGX_Alpha(qboolean state)
 	
 }
 
-void QGX_AlphaMap(qboolean state)
-{
-	if (state)
-		//GX_SetAlphaCompare(GX_GREATER,0,GX_AOP_AND,GX_ALWAYS,0);
-		GX_SetAlphaCompare(GX_GREATER,0,GX_AOP_AND,GX_LEQUAL,0);
-	else
-		GX_SetAlphaCompare(GX_ALWAYS,0,GX_AOP_AND,GX_ALWAYS,0);
-	
-}
-
 void QGX_Blend(qboolean state)
 {
 	if (state)
@@ -170,7 +160,7 @@ void QGX_Blend(qboolean state)
 void QGX_BlendMap(qboolean state)
 {
 	if (state)
-		GX_SetBlendMode(GX_BM_BLEND, GX_BL_ZERO, GX_BL_SRCCLR, GX_LO_CLEAR);
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_ZERO, GX_BL_DSTCLR, GX_LO_CLEAR);
 	else
 		GX_SetBlendMode(GX_BM_NONE,GX_BL_ONE,GX_BL_ZERO,GX_LO_COPY);
 }
@@ -178,7 +168,7 @@ void QGX_BlendMap(qboolean state)
 void QGX_BlendTurb(qboolean state)
 {
 	if (state)
-		GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCCLR, GX_BL_SRCALPHA, GX_LO_CLEAR);
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_DSTCLR, GX_BL_SRCCLR, GX_LO_CLEAR);
 	else
 		GX_SetBlendMode(GX_BM_NONE,GX_BL_ONE,GX_BL_ZERO,GX_LO_COPY);
 }

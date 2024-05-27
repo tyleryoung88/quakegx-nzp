@@ -460,6 +460,7 @@ void CL_RelinkEntities (void)
 	frac = CL_LerpPoint();
 
 	cl_numvisedicts = 0;
+	cl_numstaticbrushmodels = 0;
 
 //
 // interpolate player info
