@@ -542,6 +542,7 @@ void SCR_CheckDrawUseString (void)
 		return;
     if (cl.stats[STAT_HEALTH] <= 0)
         return;
+	else
 
 	SCR_DrawUseString ();
 }
@@ -1293,7 +1294,8 @@ void SCR_UpdateScreen (void)
 		SCR_DrawFPS ();
 		SCR_DrawPause ();
 		SCR_CheckDrawCenterString ();
-		Sbar_Draw ();
+		HUD_Draw ();
+		//Sbar_Draw ();
 		SCR_DrawConsole ();	
 		M_Draw ();
 	}

@@ -49,7 +49,7 @@ state bit 2 is edge triggered on the down to up transition
 kbutton_t	in_mlook, in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
-kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack;
+kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack, in_grenade, in_reload, in_switch, in_knife, in_aim;
 kbutton_t	in_up, in_down;
 
 int			in_impulse;
@@ -114,6 +114,8 @@ void KeyUp (kbutton_t *b)
 	b->state |= 4; 		// impulse up
 }
 
+qboolean croshhairmoving = false;
+
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
 void IN_MLookDown (void) {KeyDown(&in_mlook);}
@@ -156,6 +158,17 @@ void IN_UseUp (void) {KeyUp(&in_use);}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
 
+void IN_GrenadeDown (void) {KeyDown(&in_grenade);}
+void IN_GrenadeUp (void) {KeyUp(&in_grenade);}
+void IN_SwitchDown (void) {KeyDown(&in_switch);}
+void IN_SwitchUp (void) {KeyUp(&in_switch);}
+void IN_ReloadDown (void) {KeyDown(&in_reload);}
+void IN_ReloadUp (void) {KeyUp(&in_reload);}
+void IN_KnifeDown (void) {KeyDown(&in_knife);}
+void IN_KnifeUp (void) {KeyUp(&in_knife);}
+void IN_AimDown (void) {KeyDown(&in_aim);}
+void IN_AimUp (void) {KeyUp(&in_aim);}
+
 void IN_Impulse (void) {in_impulse=atoi(Cmd_Argv(1));}
 
 /*
@@ -181,7 +194,7 @@ float CL_KeyState (kbutton_t *key)
 	if (impulsedown && !impulseup)
 	{
 		if (down)
-			val = 0.5f;	// pressed and held this frame
+			val = 0.5;	// pressed and held this frame
 		else
 			val = 0;	//	I_Error ();
 	}
@@ -195,7 +208,7 @@ float CL_KeyState (kbutton_t *key)
 	if (!impulsedown && !impulseup)
 	{
 		if (down)
-			val = 1.0f;	// held the entire frame
+			val = 1.0;	// held the entire frame
 		else
 			val = 0;	// up the entire frame
 	}
@@ -218,11 +231,11 @@ float CL_KeyState (kbutton_t *key)
 //==========================================================================
 
 cvar_t	cl_upspeed = {"cl_upspeed","200"};
-cvar_t	cl_forwardspeed = {"cl_forwardspeed","200", TRUE};
-cvar_t	cl_backspeed = {"cl_backspeed","200", TRUE};
-cvar_t	cl_sidespeed = {"cl_sidespeed","350"};
+cvar_t	cl_forwardspeed = {"cl_forwardspeed","190", TRUE};
+cvar_t	cl_backspeed = {"cl_backspeed","150", TRUE};
+cvar_t	cl_sidespeed = {"cl_sidespeed","190"};
 
-cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0"};
+cvar_t	cl_movespeedkey = {"cl_movespeedkey","1.5"};
 
 cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
@@ -344,8 +357,122 @@ void CL_BaseMove (usercmd_t *cmd)
 #endif
 }
 
-extern cvar_t cl_crossx, cl_crossy;
+int infront(edict_t *ent1, edict_t *ent2)
+{
+	vec3_t vec;
+	float dot;
+	VectorSubtract(ent2->v.origin,ent1->v.origin,vec);
+	VectorNormalize(vec);
 
+	vec3_t temp_angle,temp_forward,temp_right,temp_up;
+	VectorCopy(cl.viewangles,temp_angle);
+
+	AngleVectors(temp_angle,temp_forward,temp_right,temp_up);
+
+	dot = DotProduct(vec,temp_forward);
+	if(dot > 0.98)
+	{
+		return 1;
+	}
+	return 0;
+}
+
+int EN_Find(int num,char *string)
+{
+	edict_t *ed;
+
+	int e;
+	e = num;
+
+	for(e++; e < sv.num_edicts; e++)
+	{
+		ed = EDICT_NUM(e);
+		if(ed->free)
+			continue;
+		if(!strcmp(pr_strings + ed->v.classname,string))
+		{
+			return e;
+		}
+	}
+	return 0;
+}
+
+void CL_Aim_Snap(void)
+{
+	edict_t *z,*bz,*player;
+	int znum;
+	trace_t trace;
+	float bestDist = 10000;
+	vec3_t distVec, zOrg, pOrg;
+	//32 is v_ofs num
+
+	bz = sv.edicts;
+
+	int vofs = 32;//32 is actual v_ofs num
+	int aimOfs = -10;//30 is top of bbox, 20 is our goal, so -10
+	//Zombie body bbox vert max = 30
+	//20 is the offset of the height of the zombie that we're aiming at, 20 above the origin
+	//Crawler body bbox vert max = -15
+
+	//Equation = origin + bbox vertical offset - 20
+
+	player = EDICT_NUM(cl.viewentity);
+	VectorCopy(player->v.origin,pOrg);
+	pOrg[2] += vofs;
+
+	if (cl.perks & 64)
+    	znum = EN_Find(0,"ai_zombie_head");
+  	else
+    	znum = EN_Find(0,"ai_zombie");
+
+	z = EDICT_NUM(znum);
+	VectorCopy(z->v.origin,zOrg);
+	zOrg[2] += z->v.maxs[2];//Setting to top of zomb ent
+	zOrg[2] += aimOfs;
+
+	while(znum != 0)
+	{
+		if((z->v.health > 0) && infront(player,z))
+		{
+			VectorCopy(z->v.origin,zOrg);
+			zOrg[2] += aimOfs;
+			VectorSubtract(pOrg,zOrg,distVec);
+			if(VectorLength(distVec) < bestDist)
+			{
+				trace = SV_Move (pOrg, vec3_origin, vec3_origin,zOrg, 1, player);
+				if (trace.fraction >= 1)
+				{
+					bestDist = VectorLength(distVec);
+					bz = z;
+				}
+			}
+		}
+		if (cl.perks & 64)
+		  	znum = EN_Find(znum,"ai_zombie_head");
+    	else
+      		znum = EN_Find(znum,"ai_zombie");
+		z = EDICT_NUM(znum);
+	}
+
+	if(bz != sv.edicts)
+	{
+		VectorCopy(bz->v.origin,zOrg);
+		zOrg[2] += bz->v.maxs[2];//Setting to top of bbox
+		zOrg[2] += aimOfs;
+		VectorSubtract(zOrg,pOrg,distVec);
+		VectorNormalize(distVec);
+		vectoangles(distVec,distVec);
+		distVec[0] += (distVec[0]  > 180)? -360 : 0;//Need to bound pitch around 0, from -180, to + 180
+		distVec[0] *= -1;//inverting pitch
+
+		if(distVec[0] < -70 || distVec[0] > 80)
+			return;
+
+		VectorCopy(distVec,cl.viewangles);
+	}
+}
+
+extern cvar_t cl_crossx, cl_crossy;
 /*
 ==============
 CL_SendMove
@@ -353,7 +480,7 @@ CL_SendMove
 */
 void CL_SendMove (usercmd_t *cmd)
 {
-	int		bits;
+	int		bits, i;
 	sizebuf_t	buf;
 	byte	data[128];
 	
@@ -362,7 +489,21 @@ void CL_SendMove (usercmd_t *cmd)
 	buf.data = data;
 	
 	cl.cmd = *cmd;
-
+	
+	/*
+	//==== Aim Assist Code ====
+	if((cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2) && ((in_aimassist.value) || (cl.perks & 64)))
+	{
+		if(!zoom_snap)
+		{
+			CL_Aim_Snap();
+			zoom_snap = 1;
+		}
+	}
+	else {
+		zoom_snap = 0;
+	}
+`	*/
 //
 // send the movement message
 //
@@ -378,9 +519,14 @@ void CL_SendMove (usercmd_t *cmd)
 	 *
 	 * It's also possible to bypass the client-side PITCH limits. Beware, this may be considered cheating!
 	 */
+	/* 
 	MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
 	MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
 	MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
+	*/
+	
+	for (i=0 ; i<3 ; i++)
+		MSG_WriteAngle (&buf, cl.viewangles[i]);
 	
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);
@@ -390,15 +536,39 @@ void CL_SendMove (usercmd_t *cmd)
 // send button bits
 //
 	bits = 0;
-	
-	if ( in_attack.state & 3 )
+
+	if (in_attack.state & 3 )
 		bits |= 1;
 	in_attack.state &= ~2;
-	
+
 	if (in_jump.state & 3)
 		bits |= 2;
 	in_jump.state &= ~2;
+
+	if (in_grenade.state & 3)
+		bits |= 8;
+	in_grenade.state &= ~2;
+
+	if (in_switch.state & 3)
+		bits |= 16;
+	in_switch.state &= ~2;
+
+	if (in_reload.state & 3)
+		bits |= 32;
+	in_reload.state &= ~2;
+
+	if (in_knife.state & 3)
+		bits |= 64;
+	in_knife.state &= ~2;
 	
+	if (in_use.state & 3)
+		bits |= 128;
+	in_use.state &= ~2;
+	/*
+	if (in_aim.state & 3)
+		bits |= 256;
+	in_aim.state &= ~2; 
+	*/
     MSG_WriteByte (&buf, bits);
 
     MSG_WriteByte (&buf, in_impulse);
@@ -468,6 +638,14 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-use", IN_UseUp);
 	Cmd_AddCommand ("+jump", IN_JumpDown);
 	Cmd_AddCommand ("-jump", IN_JumpUp);
+	Cmd_AddCommand ("+grenade", IN_GrenadeDown);
+	Cmd_AddCommand ("-grenade", IN_GrenadeUp);
+	Cmd_AddCommand ("+reload", IN_ReloadDown);
+	Cmd_AddCommand ("-reload", IN_ReloadUp);
+	Cmd_AddCommand ("+knife", IN_KnifeDown);
+	Cmd_AddCommand ("-knife", IN_KnifeUp);
+	Cmd_AddCommand ("+aim", IN_AimDown);
+	Cmd_AddCommand ("-aim", IN_AimUp);
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);

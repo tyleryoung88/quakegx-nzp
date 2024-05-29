@@ -30,6 +30,9 @@ extern cvar_t lcd_x;
 #define IR_YAWRANGE	100.0f
 #define IR_PITCHRANGE	60.0f
 
+extern vec3_t CWeaponRot;
+extern vec3_t CWeaponOffset;//blubs declared this
+
 void V_Init (void);
 void V_RenderView (void);
 float V_CalcRoll (vec3_t angles, vec3_t velocity);

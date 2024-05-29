@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t	osk_repeat_delay = {"osk_repeat_delay","0.25"};
 cvar_t	kb_repeat_delay = {"kb_repeat_delay","0.1"};
 cvar_t	nunchuk_stick_as_arrows = {"nunchuk_stick_as_arrows","0"};
-cvar_t  rumble = {"rumble","1"};
+cvar_t  rumble = {"rumble","0"};
 
 char keycode_normal[256] = { 
 	'\0', '\0', '\0', '\0', //0-3
@@ -746,6 +746,9 @@ void IN_Commands (void)
 	wpad_previous_keys = wpad_keys;
 }
 
+extern bool croshhairmoving;
+extern float crosshair_opacity;
+
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
@@ -944,4 +947,20 @@ void IN_Move (usercmd_t *cmd)
 		in_yawangle = .0f;
 		in_rollangle = .0f;
 	}
+	/*
+	// crosshair stuff
+	if (x2 < 50 && x2 > -50 && y2 < 50 && y2 > -50) {
+		croshhairmoving = false;
+
+		crosshair_opacity += 22;
+
+		if (crosshair_opacity >= 255)
+			crosshair_opacity = 255;
+	} else {
+		croshhairmoving = true;
+		crosshair_opacity -= 8;
+		if (crosshair_opacity <= 128)
+			crosshair_opacity = 128;
+	}
+	*/
 }

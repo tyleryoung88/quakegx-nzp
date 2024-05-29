@@ -1313,7 +1313,6 @@ int IsDualWeapon(int weapon)
 
 void HUD_Ammo (void)
 {
-/*
 	char* magstring;
 	int reslen;
 
@@ -1324,9 +1323,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG]) {
-		Draw_ColoredString((355-(reslen*8)) - strlen(magstring)*8, 218, magstring, 255, 0, 0, 255, 1);
+		//Draw_ColoredString((355-(reslen*8)) - strlen(magstring)*8, 218, magstring, 255, 0, 0, 255, 1);
 	} else {
-		Draw_ColoredString((355-(reslen*8)) - strlen(magstring)*8, 218, magstring, 255, 255, 255, 255, 1);
+		//Draw_ColoredString((355-(reslen*8)) - strlen(magstring)*8, 218, magstring, 255, 255, 255, 255, 1);
 	}
 
 	//
@@ -1334,11 +1333,10 @@ void HUD_Ammo (void)
 	//
 	magstring = va("/%i", cl.stats[STAT_AMMO]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) {
-		Draw_ColoredString(355 - strlen(magstring)*8, 218, magstring, 255, 0, 0, 255, 1);
+		//Draw_ColoredString(355 - strlen(magstring)*8, 218, magstring, 255, 0, 0, 255, 1);
 	} else {
-		Draw_ColoredString(355 - strlen(magstring)*8, 218, magstring, 255, 255, 255, 255, 1);
+		//Draw_ColoredString(355 - strlen(magstring)*8, 218, magstring, 255, 255, 255, 255, 1);
 	}
-*/
 }
 
 /*
@@ -1413,8 +1411,8 @@ void HUD_Weapon (void)
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	x_value = 355 - l*8;
-	//Draw_String (x_value, y_value, str);
+	//x_value = 355 - l*8;
+	Draw_String (x_value + 10 - l, y_value + l, str);
 }
 
 /*
@@ -1534,19 +1532,17 @@ HUD_Draw
 */
 void HUD_Draw (void)
 {
-/*
 	if (scr_con_current == vid.height)
 		return;		// console is full screen
 
-	if (key_dest == key_menu_pause) {
+	//if (key_dest == key_menu_pause) {
 		// Make sure we still draw the screen flash.
 		if (screenflash_duration > sv.time)
 			HUD_Screenflash();
-		return;
-	}
+		//return;
+	//}
 
 	scr_copyeverything = 1;
-
 
 	if (waypoint_mode.value)
 	{
@@ -1559,7 +1555,6 @@ void HUD_Draw (void)
 		Draw_String (vid.width - 304, 48, "Press reload to make special waypoint");
 		return;
 	}
-
 
 	if (cl.stats[STAT_HEALTH] <= 0)
 	{
@@ -1604,5 +1599,4 @@ void HUD_Draw (void)
 	// This should always come last!
 	if (screenflash_duration > sv.time)
 		HUD_Screenflash();
-*/
 }

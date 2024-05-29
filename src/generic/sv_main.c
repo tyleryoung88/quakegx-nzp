@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // sv_main.c -- server main program
 
 #include "quakedef.h"
+#include <ctype.h>
 
 server_t		sv;
 server_static_t	svs;
@@ -1194,3 +1195,342 @@ void SV_SpawnServer (char *server)
 	Con_DPrintf ("Server spawned.\n");
 }
 
+//ZOMBIE AI THINGS BELOVE THIS!!!
+#define W_MAX_TEMPSTRING 2048
+char	*w_string_temp;
+int W_fopen (void)
+{
+	int h = 0;
+
+	Con_DPrintf("Loading waypoint file %s\n", va("%s/maps/%s.way",com_gamedir, sv.name));
+
+	Sys_FileOpenRead (va("%s/maps/%s.way",com_gamedir, sv.name), &h);
+	return h;
+}
+
+int W_fopenbeta(void)
+{
+	int h = 0;
+
+	Sys_FileOpenRead (va("%s/data/%s",com_gamedir, sv.name), &h);
+	return h;
+}
+
+void W_fclose (int h)
+{
+	Sys_FileClose(h);
+}
+
+char *W_fgets (int h)
+{
+	// reads one line (up to a \n) into a string
+	int		i;
+	int		count;
+	char	buffer;
+
+	count = Sys_FileRead(h, &buffer, 1);
+	if (count && buffer == '\r')	// carriage return
+	{
+		count = Sys_FileRead(h, &buffer, 1);	// skip
+	}
+	if (!count)	// EndOfFile
+	{
+		return "";
+	}
+
+	i = 0;
+	while (count && buffer != '\n')
+	{
+		if (i < 128-1)	// no place for character in temp string
+		{
+			w_string_temp[i++] = buffer;
+		}
+
+		// read next character
+		count = Sys_FileRead(h, &buffer, 1);
+		if (count && buffer == '\r')	// carriage return
+		{
+			count = Sys_FileRead(h, &buffer, 1);	// skip
+		}
+	};
+	w_string_temp[i] = 0;
+
+	return (w_string_temp);
+}
+
+char *W_substring (char *p, int offset, int length)
+{
+	int		maxoffset;		// 2001-10-25 Enhanced temp string handling by Maddes
+
+	// cap values
+	maxoffset = strlen(p);
+	if (offset > maxoffset)
+	{
+		offset = maxoffset;
+	}
+	if (offset < 0)
+		offset = 0;
+// 2001-10-25 Enhanced temp string handling by Maddes  start
+	if (length >= maxoffset)
+		length = maxoffset-1;
+// 2001-10-25 Enhanced temp string handling by Maddes  end
+	if (length < 0)
+		length = 0;
+
+	p += offset;
+	strncpy(w_string_temp, p, length);
+	w_string_temp[length]=0;
+
+	return w_string_temp;
+}
+
+void W_stov (char *v, vec3_t out)
+{
+	int i;
+	vec3_t d;
+
+	for (i=0; i<3; i++)
+	{
+		while(v && (v[0] == ' ' || v[0] == '\'')) //skip unneeded data
+			v++;
+		d[i] = atof(v);
+		while (v && v[0] != ' ') // skip to next space
+			v++;
+	}
+	VectorCopy (d, out);
+}
+
+waypoint_ai waypoints[MAX_WAYPOINTS];
+
+//
+// Load_Waypoint_NZPBETA
+// Attempts to load an NZ:P Beta formatted
+// Waypoint file.
+//
+void Load_Waypoint_NZPBETA()
+{
+	char temp[64];
+	int i, p, s;
+	int h = 0;
+
+	h = W_fopenbeta();
+
+	if (h == -1) {
+		return; // don't bother notifying..
+	}
+
+	for (i = 0; i < MAX_WAYPOINTS; i++)
+	{
+		waypoints[i].used = 0;
+		waypoints[i].id = -1;
+		for (p = 0; p < 8; p++) {
+			waypoints[i].target[p] = -1;
+			waypoints[i].target_id[p] = -1;
+		}
+	}
+
+	for (i = 0; i < MAX_EDICTS; i++)
+	{
+		closest_waypoints[i] = -1;
+	}
+
+	i = 0;
+	Con_DPrintf("Loading BETA waypoints\n");
+
+	vec3_t way_origin;
+	int way_id;
+
+	while (1)
+	{
+		// End of file.
+		if (!strcmp(W_fgets(h), ""))
+			break;
+
+		W_stov(w_string_temp, way_origin); // <origin>
+		way_id = atoi(W_fgets(h)); // <id>
+
+		if (way_id >= MAX_WAYPOINTS)
+		 	Sys_Error ("Waypoint with id %d past MAX_WAYPOINTS {%i)\n", way_id, MAX_WAYPOINTS);
+
+		waypoints[way_id].id = way_id;
+		VectorCopy(way_origin, waypoints[way_id].origin);
+
+		// <link1> - <link4>, <owner1> - <owner4>
+		for(i = 0; i < 8; i++) {
+			W_fgets(h);
+
+			if (i < 4) {
+				int id = atoi(w_string_temp);
+				if (id > 0) {
+					waypoints[way_id].target[i] = id;
+					waypoints[way_id].target_id[i] = waypoints[way_id].target[i];
+				}
+			}
+		}
+
+		waypoints[way_id].used = 1;
+		waypoints[way_id].open = 1;
+	}
+	Con_DPrintf("Total waypoints: %i\n", way_id);
+	for (i = 0; i < MAX_WAYPOINTS; i++) //for sake of saving time later we are now going to save each targets array position and distace to each waypoint
+	{
+		for (p = 0; waypoints[i].target[p]; p++)
+		{
+			if (waypoints[i].target[p] < 0) break;
+	
+			for (s = 0; s < MAX_WAYPOINTS; s++)
+			{
+				if (waypoints[i].target[p] == s)
+				{
+					waypoints[i].dist[p] = VecLength2(waypoints[s].origin, waypoints[i].origin);
+					break;
+				}
+			}
+		}
+	}
+	W_fclose(h);
+}
+
+void Load_Waypoint ()
+{
+	char temp[64];
+	int i, p, s;
+	vec3_t d;
+	int h = 0;
+
+	h = W_fopen();
+
+	w_string_temp = Z_Malloc(128);
+	if (h == -1)
+	{
+		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
+		Load_Waypoint_NZPBETA();
+		return;
+	}
+	for (i = 0; i < MAX_WAYPOINTS; i++)
+	{
+		waypoints[i].used = 0;
+		waypoints[i].id = -1;
+		for (p = 0; p < 8; p++) {
+			waypoints[i].target[p] = -1;
+			waypoints[i].target_id[p] = -1;
+		}
+	}
+
+	for (i = 0; i < MAX_EDICTS; i++)
+	{
+		closest_waypoints[i] = -1;
+	}
+
+	i = 0;
+	Con_DPrintf("Loading waypoints\n");
+	while (1)
+	{
+		if (strncmp(W_fgets (h), "Waypoint", 8))
+		{
+			Con_DPrintf("Last waypoint\n");
+			break;
+		}
+		else
+		{
+			W_fgets (h);
+
+			W_stov (W_substring (W_fgets (h), 9, 20), d);
+
+			strcpy(temp, W_substring (W_fgets (h), 5, 20));
+
+			i = atoi (temp);
+
+			if (i >= MAX_WAYPOINTS)
+				Sys_Error ("Waypoint with id %d past MAX_WAYPOINTS {%i)\n", i, MAX_WAYPOINTS);
+
+			// what's the point of id and index being the same?
+			waypoints[i].id = i;
+			VectorCopy (d, waypoints[i].origin);
+
+			strcpy(waypoints[i].special, W_substring (W_fgets (h), 10, 20));
+
+			if (waypoints[i].special[0])
+				waypoints[i].open = 0;
+			else
+				waypoints[i].open = 1;
+			
+			// Note: this block makes sure that empty/invalid neighbors are always packed to the end
+			// In other words, when iterating from start, first empty means rest are empty too.
+			int slot = 0;
+			for (int t = 0; t < 8; t++) {
+				int start = t == 0 ? 9 : 10;
+				strcpy(temp, W_substring (W_fgets (h), start, 20));
+				if (isdigit(temp[0])) {
+					waypoints[i].target[slot] = atoi (temp);
+					waypoints[i].target_id[slot] = waypoints[i].target[slot];
+					slot++;
+				}
+			}
+
+			W_fgets (h);
+			W_fgets (h);
+			waypoints[i].used = 1;
+
+
+			Con_DPrintf("Waypoint (%i) id: %i, tag: %s, open: %i, target: %i, target2: %i, target3: %i, target4: %i, target5: %i, target6: %i, target7: %i, target8: %i\n",
+			i,
+			waypoints[i].id,
+			waypoints[i].special,
+			waypoints[i].open,
+			waypoints[i].target[0],
+			waypoints[i].target[1],
+			waypoints[i].target[2],
+			waypoints[i].target[3],
+			waypoints[i].target[4],
+			waypoints[i].target[5],
+			waypoints[i].target[6],
+			waypoints[i].target[7]);
+		}
+	}
+	Con_DPrintf("Total waypoints: %i\n", i);
+	for (i = 0; i < MAX_WAYPOINTS; i++) //for sake of saving time later we are now going to save each targets array position and distace to each waypoint
+	{
+		for (p = 0; waypoints[i].target[p]; p++)
+		{
+			if (waypoints[i].target[p] < 0) break;
+	
+			for (s = 0; s < MAX_WAYPOINTS; s++)
+			{
+				if (waypoints[i].target[p] == s)
+				{
+					waypoints[i].dist[p] = VecLength2(waypoints[s].origin, waypoints[i].origin);
+					break;
+				}
+			}
+		}
+		Con_DPrintf("Waypoint (%i)\n target: %i (%i, %f),\n target2: %i (%i, %f),\n target3: %i (%i, %f),\n target4: %i (%i, %f),\n target5: %i (%i, %f),\n target6: %i (%i, %f),\n target7: %i (%i, %f),\n target8: %i (%i, %f)\n",
+		waypoints[i].id,
+		waypoints[i].target[0],
+		waypoints[i].target_id[0],
+		waypoints[i].dist[0],
+		waypoints[i].target[1],
+		waypoints[i].target_id[1],
+		waypoints[i].dist[1],
+		waypoints[i].target[2],
+		waypoints[i].target_id[2],
+		waypoints[i].dist[2],
+		waypoints[i].target[3],
+		waypoints[i].target_id[3],
+		waypoints[i].dist[3],
+		waypoints[i].target[4],
+		waypoints[i].target_id[4],
+		waypoints[i].dist[4],
+		waypoints[i].target[5],
+		waypoints[i].target_id[5],
+		waypoints[i].dist[5],
+		waypoints[i].target[6],
+		waypoints[i].target_id[6],
+		waypoints[i].dist[6],
+		waypoints[i].target[7],
+		waypoints[i].target_id[7],
+		waypoints[i].dist[7]);
+	}
+	W_fclose(h);
+	//Z_Free (w_string_temp);
+}

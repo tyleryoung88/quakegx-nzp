@@ -24,7 +24,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
 
-// these two are not intended to be set directly
+cvar_t	waypoint_mode = {"waypoint_mode", "0", false};// waypoint mode active
+cvar_t	autosave_waypoint = {"autosave_waypoint", "0", false};// waypoint mode active
 cvar_t	cl_name = {"_cl_name", "player", TRUE};
 cvar_t	cl_color = {"_cl_color", "0", TRUE};
 

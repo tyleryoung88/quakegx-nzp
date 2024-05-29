@@ -218,6 +218,7 @@ typedef struct
 #include "net.h"
 #include "protocol.h"
 #include "cmd.h"
+#include "cl_hud.h"
 #include "sbar.h"
 #include "sound.h"
 #include "render.h"
@@ -318,5 +319,32 @@ void R_ClearSkyBox (void);
 void EmitBothSkyLayers (msurface_t *fa);
 
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
+
+//ZOMBIE AI STUFF
+#define MAX_WAYPOINTS 256 //max waypoints
+typedef struct
+{
+	int pathlist [MAX_WAYPOINTS];
+	int zombienum;
+} zombie_ai;
+
+typedef struct
+{
+	vec3_t origin;
+	int id;
+	float g_score, f_score;
+	int open; // Determine if the waypoint is "open" a.k.a avaible
+	int target_id [8]; // Targets array number
+	char special[64]; //special tag is required for the closed waypoints
+	int target [8]; //Each waypoint can have up to 8 targets
+	float dist [8]; // Distance to the next waypoints
+	int came_from; // Used for pathfinding store where we got here to this
+	qboolean used; //if the waypoint is in use
+} waypoint_ai;
+
+extern waypoint_ai waypoints[MAX_WAYPOINTS];
+extern short closest_waypoints[MAX_EDICTS];
+
+extern func_t	EndFrame;
 
 #endif

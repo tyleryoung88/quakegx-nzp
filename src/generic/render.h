@@ -67,6 +67,12 @@ typedef struct entity_s
 	struct mnode_s			*topnode;		// for bmodels, first world node
 											//  that splits bmodel, or NULL if
 											//  not split
+											
+	int		modelindex;
+
+    int                     z_head;
+    int                     z_larm;
+    int                     z_rarm;
 } entity_t;
 
 // !!! if this is changed, it must be changed in asm_draw.h too !!!

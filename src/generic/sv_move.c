@@ -425,3 +425,34 @@ void SV_MoveToGoal (void)
 	}
 }
 
+/*
+======================
+SV_MoveToOrigin
+
+======================
+*/
+void SV_MoveToOrigin (void)
+{
+	edict_t		*ent, *goal;
+	float		dist;
+
+	ent = PROG_TO_EDICT(pr_global_struct->self);
+	goal = PROG_TO_EDICT(ent->v.goalentity);
+	dist = G_FLOAT(OFS_PARM0);
+
+	if ( !( (int)ent->v.flags & (FL_ONGROUND|FL_FLY|FL_SWIM) ) )
+	{
+		G_FLOAT(OFS_RETURN) = 0;
+		return;
+	}
+
+// if the next step hits the enemy, return immediately
+    if ( PROG_TO_EDICT(ent->v.enemy) != sv.edicts &&  SV_CloseEnough (ent, goal, dist) )
+		return;
+
+// bump around...
+	if ((rand()&3)==1 || !SV_StepDirection (ent, ent->v.ideal_yaw, dist))
+	    SV_NewChaseDir (ent, goal, dist);
+
+}
+

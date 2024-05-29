@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-extern double HUD_Change_time;
+extern qboolean domaxammo;
 qboolean crosshair_pulse_grenade;
 extern char player_name[16];
 extern double nameprint_time;
@@ -959,6 +959,31 @@ void CL_ParseWeaponFire (void)
 	cl.gun_kick[2] += kick[2];
 }
 
+/*
+===================
+CL_ParseLimbUpdate
+===================
+*/
+void CL_ParseLimbUpdate (void)
+{
+    int limb = MSG_ReadByte();
+    int zombieent = MSG_ReadShort();
+    int limbent = MSG_ReadShort();
+    switch (limb)
+    {
+        case 0://head
+            cl_entities[zombieent].z_head = limbent;
+            break;
+        case 1://larm
+            cl_entities[zombieent].z_larm = limbent;
+            break;
+        case 2://rarm
+            cl_entities[zombieent].z_rarm = limbent;
+            break;
+
+    }
+}
+
 
 #define SHOWNET(x) if(cl_shownet.value==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
 
@@ -967,6 +992,13 @@ void CL_ParseWeaponFire (void)
 CL_ParseServerMessage
 =====================
 */
+extern double bettyprompt_time;
+extern qboolean doubletap_has_damage_buff;
+extern int screenflash_color;
+extern double screenflash_duration;
+extern int screenflash_type;
+extern double screenflash_worktime;
+extern double screenflash_starttime;
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
@@ -1052,7 +1084,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_maxammo:
-			//domaxammo = true;
+			domaxammo = true;
 			break;
 
 		case svc_pulse:
@@ -1060,21 +1092,19 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_doubletap:
-			//doubletap_has_damage_buff = MSG_ReadByte();
+			doubletap_has_damage_buff = MSG_ReadByte();
 			break;
 
 		case svc_screenflash:
-		/*
 			screenflash_color = MSG_ReadByte();
 			screenflash_duration = sv.time + MSG_ReadByte();
 			screenflash_type = MSG_ReadByte();
 			screenflash_worktime = 0;
 			screenflash_starttime = sv.time;
-			*/
 			break;
 
 		case svc_bettyprompt:
-			//bettyprompt_time = sv.time + 4;
+			bettyprompt_time = sv.time + 4;
 			break;
 
 		case svc_playername:
@@ -1238,11 +1268,11 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_sellscreen:
-			//Cmd_ExecuteString ("help", src_command);
+			Cmd_ExecuteString ("help", src_command);
 			break;
 
 		case svc_achievement:
-			//HUD_Parse_Achievement (MSG_ReadByte());
+			HUD_Parse_Achievement (MSG_ReadByte());
 			break;
 
 		case svc_hitmark:
@@ -1254,7 +1284,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_limbupdate:
-			//CL_ParseLimbUpdate();
+			CL_ParseLimbUpdate();
 			break;
 
 		case svc_updatepoints:
