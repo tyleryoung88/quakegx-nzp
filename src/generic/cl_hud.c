@@ -1405,14 +1405,16 @@ void HUD_Weapon (void)
 {
 	char str[32];
 	float l;
+	int x;
 	x_value = vid.width;
 	y_value = 205;
 
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	//x_value = 355 - l*8;
-	Draw_String (x_value + 10 - l, y_value + l, str);
+	x = x_value/2 - l;
+	x_value = 300 - l*8;
+	Draw_String (x_value, y_value + l, str);
 }
 
 /*
@@ -1535,12 +1537,12 @@ void HUD_Draw (void)
 	if (scr_con_current == vid.height)
 		return;		// console is full screen
 
-	//if (key_dest == key_menu_pause) {
-		// Make sure we still draw the screen flash.
+	if (key_dest == key_menu_pause) {
+		//Make sure we still draw the screen flash.
 		if (screenflash_duration > sv.time)
 			HUD_Screenflash();
-		//return;
-	//}
+		return;
+	}
 
 	scr_copyeverything = 1;
 

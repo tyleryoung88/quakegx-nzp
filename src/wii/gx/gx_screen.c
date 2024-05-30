@@ -516,14 +516,12 @@ void SCR_DrawUseString (void)
 		return;
 // the finale prints the characters one at a time
 
-	y = 20;
+	y = 180;
 	l = strlen (scr_usestring);
-    x = (vid.width - l)/2;
+	x = (vid.width - l*8)/2;
 
 	l2 = strlen (scr_usestring2);
-	x2 = (vid.width - l2)/2; 
-	
-	Con_Printf("Drawing wallbuy string");
+	x2 = (vid.width - l2*8)/2;
 
     Draw_String (x, y, scr_usestring);
 	Draw_String (x2, y + 10, scr_usestring2);
@@ -821,7 +819,7 @@ void SCR_DrawFPS (void)
 	sprintf(st, "%3d FPS", lastfps);
 
 	x = vid.width - strlen(st) * 16 - 2;
-	y = 15 ; //vid.height - (sb_lines * (vid.height/240) )- 16;
+	y = 8 ; //vid.height - (sb_lines * (vid.height/240) )- 16;
 
 //	Draw_TileClear(x, y, strlen(st)*16, 16);
 
@@ -1258,52 +1256,36 @@ void SCR_UpdateScreen (void)
 	// draw any areas not covered by the refresh
 	//
 	SCR_TileClear ();
-
-	if (scr_drawdialog)
-	{
-		Sbar_Draw ();
-		Draw_FadeScreen ();
-		SCR_DrawNotifyString ();
-		scr_copyeverything = TRUE;
+	
+	if (crosshair.value) {
+			Draw_Character ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width,
+					(scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height, '+');
 	}
-	else if (scr_drawloading)
+	
+	SCR_DrawRam ();
+	SCR_DrawNet ();
+	SCR_DrawTurtle ();
+	//muff - to show FPS on screen
+	SCR_DrawFPS ();
+	SCR_DrawPause ();
+	SCR_CheckDrawCenterString ();
+	SCR_CheckDrawUseString ();
+	HUD_Draw ();
+	//Sbar_Draw ();
+	SCR_DrawConsole ();	
+	M_Draw ();
+	
+	if (in_osk)
+		GX_DrawOSK();
+	
+	if (scr_drawloading)
 	{
 		SCR_DrawLoading ();
 		Sbar_Draw ();
 	}
-	else if (cl.intermission == 1 && key_dest == key_game)
-	{
-		Sbar_IntermissionOverlay ();
-	}
-	else if (cl.intermission == 2 && key_dest == key_game)
-	{
-		Sbar_FinaleOverlay ();
-		SCR_CheckDrawCenterString ();
-	}
-	else
-	{
-        if (crosshair.value) {
-                Draw_Character ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width,
-                        (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height, '+');
-		}
-		
-		SCR_DrawRam ();
-		SCR_DrawNet ();
-		SCR_DrawTurtle ();
-		//muff - to show FPS on screen
-		SCR_DrawFPS ();
-		SCR_DrawPause ();
-		SCR_CheckDrawCenterString ();
-		HUD_Draw ();
-		//Sbar_Draw ();
-		SCR_DrawConsole ();	
-		M_Draw ();
-	}
 
 	// ELUTODO: place correctly in the if_else structures above
-	if (in_osk)
-		GX_DrawOSK();
-
+	
 	V_UpdatePalette ();
 
 	GL_EndRendering ();

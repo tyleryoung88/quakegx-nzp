@@ -564,11 +564,11 @@ void CL_SendMove (usercmd_t *cmd)
 	if (in_use.state & 3)
 		bits |= 128;
 	in_use.state &= ~2;
-	/*
+	
 	if (in_aim.state & 3)
 		bits |= 256;
 	in_aim.state &= ~2; 
-	*/
+	
     MSG_WriteByte (&buf, bits);
 
     MSG_WriteByte (&buf, in_impulse);

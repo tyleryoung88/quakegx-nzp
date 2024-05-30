@@ -1202,7 +1202,7 @@ int W_fopen (void)
 {
 	int h = 0;
 
-	Con_DPrintf("Loading waypoint file %s\n", va("%s/maps/%s.way",com_gamedir, sv.name));
+	Con_Printf("Loading waypoint file %s\n", va("%s/maps/%s.way",com_gamedir, sv.name));
 
 	Sys_FileOpenRead (va("%s/maps/%s.way",com_gamedir, sv.name), &h);
 	return h;

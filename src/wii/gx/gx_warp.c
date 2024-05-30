@@ -362,7 +362,7 @@ void Sky_LoadSkyBox(char* name)
 		return; //no change
 
 	//turn off skybox if sky is set to ""
-	if (name[0] == '0') {
+	if (!name) {
 		skybox_name[0] = 0;
 		skytexname[0] = 0;
 		return;
@@ -377,12 +377,12 @@ void Sky_LoadSkyBox(char* name)
 		skyimage[i] = loadtextureimage (va("gfx/env/%s%s", name, suf[i]), 0, 0, false, false);
 		if(skyimage[i] == 0)
 		{
-			Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[i]);
-			sprintf (skytexname, "%s%s", name, suf[i]);
-			skyimage[i] = loadtextureimage (va("gfx/env/skybox%s", suf[i]), 0, 0, false, false);
+			//Con_Printf("Sky: %s%s not found, used std\n", "gfx/env/ndu%s", suf[i]);
+			skyimage[i] = loadtextureimage (va("gfx/env/ndu%s", suf[i]), 0, 0, false, false);
 		    if(skyimage[i] == 0)
 		    {
-			    Sys_Error("STD SKY NOT FOUND!");
+				return;
+			    //Con_Printf("STD SKY NOT FOUND!");
 			}
 		}
         //Hunk_FreeToLowMark (mark);
@@ -395,11 +395,11 @@ void Sky_LoadSkyBox(char* name)
 	if(skyimage[4] == 0)
 	{
 		Con_Printf("Sky: %s[%s] not found, used std\n", name, suf[4]);
-		sprintf (skytexname, "%sup", name);
-		skyimage[4] = loadtextureimage (va("gfx/env/skybox%s", suf[4]), 0, 0, false, false);
+		skyimage[4] = loadtextureimage (va("gfx/env/ndu%s", suf[4]), 0, 0, false, false);
 		if(skyimage[4] == 0)
 		{
-			Sys_Error("STD SKY NOT FOUND!");
+			return;
+			//Con_Printf("STD SKY NOT FOUND!");
 		}
 	}
 	//Hunk_FreeToLowMark (mark);

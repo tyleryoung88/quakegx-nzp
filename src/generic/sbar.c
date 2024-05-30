@@ -88,7 +88,7 @@ Sbar_Changed
 */
 void Sbar_Changed (void)
 {
-
+	
 }
 
 /*
