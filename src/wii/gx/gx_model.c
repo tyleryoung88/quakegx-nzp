@@ -30,6 +30,8 @@ char	loadname[32];	// for hunk tags
 
 extern int lightmap_bytes;
 
+int			posenum;
+
 void Mod_LoadSpriteModel (model_t *mod, void *buffer);
 void Mod_LoadBrushModel (model_t *mod, void *buffer);
 void Mod_LoadAliasModel (model_t *mod, void *buffer);
@@ -1386,8 +1388,8 @@ void * Mod_LoadAliasFrame (void * pin, maliasframedesc_t *frame)
 		frame->bboxmin.v[i] = pdaliasframe->bboxmin.v[i];
 		frame->bboxmax.v[i] = pdaliasframe->bboxmax.v[i];
 
-		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
-		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
+		//aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
+		//aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
 	}
 
 	pinframe = (trivertx_t *)(pdaliasframe + 1);
@@ -1426,8 +1428,8 @@ void *Mod_LoadAliasGroup (void * pin,  maliasframedesc_t *frame)
 		frame->bboxmin.v[i] = pingroup->bboxmin.v[i];
 		frame->bboxmax.v[i] = pingroup->bboxmax.v[i];
 
-		aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
-		aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
+		//aliasbboxmins[i] = min (frame->bboxmin.v[i], aliasbboxmins[i]);
+		//aliasbboxmaxs[i] = max (frame->bboxmax.v[i], aliasbboxmaxs[i]);
 	}
 
 	pin_intervals = (daliasinterval_t *)(pingroup + 1);
@@ -1745,14 +1747,18 @@ void Mod_LoadAliasModel (model_t *mod, void *buffer)
 	pheader->numposes = posenum;
 
 	mod->type = mod_alias;
-
+/*
 	for (i = 0; i < 3; i++)
 	{
 		// ELUTODO - we always have a minimum size of -16...16
 		mod->mins[i] = min(-16, aliasbboxmins[i] * pheader->scale[i] + pheader->scale_origin[i]);
 		mod->maxs[i] = max(16, aliasbboxmaxs[i] * pheader->scale[i] + pheader->scale_origin[i]);
 	}
-
+*/
+	// FIXME: do this right
+	mod->mins[0] = mod->mins[1] = mod->mins[2] = -16;
+	mod->maxs[0] = mod->maxs[1] = mod->maxs[2] = 16;
+	
 	//
 	// build the draw lists
 	//

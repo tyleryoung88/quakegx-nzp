@@ -339,6 +339,10 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define	EF_TRACER2	64			// orange split trail + rotate
 #define	EF_TRACER3	128			// purple trail
 
+//johnfitz -- extra flags for rendering
+#define MOD_NOLERP	256
+//johnfits
+
 typedef struct model_s
 {
 	char		name[MAX_QPATH];

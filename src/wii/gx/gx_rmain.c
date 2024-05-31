@@ -88,6 +88,8 @@ cvar_t	r_mirroralpha = {"r_mirroralpha","1"};
 cvar_t	r_wateralpha = {"r_wateralpha","0.5"};
 cvar_t	r_dynamic = {"r_dynamic","1"};
 cvar_t	r_novis = {"r_novis","0"};
+cvar_t	r_lerpmodels = {"r_lerpmodels", "1"};
+cvar_t  r_lerpmove = {"r_lerpmove", "1"};
 cvar_t 	r_skyfog = {"r_skyfog", "1"};
 
 cvar_t	gl_finish = {"gl_finish","0"};
@@ -103,6 +105,16 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0"};
+
+//johnfitz -- struct for passing lerp information to drawing functions
+typedef struct {
+	short pose1;
+	short pose2;
+	float blend;
+	vec3_t origin;
+	vec3_t angles;
+} lerpdata_t;
+//johnfitz
 
 extern	cvar_t	gl_ztrick;
 float viewport_size[4];
@@ -308,25 +320,45 @@ int	lastposenum;
 GL_DrawAliasFrame
 =============
 */
-void GL_DrawAliasFrame (aliashdr_t *paliashdr, int posenum)
+void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 {
 	float 	l;
-	trivertx_t	*verts;
+	trivertx_t	*verts1, *verts2;
 	int		*order;
+	int		*commands;
 	int		count;
+	float	blend, iblend;
+	//float	u, v;
+	qboolean lerping;
+	
+	if (lerpdata.pose1 != lerpdata.pose2)
+	{
+		lerping = true;
+		verts1  = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+		verts2  = verts1;
+		verts1 += lerpdata.pose1 * paliashdr->poseverts;
+		verts2 += lerpdata.pose2 * paliashdr->poseverts;
+		blend = lerpdata.blend;
+		iblend = 1.0f - blend;
+	}
+	else // poses the same means either 1. the entity has paused its animation, or 2. r_lerpmodels is disabled
+	{
+		lerping = false;
+		verts1  = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
+		verts2  = verts1; // avoid bogus compiler warning
+		verts1 += lerpdata.pose1 * paliashdr->poseverts;
+		blend = iblend = 0; // avoid bogus compiler warning
+	}
 
-lastposenum = posenum;
-
-	verts = (trivertx_t *)((byte *)paliashdr + paliashdr->posedata);
-	verts += posenum * paliashdr->poseverts;
-	order = (int *)((byte *)paliashdr + paliashdr->commands);
-
+	commands = (int *)((byte *)paliashdr + paliashdr->commands);
+	
 	while (1)
 	{
 		// get the vertex count and primitive type
-		count = *order++;
+		count = *commands++;
 		if (!count)
 			break;		// done
+
 		if (count < 0)
 		{
 			count = -count;
@@ -337,17 +369,42 @@ lastposenum = posenum;
 
 		do
 		{
-			// normals and vertexes come from the frame list
-			GX_Position3f32(verts->v[0], verts->v[1], verts->v[2]);
-			l = shadedots[verts->lightnormalindex] * shadelight;
+			//u = ((float *)commands)[0];
+			//v = ((float *)commands)[1];
+
+			//glTexCoord2f (u, v);
+			//GX_TexCoord2f32(u, v);
+
+			if (lerping) {
+				//glVertex3f (verts1->v[0]*iblend + verts2->v[0]*blend,
+							//verts1->v[1]*iblend + verts2->v[1]*blend,
+							//verts1->v[2]*iblend + verts2->v[2]*blend);
+				GX_Position3f32(verts1->v[0]*iblend + verts2->v[0]*blend,
+								verts1->v[1]*iblend + verts2->v[1]*blend,
+								verts1->v[2]*iblend + verts2->v[2]*blend);
+								
+								//GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
+								
+				verts1++;
+				verts2++;
+			} else {
+				//glVertex3f (verts1->v[0], verts1->v[1], verts1->v[2]);
+				GX_Position3f32(verts1->v[0], verts1->v[1], verts1->v[2]);
+
+				//GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
+				
+				verts1++;
+
+			}
+			
+			l = shadedots[verts1->lightnormalindex] * shadelight;
 			l *= 255; if (l > 255.0f) l = 255.0f;
 			GX_Color4u8(l, l, l, 0xff);
-
-			// texture coordinates come from the draw list
-			GX_TexCoord2f32(((float *)order)[0], ((float *)order)[1]);
-
-			order += 2;
-			verts++;
+			
+			GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
+			
+			commands += 2;
+			
 		} while (--count);
 
 		GX_End ();
@@ -434,33 +491,229 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 
 /*
 =================
-R_SetupAliasFrame
-
+R_SetupAliasFrame -- johnfitz -- rewritten to support lerping
 =================
 */
-void R_SetupAliasFrame (int frame, aliashdr_t *paliashdr)
+void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
 {
-	int				pose, numposes;
-	float			interval;
+	entity_t		*e = currententity;
+	int				posenum, numposes;
 
 	if ((frame >= paliashdr->numframes) || (frame < 0))
 	{
-		Con_DPrintf ("R_AliasSetupFrame: no such frame %d\n", frame);
+		Con_DPrintf ("R_AliasSetupFrame: no such frame %d for '%s'\n", frame, e->model->name);
 		frame = 0;
 	}
 
-	pose = paliashdr->frames[frame].firstpose;
-	numposes = paliashdr->frames[frame].numposes;
+	// HACK: if we're a certain distance away, don't bother blending
+	// cypress -- Lets not care about Z (up).. chances are they're out of the frustum anyway
+	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
+	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
+	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
 
-	if (numposes > 1)
-	{
-		interval = paliashdr->frames[frame].interval;
-		pose += (int)(cl.time / interval) % numposes;
+	// They're too far away from us to care about blending their frames.
+	// cypress -- added an additional check not to lerp if there's only 1 frame
+	if (distance_from_client >= 40000 || paliashdr->numframes <= 1) { // 200 * 200
+		// Fix them from jumping from last lerp
+		lerpdata->pose1 = lerpdata->pose2 = paliashdr->frames[frame].firstpose;
+
+		e->lerptime = 0.1;
+		lerpdata->blend = 1;
+	} else {
+		posenum = paliashdr->frames[frame].firstpose;
+		numposes = paliashdr->frames[frame].numposes;
+
+		if (numposes > 1)
+		{
+			e->lerptime = paliashdr->frames[frame].interval;
+			posenum += (int)(cl.time / e->lerptime) % numposes;
+		}
+		else
+			e->lerptime = 0.1;
+
+		if (e->lerpflags & LERP_RESETANIM) //kill any lerp in progress
+		{
+			e->lerpstart = 0;
+			e->previouspose = posenum;
+			e->currentpose = posenum;
+			e->lerpflags -= LERP_RESETANIM;
+		}
+		else if (e->currentpose != posenum) // pose changed, start new lerp
+		{
+			if (e->lerpflags & LERP_RESETANIM2) //defer lerping one more time
+			{
+				e->lerpstart = 0;
+				e->previouspose = posenum;
+				e->currentpose = posenum;
+				e->lerpflags -= LERP_RESETANIM2;
+			}
+			else
+			{
+				e->lerpstart = cl.time;
+				e->previouspose = e->currentpose;
+				e->currentpose = posenum;
+			}
+		}
+
+		//set up values
+		if (r_lerpmodels.value && !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2))
+		{
+			if (e->lerpflags & LERP_FINISH && numposes == 1)
+				lerpdata->blend = CLAMP (0, (cl.time - e->lerpstart) / (e->lerpfinish - e->lerpstart), 1);
+			else
+				lerpdata->blend = CLAMP (0, (cl.time - e->lerpstart) / e->lerptime, 1);
+			lerpdata->pose1 = e->previouspose;
+			lerpdata->pose2 = e->currentpose;
+		}
+		else //don't lerp
+		{
+			lerpdata->blend = 1;
+			lerpdata->pose1 = posenum;
+			lerpdata->pose2 = posenum;
+		}
 	}
-
-	GL_DrawAliasFrame (paliashdr, pose);
 }
 
+/*
+=================
+R_SetupEntityTransform -- johnfitz -- set up transform part of lerpdata
+=================
+*/
+void R_SetupEntityTransform (entity_t *e, lerpdata_t *lerpdata)
+{
+	float blend;
+	vec3_t d;
+	int i;
+
+	// if LERP_RESETMOVE, kill any lerps in progress
+	if (e->lerpflags & LERP_RESETMOVE)
+	{
+		e->movelerpstart = 0;
+		VectorCopy (e->origin, e->previousorigin);
+		VectorCopy (e->origin, e->currentorigin);
+		VectorCopy (e->angles, e->previousangles);
+		VectorCopy (e->angles, e->currentangles);
+		e->lerpflags -= LERP_RESETMOVE;
+	}
+	else if (!VectorCompare (e->origin, e->currentorigin) || !VectorCompare (e->angles, e->currentangles)) // origin/angles changed, start new lerp
+	{
+		e->movelerpstart = cl.time;
+		VectorCopy (e->currentorigin, e->previousorigin);
+		VectorCopy (e->origin,  e->currentorigin);
+		VectorCopy (e->currentangles, e->previousangles);
+		VectorCopy (e->angles,  e->currentangles);
+	}
+
+	//set up values
+	if (r_lerpmove.value && e != &cl.viewent && e->lerpflags & LERP_MOVESTEP)
+	{
+		if (e->lerpflags & LERP_FINISH)
+			blend = CLAMP (0, (cl.time - e->movelerpstart) / (e->lerpfinish - e->movelerpstart), 1);
+		else
+			blend = CLAMP (0, (cl.time - e->movelerpstart) / 0.1, 1);
+
+		//translation
+		VectorSubtract (e->currentorigin, e->previousorigin, d);
+		lerpdata->origin[0] = e->previousorigin[0] + d[0] * blend;
+		lerpdata->origin[1] = e->previousorigin[1] + d[1] * blend;
+		lerpdata->origin[2] = e->previousorigin[2] + d[2] * blend;
+
+		//rotation
+		VectorSubtract (e->currentangles, e->previousangles, d);
+		for (i = 0; i < 3; i++)
+		{
+			if (d[i] > 180)  d[i] -= 360;
+			if (d[i] < -180) d[i] += 360;
+		}
+		lerpdata->angles[0] = e->previousangles[0] + d[0] * blend;
+		lerpdata->angles[1] = e->previousangles[1] + d[1] * blend;
+		lerpdata->angles[2] = e->previousangles[2] + d[2] * blend;
+	}
+	else //don't lerp
+	{
+		VectorCopy (e->origin, lerpdata->origin);
+		VectorCopy (e->angles, lerpdata->angles);
+	}
+}
+
+/*
+=================
+R_DrawZombieLimb
+
+=================
+*/
+//Blubs Z hacks: need this declaration.
+model_t *Mod_FindName (char *name);
+
+void R_DrawZombieLimb (entity_t *e, int which)
+{
+	model_t		*clmodel;
+	aliashdr_t	*paliashdr;
+	entity_t 	*limb_ent;
+	lerpdata_t	lerpdata;
+#if 0
+	switch(which) {
+		case 1:
+			limb_ent = &cl_entities[e->z_head];
+			break;
+		case 2:
+			limb_ent = &cl_entities[e->z_larm];
+			break;
+		case 3:
+			limb_ent = &cl_entities[e->z_rarm];
+			break;
+		default:
+			return;
+	}
+
+	clmodel = limb_ent->model;
+
+	if (clmodel == NULL)
+		return;
+
+	VectorCopy(e->origin, r_entorigin);
+	VectorSubtract(r_origin, r_entorigin, modelorg);
+
+	// locate the proper data
+	paliashdr = (aliashdr_t *)Mod_Extradata(clmodel);//e->model
+	c_alias_polys += paliashdr->numtris;
+
+	GL_DisableMultitexture();
+
+	//Shpuld
+	if(r_model_brightness.value)
+	{
+		lightcolor[0] += 48;
+		lightcolor[1] += 48;
+		lightcolor[2] += 48;
+	}
+
+	glPushMatrix ();
+	R_RotateForEntity (e, e->scale);
+
+	glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+
+	if (gl_smoothmodels.value)
+		glShadeModel (GL_SMOOTH);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	if (gl_affinemodels.value)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
+
+	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
+	R_SetupEntityTransform (e, &lerpdata);
+	GL_DrawAliasFrame(paliashdr, lerpdata);
+
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+
+	glShadeModel (GL_FLAT);
+	if (gl_affinemodels.value)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	glPopMatrix ();
+#endif
+}
 
 
 /*
@@ -469,8 +722,11 @@ R_DrawAliasModel
 
 =================
 */
+int doZHack;
+extern int zombie_skins[4];
 void R_DrawAliasModel (entity_t *e)
 {
+	char		specChar;
 	int			i;
 	int			lnum;
 	vec3_t		dist;
@@ -481,6 +737,7 @@ void R_DrawAliasModel (entity_t *e)
 	float		an;
 	int			anim;
 	Mtx			temp;
+	lerpdata_t	lerpdata;
 
 	clmodel = currententity->model;
 
@@ -490,6 +747,7 @@ void R_DrawAliasModel (entity_t *e)
 	if (R_CullBox (mins, maxs))
 		return;
 
+	specChar = clmodel->name[strlen(clmodel->name) - 5];
 
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
@@ -550,7 +808,17 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// locate the proper data
 	//
-	paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
+	/*
+	if(doZHack && specChar == '%')
+	{
+		if(clmodel->name[12] == 'c')
+			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
+		else
+			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
+	}
+	else
+		*/
+		paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
 
 	c_alias_polys += paliashdr->numtris;
 
@@ -578,9 +846,34 @@ void R_DrawAliasModel (entity_t *e)
 
 	c_guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
-
-	anim = (int)(cl.time*10) & 3;
-    GL_Bind0(paliashdr->gl_texturenum[currententity->skinnum][anim]);
+	/*
+	if (specChar == '%')//Zombie body
+	{
+		switch(e->skinnum)
+		{
+			case 0:
+				GL_Bind0(zombie_skins[0]);
+				break;
+			case 1:
+				GL_Bind0(zombie_skins[1]);
+				break;
+			case 2:
+				GL_Bind0(zombie_skins[2]);
+				break;
+			case 3:
+				GL_Bind0(zombie_skins[3]);
+				break;
+			default: //out of bounds? assuming 0
+				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
+				GL_Bind0(zombie_skins[0]);
+				break;
+		}
+	}
+	else
+	{*/
+		anim = (int)(cl.time*10) & 3;
+		GL_Bind0(paliashdr->gl_texturenum[currententity->skinnum][anim]);
+	//}
 
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
@@ -600,9 +893,22 @@ void R_DrawAliasModel (entity_t *e)
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);*/
 
-	R_SetupAliasFrame (currententity->frame, paliashdr);
+	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
+	R_SetupEntityTransform (e, &lerpdata);
+	GL_DrawAliasFrame(paliashdr, lerpdata);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	/*
+	if (doZHack == 0 && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
+	{
+		if(e->z_head)
+			R_DrawZombieLimb(e,1);
+		if(e->z_larm)
+			R_DrawZombieLimb(e,2);
+		if(e->z_rarm)
+			R_DrawZombieLimb(e,3);
+	}
+	*/
 
 /* ELUTODO
 	glShadeModel (GL_FLAT);
@@ -638,6 +944,10 @@ void R_DrawEntitiesOnList (void)
 
 	if (!r_drawentities.value)
 		return;
+	
+	int zHackCount = 0;
+	doZHack = 0;
+	char specChar;
 
 	// draw sprites seperately, because of alpha blending
 	for (i=0 ; i<cl_numvisedicts ; i++)
