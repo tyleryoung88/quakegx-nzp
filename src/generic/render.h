@@ -55,12 +55,14 @@ typedef struct entity_s
 	vec3_t					msg_origins[2];	// last two updates (0 is newest)	
 	vec3_t					origin;
 	vec3_t					msg_angles[2];	// last two updates (0 is newest)
-	vec3_t					angles;	
+	vec3_t					angles;		
 	
 	
-	
-	
-	
+	// Tomaz - QC Alpha Scale Glow Begin
+    float		renderamt;
+    float		rendermode;
+    float		rendercolor[3];
+    //Crow_bar
 	
 	
 	unsigned char 			scale;
@@ -167,6 +169,12 @@ void R_RemoveEfrags (entity_t *ent);
 
 void R_NewMap (void);
 
+typedef enum trail_type_s
+{
+	ROCKET_TRAIL, GRENADE_TRAIL, BLOOD_TRAIL, TRACER1_TRAIL, SLIGHT_BLOOD_TRAIL,NAIL_TRAIL,
+	TRACER2_TRAIL, VOOR_TRAIL, ALT_ROCKET_TRAIL, LAVA_TRAIL, BUBBLE_TRAIL, NEHAHRA_SMOKE,
+	RAYGREEN_TRAIL, RAYRED_TRAIL
+} trail_type_t;
 
 void R_ParseParticleEffect (void);
 void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);

@@ -50,6 +50,13 @@ cvar_t	saved2 = {"saved2", "0", TRUE};
 cvar_t	saved3 = {"saved3", "0", TRUE};
 cvar_t	saved4 = {"saved4", "0", TRUE};
 
+// evaluation shortcuts
+int	eval_gravity;
+int eval_idealpitch, eval_pitch_speed;
+
+// Half_life modes. Crow_bar
+int	eval_renderamt, eval_rendermode, eval_rendercolor;
+
 #define	MAX_FIELD_LEN	64
 #define GEFV_CACHESIZE	2
 
@@ -200,6 +207,26 @@ ddef_t *ED_FindField (char *name)
 	return NULL;
 }
 
+int FindFieldOffset (char *field)
+{
+	ddef_t	*d;
+
+	if (!(d = ED_FindField(field)))
+		return 0;
+
+	return d->ofs*4;
+}
+
+void FindEdictFieldOffsets (void)
+{
+	eval_gravity = FindFieldOffset ("gravity");
+
+    eval_idealpitch = FindFieldOffset ("idealpitch");
+	eval_pitch_speed = FindFieldOffset ("pitch_speed");
+	eval_renderamt   = FindFieldOffset ("renderamt");
+	eval_rendermode  = FindFieldOffset ("rendermode");
+    eval_rendercolor = FindFieldOffset ("rendercolor");
+}
 
 /*
 ============
@@ -985,14 +1012,15 @@ void ED_LoadFromFile (char *data)
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
 }
 
-
 /*
 ===============
 PR_LoadProgs
 ===============
 */
+func_t	EndFrame;
 void PR_LoadProgs (void)
 {
+	dfunction_t	*f;
 	int		i;
 
 // flush the non-C variable lookup cache
@@ -1066,6 +1094,12 @@ void PR_LoadProgs (void)
 
 	for (i=0 ; i<progs->numglobals ; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
+	
+	FindEdictFieldOffsets ();
+	EndFrame = 0;
+
+	if ((f = ED_FindFunction ("EndFrame")) != NULL)
+		EndFrame = (func_t)(f - pr_functions);
 }
 
 

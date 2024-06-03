@@ -886,6 +886,16 @@ void Mod_LoadFaces (lump_t *l)
 			continue;
 		}
 		
+		if (!strncmp(out->texinfo->texture->name,"nodraw",6) || !strncmp(out->texinfo->texture->name,"NODRAW",6)) {
+			out->flags |= TEXFLAG_NODRAW;
+			continue;
+		}
+
+		if (strstr(out->texinfo->texture->name,"light")) {
+			out->flags |= TEXFLAG_LIGHT;
+			continue;
+		}
+		
 		if (!strncmp(out->texinfo->texture->name,"*",1))		// turbulent
 		{
 			out->flags |= (SURF_DRAWTURB | SURF_DRAWTILED);

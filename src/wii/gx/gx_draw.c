@@ -98,41 +98,73 @@ qpic_t	*Draw_CachePic (char *path)
 	int			i;
 	qpic_t		*dat;
 	glpic_t		*gl;
+	char		str[128];
+	int			index = 0;
 
+	strcpy (str, path);
 	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
-		if (!strcmp (path, pic->name))
+		if (!strcmp (str, pic->name))
 			return &pic->pic;
 
 	if (menu_numcachepics == MAX_CACHED_PICS)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
 	menu_numcachepics++;
-	strcpy (pic->name, path);
+	strcpy (pic->name, str);
 
 //
 // load the pic from disk
 //
-	dat = (qpic_t *)COM_LoadTempFile (path);	
-	if (!dat)
-		Sys_Error ("Draw_CachePic: failed to load %s", path);
-	SwapPic (dat);
+	//Con_Printf ("Attempting to load: %s\n", str);
+	index = loadtextureimage (str, 0, 0, false, false);
+	if(index > 0)
+	{
+		pic->pic.width  = gltextures[index].width;
+		pic->pic.height = gltextures[index].height;
 
-	// HACK HACK HACK --- we need to keep the bytes for
-	// the translatable player picture just for the menu
-	// configuration dialog
-	if (!strcmp (path, "gfx/menuplyr.lmp"))
-		memcpy (menuplyr_pixels, dat->data, dat->width*dat->height);
+		gltextures[index].islmp = false;
+		gl = (glpic_t *)pic->pic.data;
+		gl->texnum = index;
+		gl->sl = 1;
+		gl->sh = 0;
+		gl->tl = 1;
+		gl->th = 0;
 
-	pic->pic.width = dat->width;
-	pic->pic.height = dat->height;
+		return &pic->pic;
+	} else {
 
-	gl = (glpic_t *)pic->pic.data;
-	gl->texnum = GL_LoadPicTexture (dat);
-	gl->sl = 0;
-	gl->sh = 1;
-	gl->tl = 0;
-	gl->th = 1;
+		dat = (qpic_t *)COM_LoadTempFile (str);
+		if (!dat)
+		{
+			strcat (str, ".lmp");
+			dat = (qpic_t *)COM_LoadTempFile (str);
+			if (!dat)
+			{
+				Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
+				return NULL;
+			}
+		}
+		SwapPic (dat);
 
-	return &pic->pic;
+		// HACK HACK HACK --- we need to keep the bytes for
+		// the translatable player picture just for the menu
+		// configuration dialog
+		if (!strcmp (path, "gfx/menuplyr.lmp"))
+			memcpy (menuplyr_pixels, dat->data, dat->width*dat->height);
+
+		pic->pic.width = dat->width;
+		pic->pic.height = dat->height;
+
+		gl = (glpic_t *)pic->pic.data;
+		gl->texnum = GL_LoadPicTexture (dat);
+		gl->sl = 0;
+		gl->sh = 1;
+		gl->tl = 0;
+		gl->th = 1;
+		gltextures[gl->texnum].islmp = true;
+
+		return &pic->pic;
+	}
+	return 0;
 }
 
 
@@ -300,6 +332,97 @@ void Draw_Character (int x, int y, int num)
 
 /*
 ================
+Draw_CharacterRGBA
+
+This is the same as Draw_Character, but with RGBA color codes.
+- MotoLegacy
+================
+*/
+extern cvar_t scr_coloredtext;
+void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, int scale)
+{
+	int				row, col;
+	float			frow, fcol, size;
+
+	if (num == 32)
+		return;		// space
+
+	num &= 255;
+	
+	if (y <= -8)
+		return;			// totally off screen
+
+	row = num>>4;
+	col = num&15;
+
+	frow = row*0.0625;
+	fcol = col*0.0625;
+	size = 0.0625*(float)scale;
+
+	GL_Bind0 (char_texture);
+
+	//glEnable(GL_BLEND);
+	QGX_Blend(TRUE);
+	//glColor4f(r/255, g/255, b/255, a/255);
+	//glDisable (GL_ALPHA_TEST);
+	QGX_Alpha(FALSE);
+	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+	//glBegin (GL_QUADS);
+	/*
+	glTexCoord2f (fcol, frow);
+	glVertex2f (x, y);
+	
+	glTexCoord2f (fcol + (float)(size/(float)scale), frow);
+	glVertex2f (x+(8*(scale)), y);
+	
+	glTexCoord2f (fcol + (float)(size/(float)scale), frow + (float)(size/(float)scale));
+	glVertex2f (x+(8*(scale)), y+(8*(scale)));
+	
+	glTexCoord2f (fcol, frow + (float)(size/(float)scale));
+	glVertex2f (x, y+(8*(scale)));
+	*/
+	
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	
+	GX_Position3f32(x, y, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(fcol, frow);
+
+	GX_Position3f32(x+(8*(scale)), y, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(fcol + (float)(size/(float)scale), frow);
+
+	GX_Position3f32(x+(8*(scale)), y+(8*(scale)), 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(fcol + (float)(size/(float)scale), frow + (float)(size/(float)scale));
+
+	GX_Position3f32(x, y+(8*(scale)), 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(fcol, frow + (float)(size/(float)scale));
+	//glEnd ();
+	GX_End ();
+	//glColor4f(1,1,1,1);
+	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	//GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	//glEnable(GL_ALPHA_TEST);
+	QGX_Alpha(FALSE);
+	//glDisable (GL_BLEND);
+	QGX_Blend(FALSE);
+}
+
+void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, int scale) 
+{
+	while (*str)
+	{
+		Draw_CharacterRGBA (x, y, *str, r, g, b, a, scale);
+		str++;
+		x += 8*scale;
+	}
+}
+
+/*
+================
 Draw_String
 ================
 */
@@ -358,6 +481,45 @@ void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
 	GX_Position3f32(x, y + pic->height, 0.0f);
 	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
 	GX_TexCoord2f32(gl->sl, gl->th);
+	GX_End();
+
+	QGX_Blend(FALSE);
+	QGX_Alpha(TRUE);
+}
+
+/*
+=============
+Draw_ColorPic
+=============
+*/
+void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float a)
+{
+	glpic_t			*gl;
+
+	gl = (glpic_t *)pic->data;
+	
+	QGX_Alpha(FALSE);
+	QGX_Blend(TRUE);
+	
+	GL_Bind0 (gl->texnum);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	
+	GX_Position3f32(x, y, 0.0f);
+	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_TexCoord2f32(gl->sl, gl->tl);
+
+	GX_Position3f32(x + pic->width, y, 0.0f);
+	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_TexCoord2f32(gl->sh, gl->tl);
+
+	GX_Position3f32(x + pic->width, y + pic->height, 0.0f);
+	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_TexCoord2f32(gl->sh, gl->th);
+
+	GX_Position3f32(x, y + pic->height, 0.0f);
+	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_TexCoord2f32(gl->sl, gl->th);
+	
 	GX_End();
 
 	QGX_Blend(FALSE);
@@ -557,6 +719,71 @@ void Draw_AlphaTileClear (int x, int y, int w, int h, float alpha)
 	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
 	GX_TexCoord2f32(x / 64.0, (y + h) / 64.0);
 	GX_End();
+}
+
+
+/*
+=============
+Draw_Fill
+
+Fills a box of pixels with a single color
+=============
+*/
+void Draw_FillByColor (int x, int y, int w, int h, float r, float g, float b, float a)
+{
+	//glDisable (GL_TEXTURE_2D);
+	/*
+	GX_SetVtxDesc(GX_VA_TEX0, GX_NONE);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
+	*/
+	GL_Bind0 (white_texturenum);
+	//glEnable (GL_BLEND); //johnfitz -- for alpha
+	QGX_Blend(TRUE);
+	//glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
+	QGX_Alpha(FALSE);
+	//glColor4f (r/255, g/255, b/255, a/255);
+	//GX_Color4u8(r, g, b, a);
+
+	//glBegin (GL_QUADS);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	
+	/*
+	glVertex2f (x,y);
+	glVertex2f (x+w, y);
+	glVertex2f (x+w, y+h);
+	glVertex2f (x, y+h);
+	*/
+	
+	GX_Position3f32(x, y, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(0, 0);
+
+	GX_Position3f32(x + w, y, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(1, 0);
+
+	GX_Position3f32(x + w, y + h, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(1, 1);
+
+	GX_Position3f32(x, y + h, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(0, 1);
+
+	//glEnd ();
+	GX_End ();
+	//glColor4f (1,1,1,1);
+	//glDisable (GL_BLEND); //johnfitz -- for alpha
+	QGX_Blend(FALSE);
+	//glEnable(GL_ALPHA_TEST); //johnfitz -- for alpha
+	QGX_Alpha(TRUE);
+	//glEnable (GL_TEXTURE_2D);
+	/*
+	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+ 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	*/
 }
 
 

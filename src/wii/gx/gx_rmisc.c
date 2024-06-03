@@ -63,7 +63,7 @@ void R_InitParticleTexture (void)
 R_InitOtherTextures
 ==================
 */
-void	R_InitOtherTextures (void)
+void R_InitOtherTextures (void)
 {
 	/*
 	//static decals
@@ -77,12 +77,12 @@ void	R_InitOtherTextures (void)
 	*/
 
 	// external zombie skins
-	/*
+	
 	zombie_skins[0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, true, true);
 	zombie_skins[1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, true, true);
 	zombie_skins[2] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, true, true);
 	zombie_skins[3] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, true, true);
-	*/
+	
 }
 
 /*
@@ -197,10 +197,12 @@ void R_Init (void)
 	Cvar_RegisterVariable (&gl_cshiftpercent);
 	
 	Cvar_RegisterVariable (&r_skyfog);
+	Cvar_RegisterVariable (&r_model_brightness);
 	
 	Cvar_RegisterVariable (&r_flatlightstyles);
 
 	R_InitParticles ();
+	R_InitOtherTextures ();
 	R_InitParticleTexture ();
 	
 	Sky_Init (); //johnfitz

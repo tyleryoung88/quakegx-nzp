@@ -363,6 +363,18 @@ void CL_ParseUpdate (int bits)
 		i = MSG_ReadByte ();
 		bits |= (i<<8);
 	}
+	
+	// Tomaz - QC Control Begin
+	if (bits & U_EXTEND1)
+	{
+		bits |= MSG_ReadByte() << 16;
+
+		if (bits & U_EXTEND2)
+		{
+			bits |= MSG_ReadByte() << 24;
+		}
+	}
+	// Tomaz - QC Control End
 
 	if (bits & U_LONGENTITY)	
 		num = MSG_ReadShort ();
@@ -476,6 +488,38 @@ void CL_ParseUpdate (int bits)
 		ent->msg_angles[0][2] = MSG_ReadAngle();
 	else
 		ent->msg_angles[0][2] = ent->baseline.angles[2];
+	
+	// Tomaz - QC Alpha Scale Glow Begin
+	if (bits & U_RENDERAMT)
+	    ent->renderamt = MSG_ReadFloat();
+    else
+	    ent->renderamt = 0;
+
+    if (bits & U_RENDERMODE)
+	    ent->rendermode = MSG_ReadFloat();
+    else
+	    ent->rendermode = 0;
+
+	if (bits & U_RENDERCOLOR1)
+	    ent->rendercolor[0] = MSG_ReadFloat();
+    else
+	    ent->rendercolor[0] = 0;
+
+	if (bits & U_RENDERCOLOR2)
+	    ent->rendercolor[1] = MSG_ReadFloat();
+    else
+	    ent->rendercolor[1] = 0;
+
+	if (bits & U_RENDERCOLOR3)
+	    ent->rendercolor[2] = MSG_ReadFloat();
+    else
+	    ent->rendercolor[2] = 0;
+// Tomaz - QC Alpha Scale Glow End
+
+	if (bits & U_SCALE)
+		ent->scale = MSG_ReadByte();
+	else
+		ent->scale = ENTSCALE_DEFAULT;
 
 	if ( bits & U_NOLERP )
 		ent->forcelink = TRUE;

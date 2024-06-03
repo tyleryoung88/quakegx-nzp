@@ -503,7 +503,7 @@ void CL_SendMove (usercmd_t *cmd)
 	else {
 		zoom_snap = 0;
 	}
-`	*/
+	*/	
 //
 // send the movement message
 //

@@ -471,7 +471,7 @@ reload:
 			GL_Upload8 (glt, data, width, height, mipmap, alpha);
 		}
 		else if (bytesperpixel == 4) {
-#if 1
+#if 0
 			// Baker: this applies our -gamma parameter table
 			//extern	byte	vid_gamma_table[256];
 			for (i = 0; i < s; i++){
@@ -843,6 +843,122 @@ int		image_height;
 
 int COM_OpenFile (char *filename, int *hndl);
 
+/*
+=================================================================
+  PCX Loading
+=================================================================
+*/
+
+typedef struct
+{
+    char	manufacturer;
+    char	version;
+    char	encoding;
+    char	bits_per_pixel;
+    unsigned short	xmin,ymin,xmax,ymax;
+    unsigned short	hres,vres;
+    unsigned char	palette[48];
+    char	reserved;
+    char	color_planes;
+    unsigned short	bytes_per_line;
+    unsigned short	palette_type;
+    char	filler[58];
+    unsigned 	data;			// unbounded
+} pcx_t;
+
+/*
+============
+LoadPCX
+============
+*/
+byte* LoadPCX (char* filename, int matchwidth, int matchheight)
+{
+	pcx_t	*pcx, pcxbuf;
+	byte	palette[768];
+	byte	*pix, *image_rgba;
+	int		x, y;
+	int		dataByte, runLength;
+	int		count;
+	byte	*pcxdata;
+
+//
+// parse the PCX file
+//
+	// Figure out the length
+    int handle;
+    int len = COM_OpenFile (filename, &handle);
+	
+	// Load the raw data into memory, then store it
+    pcxdata = COM_LoadFile(filename, 5);
+
+	if (pcxdata == NULL) {
+		Con_Printf("NULL: %s", filename);
+		return NULL;
+	}
+
+
+	//fread (&pcxbuf, 1, sizeof(pcxbuf), f);
+	pcx = (pcx_t *)pcxdata;
+	
+	pcx->xmax = LittleShort(pcx->xmax);
+    pcx->ymax = LittleShort(pcx->ymax);
+
+	if (pcx->manufacturer != 0x0a //0x0a
+		|| pcx->version != 5
+		|| pcx->encoding != 1
+		|| pcx->bits_per_pixel != 8
+		|| pcx->xmax >= 514
+		|| pcx->ymax >= 514)
+	{
+		Con_Printf ("Bad pcx file\n");
+		return NULL;
+	}
+
+	if (matchwidth && (pcx->xmax+1) != matchwidth)
+		return NULL;
+	if (matchheight && (pcx->ymax+1) != matchheight)
+		return NULL;
+	// seek to palette
+	fseek (handle, -768, SEEK_END);
+	fread (palette, 1, 768, handle);
+	fseek (handle, sizeof(pcxbuf) - 4, SEEK_SET);
+	count = (pcx->xmax+1) * (pcx->ymax+1);
+	image_rgba = (byte*)malloc( count * 4);
+
+	for (y=0 ; y<=pcx->ymax ; y++)
+	{
+		pix = image_rgba + 4*y*(pcx->xmax+1);
+		for (x=0 ; x<=pcx->xmax ; ) // muff - fixed - was referencing ymax
+		{
+			dataByte = fgetc(handle);
+			if((dataByte & 0xC0) == 0xC0)
+			{
+				runLength = dataByte & 0x3F;
+				dataByte = fgetc(handle);
+			}
+			else
+				runLength = 1;
+
+			while(runLength-- > 0)
+			{
+				pix[0] = palette[dataByte*3];
+				pix[1] = palette[dataByte*3+1];
+				pix[2] = palette[dataByte*3+2];
+				pix[3] = 255;
+				pix += 4;
+				x++;
+			}
+		}
+	}
+	image_width = pcx->xmax+1;
+	image_height = pcx->ymax+1;
+	
+	COM_CloseFile(handle);
+
+	//fclose(f);
+	return image_rgba;
+}
+
 /*small function to read files with stb_image - single-file image loader library.
 ** downloaded from: https://raw.githubusercontent.com/nothings/stb/master/stb_image.h
 ** only use jpeg+png formats, because tbh there's not much need for the others.
@@ -862,8 +978,6 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	int i;
 	
 	byte* rgba_data;
-	
-	//va(filename, basename);
 	
 	// Figure out the length
     int handle;
@@ -901,15 +1015,109 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 
 	return image;
 }
-extern char	skybox_name[32];
-extern char skytexname[32];
+
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap)
 {
-	int	f;
+	int	f = 0;
 	int texnum;
 	char basename[128], name[132];
 	
 	int image_size = image_width * image_height;
+	
+	byte* data/* = (byte*)malloc(image_size * 4)*/;
+	byte *c;
+	
+	if (complain == false)
+		COM_StripExtension(filename, basename); // strip the extension to allow TGA
+	else
+		strcpy(basename, filename);
+
+	c = (byte*)basename;
+	while (*c)
+	{
+		if (*c == '*')
+			*c = '+';
+		c++;
+	}
+	
+	//Try PCX
+	sprintf (name, "%s.pcx", basename);
+	COM_FOpenFile (name, &f);
+	if (f > 0) {
+		//Con_Printf("Trying to load: %s", name);
+		data = LoadPCX (name, matchwidth, matchheight);
+		
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 1);
+		
+		free(data);
+		COM_CloseFile (f);
+		return texnum;
+	}
+	
+	//Try TGA
+	sprintf (name, "%s.tga", basename);
+	COM_FOpenFile (name, &f);
+	if (f > 0){
+		data = loadimagepixels (name, complain, matchwidth, matchheight);	
+		//Con_Printf("Trying to load: %s\n", name);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		
+		free(data);
+		COM_CloseFile (f);
+		return texnum;
+	}
+	//Try PNG
+	sprintf (name, "%s.png", basename);
+	COM_FOpenFile (name, &f);
+	if (f > 0){
+		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		Con_Printf("Trying to load: %s", name);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		
+		free(data);
+		COM_CloseFile (f);
+		return texnum;
+	}
+	//Try JPEG
+	sprintf (name, "%s.jpeg", basename);
+	COM_FOpenFile (name, &f);
+	if (f > 0){
+		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		Con_Printf("Trying to load: %s", name);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		
+		free(data);
+		COM_CloseFile (f);
+		return texnum;
+	}
+	sprintf (name, "%s.jpg", basename);
+	COM_FOpenFile (name, &f);
+	if (f > 0){
+		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		Con_Printf("Trying to load: %s", name);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		
+		free(data);
+		COM_CloseFile (f);
+		return texnum;
+	}
+	
+	if (data == NULL) { 
+		return 0;
+	}
+	
+	return 0;
+}
+
+extern char	skybox_name[32];
+extern char skytexname[32];
+int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap)
+{
+	int	f = 0;
+	int texnum;
+	char basename[128], name[132];
+	
+	int image_size = 128 * 128;
 	
 	byte* data = (byte*)malloc(image_size * 4);
 	byte *c;
@@ -934,55 +1142,61 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	sprintf (name, "%s.pcx", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0) {
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
-		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture (skytexname, image_width, image_height, data, mipmap, false, false, 4);
-
+		Con_Printf("Trying to load: %s", name);
+		data = LoadPCX (name, matchwidth, matchheight);
+		
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		
 		free(data);
+		COM_CloseFile (f);
 		return texnum;
 	}
 	
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
 	COM_FOpenFile (name, &f);
-	if (f){
+	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);	
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture (skytexname, image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
+		COM_CloseFile (f);
 		return texnum;
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
 	COM_FOpenFile (name, &f);
-	if (f){
+	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture (skytexname, image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
+		COM_CloseFile (f);
 		return texnum;
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
 	COM_FOpenFile (name, &f);
-	if (f){
+	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture (skytexname, image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
+		COM_CloseFile (f);
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
 	COM_FOpenFile (name, &f);
-	if (f){
+	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture (skytexname, image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 1);
 		
 		free(data);
+		COM_CloseFile (f);
 		return texnum;
 	}
 	
@@ -993,5 +1207,3 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	
 	return 0;
 }
-// Tomaz || TGA End
-

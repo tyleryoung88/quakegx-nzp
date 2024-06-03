@@ -387,6 +387,24 @@ void CL_DecayLights (void)
 	}
 }
 
+dlighttype_t SetDlightColor (float f, dlighttype_t def, qboolean random)
+{
+	dlighttype_t	colors[NUM_DLIGHTTYPES-4] = {lt_red, lt_blue, lt_redblue, lt_green};
+
+	if ((int)f == 1)
+		return lt_red;
+	else if ((int)f == 2)
+		return lt_blue;
+	else if ((int)f == 3)
+		return lt_redblue;
+	else if ((int)f == 4)
+		return lt_green;
+	else if (((int)f == NUM_DLIGHTTYPES - 3) && random)
+		return colors[rand()%(NUM_DLIGHTTYPES-4)];
+	else
+		return def;
+}
+
 
 /*
 ===============
@@ -608,6 +626,131 @@ void CL_RelinkEntities (void)
 		}
 #endif
 
+		if (ent->effects & EF_BLUELIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin,  dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 0.25;
+			dl->color[1] = 0.25;
+			dl->color[2] = 2;
+		}
+
+		if (ent->effects & EF_REDLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin,  dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 2;
+			dl->color[1] = 0.25;
+			dl->color[2] = 0.25;
+		}
+
+		if (ent->effects & EF_ORANGELIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin,  dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 2;
+			dl->color[1] = 1;
+			dl->color[2] = 0;
+		}
+
+		if (ent->effects & EF_GREENLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin,  dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 0.25;
+			dl->color[1] = 2;
+			dl->color[2] = 0.25;
+		}
+		
+		if (ent->effects & EF_PURPLELIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin,  dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 2;
+			dl->color[1] = 0.25;
+			dl->color[2] = 2;
+		}
+
+		if (ent->effects & EF_CYANLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 0.765;
+			dl->color[1] = 1.40;
+			dl->color[2] = 1.95;
+		}
+
+		if (ent->effects & EF_PINKLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 2.37;
+			dl->color[1] = 1.35;
+			dl->color[2] = 1.35;
+		}
+
+		if (ent->effects & EF_LIMELIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 1;
+			dl->color[1] = 2;
+			dl->color[2] = 1;
+		}
+
+		if (ent->effects & EF_YELLOWLIGHT)
+		{
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->die = cl.time + 0.001;
+			dl->radius = 100;
+			dl->color[0] = 2;
+			dl->color[1] = 2;
+			dl->color[2] = 1;
+		}
+
+		if (ent->effects & EF_RAYGREEN)
+		{
+			//QMB_RocketTrail(oldorg, ent->origin, RAYGREEN_TRAIL);
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->radius = 25;
+			dl->die = cl.time + 0.01;
+	        dl->color[0] = 0;
+			dl->color[1] = 255;
+			dl->color[2] = 0;
+	        dl->type = SetDlightColor (2, lt_rocket, true);
+		}
+
+		if (ent->effects & EF_RAYRED)
+		{
+			//QMB_RocketTrail(oldorg, ent->origin, RAYRED_TRAIL);
+			dl = CL_AllocDlight (i);
+			VectorCopy (ent->origin, dl->origin);
+			dl->radius = 25;
+			dl->die = cl.time + 0.01;
+	        dl->color[0] = 255;
+			dl->color[1] = 0;
+			dl->color[2] = 0;
+	        dl->type = SetDlightColor (2, lt_rocket, true);
+		}
+
 		if (ent->model->flags & EF_GIB)
 			R_RocketTrail (oldorg, ent->origin, 2);
 		else if (ent->model->flags & EF_ZOMGIB)
@@ -622,12 +765,29 @@ void CL_RelinkEntities (void)
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 200;
-			dl->die = cl.time + 0.01f;
+			dl->die = cl.time + 0.01;
+			dl->color[0] = 0.2;
+			dl->color[1] = 0.1;
+			dl->color[2] = 0.5;
+			dl->type = SetDlightColor (2, lt_rocket, true);
 		}
 		else if (ent->model->flags & EF_GRENADE)
 			R_RocketTrail (oldorg, ent->origin, 1);
 		else if (ent->model->flags & EF_TRACER3)
 			R_RocketTrail (oldorg, ent->origin, 6);
+		
+		// Tomaz - QC Glow Begin
+        if (ISLMPOINT(ent))
+        {
+	        dl = CL_AllocDlight (i);
+	        VectorCopy (ent->origin, dl->origin);
+	        dl->radius = 150;
+	        dl->die = cl.time + 0.001;
+	        dl->color[0] = ent->rendercolor[0];
+	        dl->color[1] = ent->rendercolor[1];
+	        dl->color[2] = ent->rendercolor[2];
+        }
+		// Tomaz - QC Glow End
 
 		ent->forcelink = FALSE;
 

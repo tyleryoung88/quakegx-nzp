@@ -138,104 +138,109 @@ LIGHT SAMPLING
 
 mplane_t		*lightplane;
 vec3_t			lightspot;
+vec3_t			lightcolor; //johnfitz -- lit support via lordhavoc
 
-int RecursiveLightPoint (mnode_t *node, vec3_t start, vec3_t end)
+/*
+=============
+RecursiveLightPoint -- johnfitz -- replaced entire function for lit support via lordhavoc
+=============
+*/
+int RecursiveLightPoint (vec3_t color, mnode_t *node, vec3_t start, vec3_t end)
 {
-	int			r;
 	float		front, back, frac;
-	int			side;
-	mplane_t	*plane;
 	vec3_t		mid;
-	msurface_t	*surf;
-	int			s, t, ds, dt;
-	int			i;
-	mtexinfo_t	*tex;
-	byte		*lightmap;
-	unsigned	scale;
-	int			maps;
 
+loc0:
 	if (node->contents < 0)
-		return -1;		// didn't hit anything
-	
-// calculate mid point
+		return false;		// didn't hit anything
 
-// FIXME: optimize for axial
-	plane = node->plane;
-	front = DotProduct (start, plane->normal) - plane->dist;
-	back = DotProduct (end, plane->normal) - plane->dist;
-	side = front < 0;
-	
-	if ( (back < 0) == side)
-		return RecursiveLightPoint (node->children[side], start, end);
-	
+// calculate mid point
+	if (node->plane->type < 3)
+	{
+		front = start[node->plane->type] - node->plane->dist;
+		back = end[node->plane->type] - node->plane->dist;
+	}
+	else
+	{
+		front = DotProduct(start, node->plane->normal) - node->plane->dist;
+		back = DotProduct(end, node->plane->normal) - node->plane->dist;
+	}
+
+	// LordHavoc: optimized recursion
+	if ((back < 0) == (front < 0))
+//		return RecursiveLightPoint (color, node->children[front < 0], start, end);
+	{
+		node = node->children[front < 0];
+		goto loc0;
+	}
+
 	frac = front / (front-back);
 	mid[0] = start[0] + (end[0] - start[0])*frac;
 	mid[1] = start[1] + (end[1] - start[1])*frac;
 	mid[2] = start[2] + (end[2] - start[2])*frac;
-	
-// go down front side	
-	r = RecursiveLightPoint (node->children[side], start, mid);
-	if (r >= 0)
-		return r;		// hit something
-		
-	if ( (back < 0) == side )
-		return -1;		// didn't hit anuthing
-		
-// check for impact on this node
-	VectorCopy (mid, lightspot);
-	lightplane = plane;
 
-	surf = cl.worldmodel->surfaces + node->firstsurface;
-	for (i=0 ; i<node->numsurfaces ; i++, surf++)
+// go down front side
+	if (RecursiveLightPoint (color, node->children[front < 0], start, mid))
+		return true;	// hit something
+	else
 	{
-		if (surf->flags & SURF_DRAWTILED)
-			continue;	// no lightmaps
+		int i, ds, dt;
+		msurface_t *surf;
+	// check for impact on this node
+		VectorCopy (mid, lightspot);
+		lightplane = node->plane;
 
-		tex = surf->texinfo;
-		
-		s = DotProduct (mid, tex->vecs[0]) + tex->vecs[0][3];
-		t = DotProduct (mid, tex->vecs[1]) + tex->vecs[1][3];;
-
-		if (s < surf->texturemins[0] ||
-		t < surf->texturemins[1])
-			continue;
-		
-		ds = s - surf->texturemins[0];
-		dt = t - surf->texturemins[1];
-		
-		if ( ds > surf->extents[0] || dt > surf->extents[1] )
-			continue;
-
-		if (!surf->samples)
-			return 0;
-
-		ds >>= 4;
-		dt >>= 4;
-
-		lightmap = surf->samples;
-		r = 0;
-		if (lightmap)
+		surf = cl.worldmodel->surfaces + node->firstsurface;
+		for (i = 0;i < node->numsurfaces;i++, surf++)
 		{
+			if (surf->flags & SURF_DRAWTILED)
+				continue;	// no lightmaps
 
-			lightmap += dt * ((surf->extents[0]>>4)+1) + ds;
+		// ericw -- added double casts to force 64-bit precision.
+		// Without them the zombie at the start of jam3_ericw.bsp was
+		// incorrectly being lit up in SSE builds.
+			ds = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3]);
+			dt = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3]);
 
-			for (maps = 0 ; maps < MAXLIGHTMAPS && surf->styles[maps] != 255 ;
-					maps++)
+			if (ds < surf->texturemins[0] || dt < surf->texturemins[1])
+				continue;
+
+			ds -= surf->texturemins[0];
+			dt -= surf->texturemins[1];
+
+			if (ds > surf->extents[0] || dt > surf->extents[1])
+				continue;
+
+			if (surf->samples)
 			{
-				scale = d_lightstylevalue[surf->styles[maps]];
-				r += *lightmap * scale;
-				lightmap += ((surf->extents[0]>>4)+1) *
-						((surf->extents[1]>>4)+1);
-			}
-			
-			r >>= 8;
-		}
-		
-		return r;
-	}
+				// LordHavoc: enhanced to interpolate lighting
+				byte *lightmap;
+				int maps, line3, dsfrac = ds & 15, dtfrac = dt & 15, r00 = 0, g00 = 0, b00 = 0, r01 = 0, g01 = 0, b01 = 0, r10 = 0, g10 = 0, b10 = 0, r11 = 0, g11 = 0, b11 = 0;
+				float scale;
+				line3 = ((surf->extents[0]>>4)+1)*3;
 
-// go down back side
-	return RecursiveLightPoint (node->children[!side], mid, end);
+				lightmap = surf->samples + ((dt>>4) * ((surf->extents[0]>>4)+1) + (ds>>4))*3; // LordHavoc: *3 for color
+
+				for (maps = 0;maps < MAXLIGHTMAPS && surf->styles[maps] != 255;maps++)
+				{
+					scale = (float) d_lightstylevalue[surf->styles[maps]] * 1.0 / 256.0;
+					r00 += (float) lightmap[      0] * scale;g00 += (float) lightmap[      1] * scale;b00 += (float) lightmap[2] * scale;
+					r01 += (float) lightmap[      3] * scale;g01 += (float) lightmap[      4] * scale;b01 += (float) lightmap[5] * scale;
+					r10 += (float) lightmap[line3+0] * scale;g10 += (float) lightmap[line3+1] * scale;b10 += (float) lightmap[line3+2] * scale;
+					r11 += (float) lightmap[line3+3] * scale;g11 += (float) lightmap[line3+4] * scale;b11 += (float) lightmap[line3+5] * scale;
+					lightmap += ((surf->extents[0]>>4)+1) * ((surf->extents[1]>>4)+1)*3; // LordHavoc: *3 for colored lighting
+				}
+
+				color[2] += (float) ((int) ((((((((r11-r10) * dsfrac) >> 4) + r10)-((((r01-r00) * dsfrac) >> 4) + r00)) * dtfrac) >> 4) + ((((r01-r00) * dsfrac) >> 4) + r00)));
+				color[1] += (float) ((int) ((((((((g11-g10) * dsfrac) >> 4) + g10)-((((g01-g00) * dsfrac) >> 4) + g00)) * dtfrac) >> 4) + ((((g01-g00) * dsfrac) >> 4) + g00)));
+				color[0] += (float) ((int) ((((((((b11-b10) * dsfrac) >> 4) + b10)-((((b01-b00) * dsfrac) >> 4) + b00)) * dtfrac) >> 4) + ((((b01-b00) * dsfrac) >> 4) + b00)));
+			}
+			return true; // success
+		}
+
+	// go down back side
+		return RecursiveLightPoint (color, node->children[front >= 0], mid, end);
+	}
 }
 
 /*
@@ -246,19 +251,18 @@ R_LightPoint -- johnfitz -- replaced entire function for lit support via lordhav
 int R_LightPoint (vec3_t p)
 {
 	vec3_t		end;
-	int			r;
-	
+
 	if (!cl.worldmodel->lightdata)
+	{
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
 		return 255;
-	
+	}
+
 	end[0] = p[0];
 	end[1] = p[1];
-	end[2] = p[2] - 2048;
-	
-	r = RecursiveLightPoint (cl.worldmodel->nodes, p, end);
-	
-	if (r == -1)
-		r = 0;
+	end[2] = p[2] - 8192; //johnfitz -- was 2048
 
-	return r;
+	lightcolor[0] = lightcolor[1] = lightcolor[2] = 0;
+	RecursiveLightPoint (lightcolor, cl.worldmodel->nodes, p, end);
+	return ((lightcolor[0] + lightcolor[1] + lightcolor[2]) * (1.0f / 3.0f));
 }

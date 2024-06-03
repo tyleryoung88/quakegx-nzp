@@ -434,6 +434,15 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 	vec3_t	org;
 	float	miss;
 	edict_t	*ent;
+	
+// Tomaz - QC Alpha Scale Glow Begin
+	eval_t  *val;
+	float	renderamt  = 0;
+	float	rendermode = 0;
+
+	float	rendercolor[3];
+	memset(rendercolor, 0, sizeof(rendercolor));
+// Tomaz - QC Alpha Scale Glow End
 
 // find the client's PVS
 	VectorAdd (clent->v.origin, clent->v.view_ofs, org);

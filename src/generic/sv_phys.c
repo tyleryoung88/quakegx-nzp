@@ -257,7 +257,7 @@ int SV_FlyMove (edict_t *ent, float time, trace_t *steptrace)
 		for (i=0 ; i<3 ; i++)
 			end[i] = ent->v.origin[i] + time_left * ent->v.velocity[i];
 
-		trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, FALSE, ent);
+		trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, MOVE_NOMONSTERS, ent);//Editted by blubs, we do want to ignore monsters in the trace
 
 		if (trace.allsolid)
 		{	// entity is trapped in another solid
@@ -1048,6 +1048,312 @@ void SV_WalkMove (edict_t *ent)
 	}
 }
 
+/*
+=================
+SV_Physics_Walk
+
+Blubswillrule
+
+A physics/velocity based walking method for monsters (zombies)
+
+
+The following functions are duplicates from player modified for use by monsters
+========================================================================================================================================================
+*/
+
+/*
+============
+SV_PushMonsterEntity
+
+duplicate of SV_PushEntity: used for monster velocities.
+
+Does not change the entities velocity at all
+============
+*/
+trace_t SV_PushMonsterEntity (edict_t *ent, vec3_t push)
+{
+	trace_t	trace;
+	vec3_t	end;
+
+	VectorAdd (ent->v.origin, push, end);
+
+	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, MOVE_NOMONSTERS, ent);
+	
+	VectorCopy (trace.endpos, ent->v.origin);
+	//SV_LinkEdict (ent, true); we don't need to link it here
+
+	if (trace.ent)
+		SV_Impact (ent, trace.ent);
+
+	return trace;
+}
+
+/*
+=====================
+SV_MonsterWalkMove
+
+duplicate SV_WalkMove: Only used by monsters who move by velocity
+======================
+*/
+void SV_MonsterWalkMove (edict_t *ent)
+{
+	vec3_t		upmove, downmove;
+	vec3_t		oldorg, oldvel;
+	vec3_t		nosteporg, nostepvel;
+	int			clip;
+	trace_t		steptrace, downtrace;
+
+//
+// do a regular slide move unless it looks like you ran into a step
+//
+	ent->v.flags = (int)ent->v.flags & ~FL_ONGROUND;
+
+	VectorCopy (ent->v.origin, oldorg);
+	VectorCopy (ent->v.velocity, oldvel);
+
+	clip = SV_FlyMove (ent, host_frametime, &steptrace);
+
+	if ( !(clip & 2) )
+		return;		// move didn't block on a step
+
+	//if (!oldonground && ent->v.waterlevel == 0)
+	//	return;		// don't stair up while jumping
+
+	if (ent->v.movetype != MOVETYPE_WALK)
+		return;		// gibbed by a trigger
+
+	VectorCopy (ent->v.origin, nosteporg);
+	VectorCopy (ent->v.velocity, nostepvel);
+//
+// try moving up and forward to go up a step
+//
+	VectorCopy (oldorg, ent->v.origin);	// back to start pos
+
+	VectorCopy (vec3_origin, upmove);
+	VectorCopy (vec3_origin, downmove);
+	upmove[2] = STEPSIZE;
+	downmove[2] = -STEPSIZE + oldvel[2]*host_frametime;
+
+// move up
+	SV_PushMonsterEntity (ent, upmove);	// FIXME: don't link?
+
+// move forward
+	ent->v.velocity[0] = oldvel[0];
+	ent->v. velocity[1] = oldvel[1];
+	ent->v. velocity[2] = 0;
+	clip = SV_FlyMove (ent, host_frametime, &steptrace);
+
+// check for stuckness, possibly due to the limited precision of floats
+// in the clipping hulls
+	/*if (clip)
+	{
+		if ( fabsf(oldorg[1] - ent->v.origin[1]) < 0.03125 && fabsf(oldorg[0] - ent->v.origin[0]) < 0.03125 )
+		{	// stepping up didn't make any progress
+			clip = SV_TryUnstick (ent, oldvel);
+		}
+	}*/
+
+// extra friction based on view angle
+	if ( clip & 2 )
+		SV_WallFriction (ent, &steptrace);
+
+// move down
+	downtrace = SV_PushMonsterEntity (ent, downmove);	// FIXME: don't link?
+
+	if (downtrace.plane.normal[2] > 0.7)
+	{
+		if (downtrace.ent->v.solid == SOLID_BSP)
+		{
+			ent->v.flags =	(int)ent->v.flags | FL_ONGROUND;
+			ent->v.groundentity = EDICT_TO_PROG(downtrace.ent);
+		}
+	}
+	else
+	{
+// if the push down didn't end up on good ground, use the move without
+// the step up.  This happens near wall / slope combinations, and can
+// cause the player to hop up higher on a slope too steep to climb
+		VectorCopy (nosteporg, ent->v.origin);
+		VectorCopy (nostepvel, ent->v.velocity);
+	}
+}
+
+//Creating a duplicate SV_TestEntityPosition, one that does not check for monsters.
+//=============
+edict_t	*SV_TestEntityPosition_NOMONSTERS(edict_t *ent)
+{
+	trace_t	trace;
+
+	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, ent->v.origin, MOVE_NOMONSTERS, ent);
+
+	if (trace.startsolid)
+		return sv.edicts;
+
+	return NULL;
+}
+//=============
+//Creating a duplicate checkstuck that uses the above modified SV_TestEntityPosition_NOMONSTERS
+
+//Also adds checking of the entities v.zoom value
+//1: used setorigin, so don't adjust for a collision
+//0: not in collision
+//=============
+
+void SV_CheckStuck_IgnoreMonsters (edict_t *ent)
+{
+	int		i, j;
+	int		z;
+	vec3_t	org;
+
+	if (!SV_TestEntityPosition_NOMONSTERS(ent))
+	{
+		VectorCopy (ent->v.origin, ent->v.oldorigin);
+		//ent->v.zoom = 0; // naievil -- fixme
+		return;
+	}
+
+	// naievil -- fixme
+	//if(ent->v.zoom == 1)//if used setorigin
+	//{
+	//	VectorCopy (ent->v.origin, ent->v.oldorigin);
+	//	return;//we don't care to adjust for stuckness, whoever used setorigin in qc better handle that
+	//}
+	VectorCopy (ent->v.origin, org);
+	VectorCopy (ent->v.oldorigin, ent->v.origin);
+	if (!SV_TestEntityPosition_NOMONSTERS(ent))
+	{
+		Con_DPrintf ("zombie unstuck from bsp hull or non-monster entity.\n");
+		SV_LinkEdict (ent, true);
+		return;
+	}
+
+	for (z=0 ; z< 18 ; z++)
+		for (i=-1 ; i <= 1 ; i++)
+			for (j=-1 ; j <= 1 ; j++)
+			{
+				ent->v.origin[0] = org[0] + i;
+				ent->v.origin[1] = org[1] + j;
+				ent->v.origin[2] = org[2] + z;
+				if (!SV_TestEntityPosition_NOMONSTERS(ent))
+				{
+					Con_DPrintf ("zombie unstuck from bsp hull or non-monster entity.\n");
+					SV_LinkEdict (ent, true);
+					return;
+				}
+			}
+
+	VectorCopy (org, ent->v.origin);
+	Con_DPrintf ("zombie is stuck in bsp hull or non-monster entity.\n");
+}
+//=============================
+//PushAwayZombies
+//blubswillrule
+//Makes sure zombies are not inside of each other
+//glorified version of PF_FindRadius
+//=============================
+void SV_PushAwayZombies(edict_t *ent)
+{
+	edict_t *other_ent;
+	float	rad = 64;//approx. length of bbox corner 
+	float	*org = ent->v.origin;
+	vec3_t	eorg;
+	int		i, j;
+
+	other_ent = NEXT_EDICT(sv.edicts);
+	for (i=1 ; i<sv.num_edicts ; i++, ent = NEXT_EDICT(other_ent))
+	{	
+		//if (other_ent->free)
+			//continue;
+		//if (ent->v.solid == SOLID_NOT)
+		//	continue;
+		if( other_ent->v.solid != SOLID_CORPSE)
+			continue;
+		if( other_ent->v.movetype != MOVETYPE_WALK)
+			continue;
+		for (j=0 ; j<3 ; j++)
+			eorg[j] = org[j] - (other_ent->v.origin[j] + (other_ent->v.mins[j] + other_ent->v.maxs[j])*0.5);
+		if (Length(eorg) > rad)
+		{	
+			Con_Printf ("Length Greater than bbox corner. \n");
+			continue;
+		}
+		//Process nearby zombie
+		for(j = 0; j < 2; j++)//only x & y
+		{
+			Con_Printf ("Pushing Zombie \n");
+			other_ent->v.velocity[j] += (other_ent->v.origin[j] - ent->v.origin[j]) * 0.01;//push away other zombie was 0.001
+			//ent->v.velocity[j] += (ent->v.origin[j] - other_ent->v.origin[j]) * 0.01;//push away self
+		}
+	}
+}
+//=============================
+
+void SV_Physics_Walk(edict_t 	*ent)
+{
+	//if (!SV_CheckWater (ent) && ! ((int)ent->v.flags & FL_WATERJUMP) )
+	//	SV_AddGravity (ent);
+	//Slight modification of AddGravity below
+	
+	//Zombie bbox is actually smaller, but the movement needs to pretend it is bigger
+	vec3_t old_mins;
+	vec3_t old_maxs;
+	
+	if(!SV_RunThink(ent))
+		return;
+
+	VectorCopy(ent->v.mins,old_mins);
+	VectorCopy(ent->v.maxs,old_maxs);
+	
+		//'-16,-16,-32', '16,16,40' sB reenabled PushAwayZombies
+	ent->v.mins[0] = -16; ent->v.mins[1] = -16; ent->v.mins[2] = -32;
+	ent->v.maxs[0] = 16; ent->v.maxs[1] = 16; ent->v.maxs[2] = 40;
+
+	//if (!((int)ent->v.flags & (FL_ONGROUND)))
+	//{
+		ent->v.velocity[2] -= 1.0 * sv_gravity.value * host_frametime;
+		SV_CheckVelocity (ent);
+	//}
+
+	//SV_CheckStuck_IgnoreMonsters(ent);
+	//PushAwayZombies causes too high of a drop in framerate
+		//SV_PushAwayZombies(ent);
+	SV_MonsterWalkMove(ent);
+	
+	
+	//checking for ground beneath us
+	trace_t	downtrace;
+	vec3_t	groundlocation;
+	VectorCopy(ent->v.origin,groundlocation);
+	groundlocation[2] += -STEPSIZE + ent->v.velocity[2]*host_frametime;
+	
+	downtrace = SV_Move(ent->v.origin,ent->v.mins,ent->v.maxs,groundlocation, MOVE_NOMONSTERS,ent);
+
+	if(!downtrace.allsolid && !downtrace.startsolid)
+	{
+		VectorCopy (downtrace.endpos, ent->v.origin);
+	
+		ent->v.flags = (int) ent->v.flags & ~FL_ONGROUND;
+		if (downtrace.plane.normal[2] > 0.7)
+		{
+			if(downtrace.ent)
+			{
+				if (downtrace.ent->v.solid == SOLID_BSP)
+				{
+					ent->v.flags =	(int) ent->v.flags | FL_ONGROUND;
+					ent->v.groundentity = EDICT_TO_PROG(downtrace.ent);
+					ent->v.velocity[2] = 0;
+				}
+			}
+		}
+	}
+	
+	//restoring the bounding boxes
+	VectorCopy(old_mins,ent->v.mins);
+	VectorCopy(old_maxs,ent->v.maxs);
+	
+	SV_LinkEdict(ent,true);
+}
+
 
 /*
 ================
@@ -1145,7 +1451,6 @@ void SV_Physics_None (edict_t *ent)
 	SV_RunThink (ent);
 }
 
-#ifdef QUAKE2
 /*
 =============
 SV_Physics_Follow
@@ -1160,7 +1465,6 @@ void SV_Physics_Follow (edict_t *ent)
 	VectorAdd (PROG_TO_EDICT(ent->v.aiment)->v.origin, ent->v.v_angle, ent->v.origin);
 	SV_LinkEdict (ent, TRUE);
 }
-#endif
 
 /*
 =============
@@ -1219,7 +1523,7 @@ void SV_CheckWaterTransition (edict_t *ent)
 	{
 		if (ent->v.watertype == CONTENTS_EMPTY)
 		{	// just crossed into water
-			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
+			//SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
 		}		
 		ent->v.watertype = cont;
 		ent->v.waterlevel = 1;
@@ -1228,7 +1532,7 @@ void SV_CheckWaterTransition (edict_t *ent)
 	{
 		if (ent->v.watertype != CONTENTS_EMPTY)
 		{	// just crossed into water
-			SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
+			//SV_StartSound (ent, 0, "misc/h2ohit1.wav", 255, 1);
 		}		
 		ent->v.watertype = CONTENTS_EMPTY;
 		ent->v.waterlevel = cont;
@@ -1481,12 +1785,6 @@ void SV_Physics_Step (edict_t *ent)
 		SV_CheckVelocity (ent);
 		SV_FlyMove (ent, host_frametime, NULL);
 		SV_LinkEdict (ent, TRUE);
-
-		if ( (int)ent->v.flags & FL_ONGROUND )	// just hit ground
-		{
-			if (hitsound)
-				SV_StartSound (ent, 0, "demon/dland2.wav", 255, 1);
-		}
 	}
 
 // regular thinking
@@ -1537,24 +1835,32 @@ void SV_Physics (void)
 			SV_Physics_Pusher (ent);
 		else if (ent->v.movetype == MOVETYPE_NONE)
 			SV_Physics_None (ent);
-#ifdef QUAKE2
 		else if (ent->v.movetype == MOVETYPE_FOLLOW)
 			SV_Physics_Follow (ent);
-#endif
+		else if(ent->v.movetype == MOVETYPE_WALK)
+			SV_Physics_Walk(ent);
 		else if (ent->v.movetype == MOVETYPE_NOCLIP)
 			SV_Physics_Noclip (ent);
 		else if (ent->v.movetype == MOVETYPE_STEP)
 			SV_Physics_Step (ent);
 		else if (ent->v.movetype == MOVETYPE_TOSS 
 		|| ent->v.movetype == MOVETYPE_BOUNCE
-#ifdef QUAKE2
 		|| ent->v.movetype == MOVETYPE_BOUNCEMISSILE
-#endif
 		|| ent->v.movetype == MOVETYPE_FLY
 		|| ent->v.movetype == MOVETYPE_FLYMISSILE)
 			SV_Physics_Toss (ent);
 		else
 			Sys_Error ("SV_Physics: bad movetype %i", (int)ent->v.movetype);			
+	}
+	
+	if (EndFrame)
+	{
+		// let the progs know that the frame has ended
+		pr_global_struct->self = EDICT_TO_PROG(sv.edicts);
+		pr_global_struct->other = EDICT_TO_PROG(sv.edicts);
+		pr_global_struct->time = sv.time;
+		PR_ExecuteProgram (EndFrame);
+
 	}
 	
 	if (pr_global_struct->force_retouch)

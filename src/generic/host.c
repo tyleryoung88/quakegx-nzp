@@ -902,11 +902,12 @@ void Host_Init (quakeparms_t *parms)
 		S_Init ();
 		CDAudio_Init ();
 		Sbar_Init ();
+		HUD_Init ();
 		CL_Init ();
 		IN_Init ();
 	}
 
-	Cbuf_InsertText ("exec quake.rc\n");
+	Cbuf_InsertText ("exec nzp.rc\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();

@@ -105,6 +105,7 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0"};
+cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 
 //johnfitz -- struct for passing lerp information to drawing functions
 typedef struct {
@@ -352,6 +353,9 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 
 	commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	
+	//glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
+	//
+	
 	while (1)
 	{
 		// get the vertex count and primitive type
@@ -383,24 +387,16 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 								verts1->v[1]*iblend + verts2->v[1]*blend,
 								verts1->v[2]*iblend + verts2->v[2]*blend);
 								
-								//GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
-								
 				verts1++;
 				verts2++;
 			} else {
 				//glVertex3f (verts1->v[0], verts1->v[1], verts1->v[2]);
 				GX_Position3f32(verts1->v[0], verts1->v[1], verts1->v[2]);
-
-				//GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
 				
 				verts1++;
 
 			}
-			
-			l = shadedots[verts1->lightnormalindex] * shadelight;
-			l *= 255; if (l > 255.0f) l = 255.0f;
-			GX_Color4u8(l, l, l, 0xff);
-			
+			GX_Color4u8(lightcolor[2], lightcolor[1], lightcolor[0], 0xff);
 			GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
 			
 			commands += 2;
@@ -651,7 +647,10 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	aliashdr_t	*paliashdr;
 	entity_t 	*limb_ent;
 	lerpdata_t	lerpdata;
-#if 0
+	Mtx			temp;
+	
+	return;
+#if 1
 	switch(which) {
 		case 1:
 			limb_ent = &cl_entities[e->z_head];
@@ -688,30 +687,43 @@ void R_DrawZombieLimb (entity_t *e, int which)
 		lightcolor[2] += 48;
 	}
 
-	glPushMatrix ();
-	R_RotateForEntity (e, e->scale);
+	//glPushMatrix ();
+	//R_RotateForEntity (e, e->scale);
+	c_guMtxIdentity(model);
+	R_RotateForEntity (e);
 
-	glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-	glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
-
+	//glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	//glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+	
+	c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	c_guMtxConcat(model, temp, model);
+	c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+	c_guMtxConcat(model, temp, model);
+/*
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
 	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
+*/
+	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+/*
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
-
+*/
 	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
 	GL_DrawAliasFrame(paliashdr, lerpdata);
 
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
+	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+/*
 	glShadeModel (GL_FLAT);
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
-	glPopMatrix ();
+*/
+	//glPopMatrix ();
+	
+	c_guMtxConcat(view,model,modelview);
+	GX_LoadPosMtxImm(view, GX_PNMTX0); //(modelview, GX_PNMTX0)
 #endif
 }
 
@@ -751,6 +763,14 @@ void R_DrawAliasModel (entity_t *e)
 
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
+
+	for(int g = 0; g < 3; g++)
+	{
+		if(lightcolor[g] < 8)
+			lightcolor[g] = 8;
+		if(lightcolor[g] > 125)
+			lightcolor[g] = 125;
+	}
 
 	//
 	// get lighting information
@@ -808,7 +828,7 @@ void R_DrawAliasModel (entity_t *e)
 	//
 	// locate the proper data
 	//
-	/*
+	
 	if(doZHack && specChar == '%')
 	{
 		if(clmodel->name[12] == 'c')
@@ -817,7 +837,6 @@ void R_DrawAliasModel (entity_t *e)
 			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
 	}
 	else
-		*/
 		paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
 
 	c_alias_polys += paliashdr->numtris;
@@ -827,6 +846,22 @@ void R_DrawAliasModel (entity_t *e)
 	//
 
 	GL_DisableMultitexture();
+	
+	//Shpuld
+	if(r_model_brightness.value)
+	{
+		lightcolor[0] += 60;
+		lightcolor[1] += 60;
+		lightcolor[2] += 60;
+	}
+	
+	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+	if (add > 0.0f)
+	{
+		lightcolor[0] += add / 3.0f;
+		lightcolor[1] += add / 3.0f;
+		lightcolor[2] += add / 3.0f;
+	}
 
 	c_guMtxIdentity(model);
 	R_RotateForEntity (e);
@@ -846,7 +881,7 @@ void R_DrawAliasModel (entity_t *e)
 
 	c_guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
-	/*
+
 	if (specChar == '%')//Zombie body
 	{
 		switch(e->skinnum)
@@ -870,10 +905,10 @@ void R_DrawAliasModel (entity_t *e)
 		}
 	}
 	else
-	{*/
+	{
 		anim = (int)(cl.time*10) & 3;
 		GL_Bind0(paliashdr->gl_texturenum[currententity->skinnum][anim]);
-	//}
+	}
 
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
@@ -898,7 +933,7 @@ void R_DrawAliasModel (entity_t *e)
 	GL_DrawAliasFrame(paliashdr, lerpdata);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
-	/*
+	
 	if (doZHack == 0 && specChar == '%')//if we're drawing zombie, also draw its limbs in one call
 	{
 		if(e->z_head)
@@ -907,8 +942,7 @@ void R_DrawAliasModel (entity_t *e)
 			R_DrawZombieLimb(e,2);
 		if(e->z_rarm)
 			R_DrawZombieLimb(e,3);
-	}
-	*/
+	}	
 
 /* ELUTODO
 	glShadeModel (GL_FLAT);
@@ -953,10 +987,33 @@ void R_DrawEntitiesOnList (void)
 	for (i=0 ; i<cl_numvisedicts ; i++)
 	{
 		currententity = cl_visedicts[i];
+		
+		specChar = currententity->model->name[strlen(currententity->model->name)-5];
+
+		if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
+		{
+			continue;
+		}
+		doZHack = 0;
+		if(specChar == '%')
+		{
+			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
+			{
+				doZHack = 1;
+			}
+			else
+			{
+				zHackCount ++;//drawing zombie piece by piece.
+			}
+		}
 
 		switch (currententity->model->type)
 		{
 		case mod_alias:
+			if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
+			{
+				continue;
+			}
 			R_DrawAliasModel (currententity);
 			break;
 
@@ -967,12 +1024,18 @@ void R_DrawEntitiesOnList (void)
 		default:
 			break;
 		}
+		doZHack = 0;
 	}
 
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	for (i=0 ; i<cl_numvisedicts ; i++)
 	{
 		currententity = cl_visedicts[i];
+		
+		if(!(currententity->model))
+		{
+			continue;
+		}
 
 		switch (currententity->model->type)
 		{

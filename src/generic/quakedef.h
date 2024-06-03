@@ -208,6 +208,11 @@ typedef struct
 	int		colormap;
 	int		skin;
 	int		effects;
+	// dr_mabuse1981: HalfLife rendermodes fixed START
+	unsigned short renderamt;
+	unsigned short rendermode;
+	unsigned short rendercolor;
+	// dr_mabuse1981: HalfLife rendermodes fixed END
 } entity_state_t;
 
 
@@ -319,6 +324,7 @@ void R_ClearSkyBox (void);
 void EmitBothSkyLayers (msurface_t *fa);
 
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
+int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
 
 //ZOMBIE AI STUFF
 #define MAX_WAYPOINTS 256 //max waypoints

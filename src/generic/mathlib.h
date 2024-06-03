@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 typedef float vec_t;
 typedef vec_t vec3_t[3];
 typedef vec_t vec5_t[5];
+typedef vec_t vec2_t[2];
 
 typedef	int	fixed4_t;
 typedef	int	fixed8_t;
@@ -55,6 +56,8 @@ vec_t _DotProduct (vec3_t v1, vec3_t v2);
 void _VectorSubtract (vec3_t veca, vec3_t vecb, vec3_t out);
 void _VectorAdd (vec3_t veca, vec3_t vecb, vec3_t out);
 void _VectorCopy (vec3_t in, vec3_t out);
+
+void vectoangles (vec3_t vec, vec3_t ang);
 
 int VectorCompare (vec3_t v1, vec3_t v2);
 vec_t Length (vec3_t v);

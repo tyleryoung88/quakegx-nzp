@@ -235,22 +235,20 @@ char		scr_usestring[64];
 char 		scr_usestring2[64];
 float		scr_usetime_off = 0.0f;
 int			button_pic_x;
-/*
+
 extern qpic_t 		*b_abutton;
 extern qpic_t 		*b_bbutton;
-extern qpic_t 		*b_ybutton;
-extern qpic_t 		*b_xbutton;
+extern qpic_t 		*b_cbutton;
+extern qpic_t 		*b_zbutton;
 extern qpic_t 		*b_left;
 extern qpic_t 		*b_right;
 extern qpic_t 		*b_up;
-extern qpic_t 		*b_down;
-extern qpic_t 		*b_lt;
-extern qpic_t 		*b_rt;
-extern qpic_t 		*b_start;
-extern qpic_t 		*b_select;
-extern qpic_t		*b_zlt;
-extern qpic_t 		*b_zrt;
-*/
+extern qpic_t		*b_down;
+extern qpic_t 		*b_minus;
+extern qpic_t 		*b_plus;
+extern qpic_t 		*b_home;
+extern qpic_t 		*b_one;
+extern qpic_t 		*b_two;
 
 /*
 ==============
@@ -262,7 +260,7 @@ Similiar to above, but will also print the current button for the action.
 
 qpic_t *GetButtonIcon (char *buttonname)
 {
-	/*
+	
 	int		j;
 	int		l;
 	char	*b;
@@ -275,7 +273,6 @@ qpic_t *GetButtonIcon (char *buttonname)
 			continue;
 		if (!strncmp (b, buttonname, l) )
 		{
-			// naievil -- need to fix these
 			if (!strcmp(Key_KeynumToString(j), "PADUP"))
 				return b_up;
 			else if (!strcmp(Key_KeynumToString(j), "PADDOWN"))
@@ -284,28 +281,27 @@ qpic_t *GetButtonIcon (char *buttonname)
 				return b_left;
 			else if (!strcmp(Key_KeynumToString(j), "PADRIGHT"))
 				return b_right;
-			else if (!strcmp(Key_KeynumToString(j), "SELECT"))
-				return b_select;
+			else if (!strcmp(Key_KeynumToString(j), "MINUS"))
+				return b_minus;
+			else if (!strcmp(Key_KeynumToString(j), "PLUS"))
+				return b_plus;
 			else if (!strcmp(Key_KeynumToString(j), "ABUTTON"))
 				return b_abutton;
 			else if (!strcmp(Key_KeynumToString(j), "BBUTTON"))
 				return b_bbutton;
-			else if (!strcmp(Key_KeynumToString(j), "XBUTTON"))
-				return b_xbutton;
-			else if (!strcmp(Key_KeynumToString(j), "YBUTTON"))
-				return b_ybutton;
-			else if (!strcmp(Key_KeynumToString(j), "LTRIGGER"))
-				return b_lt;
-			else if (!strcmp(Key_KeynumToString(j), "RTRIGGER"))
-				return b_rt;
-			else if (!strcmp(Key_KeynumToString(j), "ZLTRIGGER"))
-				return b_zlt;
-			else if (!strcmp(Key_KeynumToString(j), "ZRTRIGGER"))
-				return b_zrt;
+			else if (!strcmp(Key_KeynumToString(j), "ZBUTTON"))
+				return b_zbutton;
+			else if (!strcmp(Key_KeynumToString(j), "CBUTTON"))
+				return b_cbutton;
+			else if (!strcmp(Key_KeynumToString(j), "HOME"))
+				return b_home;
+			else if (!strcmp(Key_KeynumToString(j), "ONE"))
+				return b_one;
+			else if (!strcmp(Key_KeynumToString(j), "TWO"))
+				return b_two;
 		}
 	}
 	return b_abutton;
-	*/
 }
 
 char *GetUseButtonL ()
@@ -322,9 +318,9 @@ char *GetUseButtonL ()
 			continue;
 		if (!strncmp (b, "+use", l) )
 		{
-			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
-				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
+			if (!strcmp(Key_KeynumToString(j), "MINUS") ||
+				!strcmp(Key_KeynumToString(j), "ABUTTON") ||
+				!strcmp(Key_KeynumToString(j), "BBUTTON") ||
 				!strcmp(Key_KeynumToString(j), "HOME"))
 				return "  ";
 			else
@@ -348,9 +344,9 @@ char *GetGrenadeButtonL ()
 			continue;
 		if (!strncmp (b, "+grenade", l) )
 		{
-			if (!strcmp(Key_KeynumToString(j), "SELECT") ||
-				!strcmp(Key_KeynumToString(j), "LTRIGGER") ||
-				!strcmp(Key_KeynumToString(j), "RTRIGGER") ||
+			if (!strcmp(Key_KeynumToString(j), "MINUS") ||
+				!strcmp(Key_KeynumToString(j), "ABUTTON") ||
+				!strcmp(Key_KeynumToString(j), "BBUTTON") ||
 				!strcmp(Key_KeynumToString(j), "HOME"))
 				return "  ";
 			else
@@ -525,7 +521,7 @@ void SCR_DrawUseString (void)
 
     Draw_String (x, y, scr_usestring);
 	Draw_String (x2, y + 10, scr_usestring2);
-	//Draw_Pic (x + button_pic_x*8, y - 4, GetButtonIcon("+use"));
+	Draw_Pic (x + button_pic_x*8, y - 6, GetButtonIcon("+use"));
 }
 
 void SCR_CheckDrawUseString (void)
@@ -1184,6 +1180,102 @@ void SCR_TileClear (void)
 	}
 }
 
+int GetWeaponZoomAmmount (void)
+{
+    switch (cl.stats[STAT_ACTIVEWEAPON])
+    {
+        case W_COLT:
+            return 10;
+			break;
+		case W_SPRING:
+		case W_PULVERIZER:
+		case W_KAR:
+		case W_ARMAGEDDON:
+			return 25;
+			break;
+		case W_KAR_SCOPE:
+		case W_HEADCRACKER:
+			return 47;
+			break;
+		case W_THOMPSON:
+		case W_GIBS:
+			return 10;
+			break;
+		case W_TRENCH:
+		case W_GUT:
+			return 10;
+			break;
+		case W_357:
+		case W_KILLU:
+			return 5;
+			break;
+		case W_MG:
+		case W_BARRACUDA:
+			return 15;
+			break;
+		case W_DB:
+		case W_BORE:
+		case W_SAWNOFF:
+			return 10;
+			break;
+		case W_M1A1:
+		case W_WIDDER:
+			return 20;
+			break;
+		case W_BAR:
+		case W_WIDOW:
+			return 30;
+			break;
+		case W_FG:
+		case W_IMPELLER:
+			return 30;
+			break;
+		case W_GEWEHR:
+		case W_COMPRESSOR:
+			return 25;
+			break;
+		case W_PPSH:
+		case W_REAPER:
+			return 10;
+			break;
+		case W_MP40:
+		case W_AFTERBURNER:
+			return 10;
+			break;
+		case W_MP5:
+		case W_KOLLIDER:
+			return 10;
+			break;
+		case W_STG:
+		case W_SPATZ:
+			return 20;
+			break;
+		case W_M1:
+		case W_M1000:
+			return 25;
+			break;
+		case W_BROWNING:
+		case W_ACCELERATOR:
+			return 15;
+			break;
+		case W_PTRS:
+		case W_PENETRATOR:
+			return 50;
+			break;
+		case W_TYPE:
+		case W_SAMURAI:
+			return 10;
+			break;
+		case W_RAY:
+		case W_PORTER:
+			return 5;
+			break;
+        default:
+            return 5;
+            break;
+    }
+}
+
 /*
 ==================
 SCR_UpdateScreen
@@ -1195,6 +1287,9 @@ WARNING: be very careful calling this from elsewhere, because the refresh
 needs almost the entire 256k of stack space!
 ==================
 */
+float zoomin_time;
+int original_fov;
+int original_view_fov;
 void SCR_UpdateScreen (void)
 {
 	if (block_drawing)
@@ -1221,6 +1316,43 @@ void SCR_UpdateScreen (void)
 
 
 	GL_BeginRendering (&glx, &gly, &glwidth, &glheight);
+	
+	if (cl.stats[STAT_ZOOM] == 1)
+	{/*
+		if(!original_fov) {
+			original_fov = scr_fov.value;
+			original_view_fov = scr_fov_viewmodel.value;
+		}
+		*/	
+		if(scr_fov.value > (GetWeaponZoomAmmount() + 1))//+1 for accounting for floating point inaccurraces
+		{
+			scr_fov.value += ((original_fov - GetWeaponZoomAmmount()) - scr_fov.value) * 0.25;
+			//scr_fov_viewmodel.value += ((original_view_fov - GetWeaponZoomAmmount()) - scr_fov_viewmodel.value) * 0.25;
+			Cvar_SetValue("fov",scr_fov.value);
+			//Cvar_SetValue("r_viewmodel_fov", scr_fov_viewmodel.value);
+		}
+	}
+	else if (cl.stats[STAT_ZOOM] == 2)
+	{
+		Cvar_SetValue ("fov", 30);
+		//Cvar_SetValue ("r_viewmodel_fov", 30);
+		zoomin_time = 0;
+	}
+	else if (cl.stats[STAT_ZOOM] == 0 && original_fov != 0)
+	{
+		if(scr_fov.value < (original_fov + 1))//+1 for accounting for floating point inaccuracies
+		{
+			scr_fov.value += (original_fov - scr_fov.value) * 0.25;
+			//scr_fov_viewmodel.value += (original_view_fov - scr_fov_viewmodel.value) * 0.25;
+			Cvar_SetValue("fov",scr_fov.value);
+			//Cvar_SetValue("r_viewmodel_fov", scr_fov_viewmodel.value);
+		}
+		else
+		{
+			original_fov = 0;
+			original_view_fov = 0;
+		}
+	}
 	
 	//
 	// determine size of refresh window

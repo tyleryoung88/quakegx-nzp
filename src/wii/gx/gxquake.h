@@ -38,6 +38,37 @@ extern glvert_t glv;
 
 extern	int glx, gly, glwidth, glheight;
 
+/*
+---------------------------------
+half-life Render Modes. Crow_bar
+---------------------------------
+*/
+
+#define TEX_COLOR    1
+#define TEX_TEXTURE  2
+#define TEX_GLOW     3
+#define TEX_SOLID    4
+#define TEX_ADDITIVE 5
+#define TEX_LMPOINT  6 //for light point
+
+#define ISCOLOR(ent)    ((ent)->rendermode == TEX_COLOR    && ((ent)->rendercolor[0] <= 1|| \
+                                                               (ent)->rendercolor[1] <= 1|| \
+															   (ent)->rendercolor[2] <= 1))
+
+#define ISTEXTURE(ent)  ((ent)->rendermode == TEX_TEXTURE  && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
+#define ISGLOW(ent)     ((ent)->rendermode == TEX_GLOW     && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
+#define ISSOLID(ent)    ((ent)->rendermode == TEX_SOLID    && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
+#define ISADDITIVE(ent) ((ent)->rendermode == TEX_ADDITIVE && (ent)->renderamt > 0 && (ent)->renderamt <= 1)
+
+#define ISLMPOINT(ent)  ((ent)->rendermode == TEX_LMPOINT  && ((ent)->rendercolor[0] <= 1|| \
+                                                               (ent)->rendercolor[1] <= 1|| \
+															   (ent)->rendercolor[2] <= 1))
+/*
+---------------------------------
+//half-life Render Modes
+---------------------------------
+*/
+
 // r_local.h -- private refresh defs
 
 #define ALIAS_BASE_SIZE_RATIO		(1.0 / 11.0)
@@ -173,6 +204,8 @@ extern	cvar_t	gl_reporttjunctions;
 extern	cvar_t	gl_nocolors;
 extern	cvar_t	gl_doubleeyes;
 
+extern  cvar_t  r_model_brightness;
+
 extern	cvar_t	gl_max_size;
 extern	cvar_t	gl_playermip;
 
@@ -217,6 +250,8 @@ typedef struct
 	qboolean	keep;
 
 	qboolean	used;
+	
+	qboolean	islmp;
 	
 	// Diabolicka TGA
 	int			bytesperpixel;
