@@ -50,7 +50,7 @@ char *svc_strings[] =
 	"svc_updatepoints",	// [byte] [short]
 	"svc_clientdata",		// <shortbits + data>
 	"svc_stopsound",		// <see code>
-	"svc_updatecolors",	// [byte] [byte]
+	"",	// [byte] [byte]
 	"svc_particle",		// [vec3] <variable>
 	"svc_damage",			// [byte] impact [byte] blood [vec3] from
 

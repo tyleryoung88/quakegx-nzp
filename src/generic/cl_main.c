@@ -827,31 +827,33 @@ void CL_RelinkEntities (void)
 	        dl->type = SetDlightColor (2, lt_rocket, true);
 		}
 
-		if (ent->model->flags & EF_GIB)
-			R_RocketTrail (oldorg, ent->origin, 2);
-		else if (ent->model->flags & EF_ZOMGIB)
-			R_RocketTrail (oldorg, ent->origin, 4);
-		else if (ent->model->flags & EF_TRACER)
-			R_RocketTrail (oldorg, ent->origin, 3);
-		else if (ent->model->flags & EF_TRACER2)
-			R_RocketTrail (oldorg, ent->origin, 5);
-		else if (ent->model->flags & EF_ROCKET)
+		if (ent->model->flags)
 		{
-			R_RocketTrail (oldorg, ent->origin, 0);
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin, dl->origin);
-			dl->radius = 200;
-			dl->die = cl.time + 0.01;
-			dl->color[0] = 0.2;
-			dl->color[1] = 0.1;
-			dl->color[2] = 0.5;
-			dl->type = SetDlightColor (2, lt_rocket, true);
+			if (ent->model->flags & EF_GIB)
+				R_RocketTrail (oldorg, ent->origin, 2);
+			else if (ent->model->flags & EF_ZOMGIB)
+				R_RocketTrail (oldorg, ent->origin, 4);
+			else if (ent->model->flags & EF_TRACER)
+				R_RocketTrail (oldorg, ent->origin, 3);
+			else if (ent->model->flags & EF_TRACER2)
+				R_RocketTrail (oldorg, ent->origin, 5);
+			else if (ent->model->flags & EF_ROCKET)
+			{
+				R_RocketTrail (oldorg, ent->origin, 0);
+				dl = CL_AllocDlight (i);
+				VectorCopy (ent->origin, dl->origin);
+				dl->radius = 200;
+				dl->die = cl.time + 0.01;
+				dl->color[0] = 0.2;
+				dl->color[1] = 0.1;
+				dl->color[2] = 0.5;
+				dl->type = SetDlightColor (2, lt_rocket, true);
+			}
+			else if (ent->model->flags & EF_GRENADE)
+				R_RocketTrail (oldorg, ent->origin, 1);
+			else if (ent->model->flags & EF_TRACER3)
+				R_RocketTrail (oldorg, ent->origin, 6);
 		}
-		else if (ent->model->flags & EF_GRENADE)
-			R_RocketTrail (oldorg, ent->origin, 1);
-		else if (ent->model->flags & EF_TRACER3)
-			R_RocketTrail (oldorg, ent->origin, 6);
-		
 		
 		// Tomaz - QC Glow Begin
         if (ISLMPOINT(ent))

@@ -176,7 +176,7 @@ void CL_ParseTEnt (void)
 		dl->die = cl.time + 0.5f;
 		dl->decay = 300;
 		break;
-/*	
+	
 	case TE_RAYSPLASHGREEN:
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
@@ -207,7 +207,7 @@ void CL_ParseTEnt (void)
 		R_RunParticleEffect (pos, vec3_origin, 0, 512);
 		//S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 0.5); // NZPFIXME - add raygun hum
 		break;
-*/		
+	
 	case TE_TAREXPLOSION:			// tarbaby explosion
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
@@ -300,7 +300,7 @@ qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal)
 	trace_t	trace;
 
 	memset (&trace, 0, sizeof(trace));
-	if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, 0, 1, start, end, &trace))
+	if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, start, end, &trace))
 	{
 		if (trace.fraction < 1)
 		{

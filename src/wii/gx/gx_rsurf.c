@@ -232,27 +232,33 @@ store:
 			t = bl[0] >> 7;
 			if (t > 255)
 				t = 255;
-			dest[2] = t;
-			dest[1] = t;
 			dest[3] = t;
 
 			t = bl[1] >> 7;
 			if (t > 255)
 				t = 255;
 			dest[2] = t;
-			dest[1] = t;
-			dest[3] = t;
 
 			t = bl[2] >> 7;
 			if (t > 255)
 				t = 255;
-			dest[2] = t;
 			dest[1] = t;
-			dest[3] = t;
+			
+			dest[0] = 255;
 			
 			bl += 3;
 			dest += 4;
 			// LordHavoc: .lit support end
+			/*
+			// LordHavoc: .lit support begin
+			// LordHavoc: positive lighting (would be 255-t if it were inverse like glquake was)
+			t = bl[0] >> 7;if (t > 255) t = 255;dest[3] = t;
+			t = bl[1] >> 7;if (t > 255) t = 255;dest[2] = t;
+			t = bl[2] >> 7;if (t > 255) t = 255;dest[1] = t;
+			dest[0] = 255;
+			bl += 3;	
+			// LordHavoc: .lit support end
+			*/
 		}
 	}
 }
