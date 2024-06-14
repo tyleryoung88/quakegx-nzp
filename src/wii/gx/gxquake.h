@@ -311,7 +311,11 @@ void Fog_NewMap (void);
 void Fog_Init (void);
 void Fog_SetupState (void);
 
+void GX_SetMinMag (int minfilt, int magfilt);
+
 void GL_ClearTextureCache(void);
+
+void Clear_LoadingFill (void);
 
 // OSK
 void GX_DrawOSK(void);
@@ -332,7 +336,7 @@ extern int osk_coords[2];
 extern void Draw_TransAlphaPic (int x, int y, qpic_t *pic, float alpha);
 extern void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
 extern void Draw_AlphaTileClear (int x, int y, int w, int h, float alpha);
-extern qpic_t		*conback;
+//extern qpic_t		*conback;
 
 // input extensions
 extern float in_pitchangle;

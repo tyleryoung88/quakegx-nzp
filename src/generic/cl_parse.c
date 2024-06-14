@@ -300,25 +300,41 @@ void CL_ParseServerInfo (void)
 // now we try to load everything else until a cache allocation fails
 //
 
+	loading_num_step = loading_num_step +nummodels + numsounds;
+	loading_step = 1;
+
 	for (i=1 ; i<nummodels ; i++)
 	{
 		cl.model_precache[i] = Mod_ForName (model_precache[i], FALSE);
 		if (cl.model_precache[i] == NULL)
 		{
 			Con_Printf("Model %s not found\n", model_precache[i]);
+			loading_cur_step++;
 			return;
 		}
 		CL_KeepaliveMessage ();
+		loading_cur_step++;
+		strcpy(loading_name, model_precache[i]);
+		SCR_UpdateScreen ();
 	}
+	SCR_UpdateScreen ();
+
+	loading_step = 4;
 
 	S_BeginPrecaching ();
 	for (i=1 ; i<numsounds ; i++)
 	{
 		cl.sound_precache[i] = S_PrecacheSound (sound_precache[i]);
 		CL_KeepaliveMessage ();
+		loading_cur_step++;
+		strcpy(loading_name, sound_precache[i]);
+		SCR_UpdateScreen ();
 	}
 	S_EndPrecaching ();
+	
+	SCR_UpdateScreen ();
 
+   	Clear_LoadingFill ();
 
 // local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
@@ -326,6 +342,7 @@ void CL_ParseServerInfo (void)
 	R_NewMap ();
 
 	Hunk_Check ();		// make sure nothing is hurt
+	HUD_NewMap ();
 	
 	noclip_anglehack = FALSE;		// noclip is turned off at start	
 }
@@ -363,7 +380,7 @@ void CL_ParseUpdate (int bits)
 		i = MSG_ReadByte ();
 		bits |= (i<<8);
 	}
-	
+
 	// Tomaz - QC Control Begin
 	if (bits & U_EXTEND1)
 	{
@@ -431,27 +448,37 @@ void CL_ParseUpdate (int bits)
 		ent->frame = ent->baseline.frame;
 
 	if (bits & U_COLORMAP)
-		i = MSG_ReadByte();
-	else
-		i = ent->baseline.colormap;
-	if (!i)
-		ent->colormap = vid.colormap;
-	else
-	{
-		if (i > cl.maxclients)
-			Sys_Error ("i >= cl.maxclients");
-		//ent->colormap = cl.scores[i-1].translations;
-	}
+			i = MSG_ReadByte();
+		else
+			i = ent->baseline.colormap;
+		if (!i)
+			ent->colormap = vid.colormap;
+		else
+		{
+			if (i > cl.maxclients)
+				Sys_Error ("i >= cl.maxclients");
+			//ent->colormap = cl.scores[i-1].translations;
+		}
 
+#if 1
 	if (bits & U_SKIN)
 		skin = MSG_ReadByte();
 	else
 		skin = ent->baseline.skin;
+	
 	if (skin != ent->skinnum) {
 		ent->skinnum = skin;
 		if (num > 0 && num <= cl.maxclients)
 			R_TranslatePlayerSkin (num - 1);
 	}
+
+#else
+
+	if (bits & U_SKIN)
+		ent->skinnum = MSG_ReadByte();
+	else
+		ent->skinnum = ent->baseline.skin;
+#endif
 
 	if (bits & U_EFFECTS)
 		ent->effects = MSG_ReadByte();
@@ -466,6 +493,7 @@ void CL_ParseUpdate (int bits)
 		ent->msg_origins[0][0] = MSG_ReadCoord ();
 	else
 		ent->msg_origins[0][0] = ent->baseline.origin[0];
+	
 	if (bits & U_ANGLE1)
 		ent->msg_angles[0][0] = MSG_ReadAngle();
 	else
@@ -475,6 +503,7 @@ void CL_ParseUpdate (int bits)
 		ent->msg_origins[0][1] = MSG_ReadCoord ();
 	else
 		ent->msg_origins[0][1] = ent->baseline.origin[1];
+	
 	if (bits & U_ANGLE2)
 		ent->msg_angles[0][1] = MSG_ReadAngle();
 	else
@@ -484,11 +513,12 @@ void CL_ParseUpdate (int bits)
 		ent->msg_origins[0][2] = MSG_ReadCoord ();
 	else
 		ent->msg_origins[0][2] = ent->baseline.origin[2];
+	
 	if (bits & U_ANGLE3)
 		ent->msg_angles[0][2] = MSG_ReadAngle();
 	else
 		ent->msg_angles[0][2] = ent->baseline.angles[2];
-	
+/*
 	// Tomaz - QC Alpha Scale Glow Begin
 	if (bits & U_RENDERAMT)
 	    ent->renderamt = MSG_ReadFloat();
@@ -520,7 +550,7 @@ void CL_ParseUpdate (int bits)
 		ent->scale = MSG_ReadByte();
 	else
 		ent->scale = ENTSCALE_DEFAULT;
-
+*/
 	if ( bits & U_NOLERP )
 		ent->forcelink = TRUE;
 
@@ -543,7 +573,7 @@ void CL_ParseBaseline (entity_t *ent)
 {
 	int			i;
 	
-	ent->baseline.modelindex = MSG_ReadByte ();
+	ent->baseline.modelindex = MSG_ReadByte (); //should be ReadShort??
 	ent->baseline.frame = MSG_ReadByte ();
 	ent->baseline.colormap = MSG_ReadByte();
 	ent->baseline.skin = MSG_ReadByte();
@@ -578,11 +608,11 @@ void CL_ParseClientdata (int bits)
 	else
 		cl.idealpitch = 0;
 
-
 	if (bits & SU_PERKS)
 		i = MSG_ReadLong ();
 	else
 		i = 0;
+	
 	if (cl.perks != i)
 	{
 		if (i & 1 && !(cl.perks & 1))
@@ -805,23 +835,20 @@ void CL_ParseClientdata (int bits)
 	else
 		i = 0;
 
-	if (cl.stats[STAT_GRENADES] != i)
-	{
+	if (cl.stats[STAT_GRENADES] != i) {
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_GRENADES] = i;
 	}
 
 	i = MSG_ReadShort ();
-	if (cl.stats[STAT_PRIGRENADES] != i)
-	{
+	if (cl.stats[STAT_PRIGRENADES] != i) {
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_PRIGRENADES] = i;
 	}
 
 
 	i = MSG_ReadShort ();
-	if (cl.stats[STAT_SECGRENADES] != i)
-	{
+	if (cl.stats[STAT_SECGRENADES] != i) {
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_SECGRENADES] = i;
 	}
@@ -831,15 +858,13 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_HEALTH] = i;
 
 	i = MSG_ReadShort ();
-	if (cl.stats[STAT_AMMO] != i)
-	{
+	if (cl.stats[STAT_AMMO] != i) {
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_AMMO] = i;
 	}
 
 	i = MSG_ReadByte ();
-	if (cl.stats[STAT_CURRENTMAG] != i)
-	{
+	if (cl.stats[STAT_CURRENTMAG] != i) {
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_CURRENTMAG] = i;
 	}
@@ -849,8 +874,7 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_ZOOM] = i;
 
 	i = MSG_ReadByte ();
-	if (cl.stats[STAT_ACTIVEWEAPON] != i)
-	{
+	if (cl.stats[STAT_ACTIVEWEAPON] != i) {
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_ACTIVEWEAPON] = i;
 	}
@@ -1013,6 +1037,7 @@ void CL_ParseLimbUpdate (void)
     int limb = MSG_ReadByte();
     int zombieent = MSG_ReadShort();
     int limbent = MSG_ReadShort();
+	
     switch (limb)
     {
         case 0://head
@@ -1046,7 +1071,7 @@ extern double screenflash_starttime;
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
-	int			i, total, j;
+	int			i, total, j, lastcmd;
 	
 //
 // if recording demos, copy the message out

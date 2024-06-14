@@ -35,10 +35,19 @@ byte		*draw_chars;				// 8*8 graphic characters
 qpic_t		*draw_disc;
 qpic_t		*draw_backtile;
 
+qpic_t		*sniper_scope;
+
 int			translate_texture;
 int			char_texture;
 
 int			white_texturenum;
+
+//Loading Fill by Crow_bar
+float 	loading_cur_step;
+char	loading_name[32];
+float 	loading_num_step;
+int 	loading_step;
+float 	loading_cur_step_bk;
 
 typedef struct
 {
@@ -124,10 +133,10 @@ qpic_t	*Draw_CachePic (char *path)
 		gltextures[index].islmp = false;
 		gl = (glpic_t *)pic->pic.data;
 		gl->texnum = index;
-		gl->sl = 1;
-		gl->sh = 0;
-		gl->tl = 1;
-		gl->th = 0;
+		gl->sl = 0;
+		gl->sh = 1;
+		gl->tl = 0;
+		gl->th = 1;
 
 		return &pic->pic;
 	} else {
@@ -167,7 +176,7 @@ qpic_t	*Draw_CachePic (char *path)
 	return 0;
 }
 
-
+/*
 void Draw_CharToConback (int num, byte *dest)
 {
 	int		row, col;
@@ -191,7 +200,7 @@ void Draw_CharToConback (int num, byte *dest)
 	}
 
 }
-
+*/
 /*
 ===============
 Draw_Init
@@ -223,14 +232,17 @@ void Draw_Init (void)
 	// by hand, because we need to write the version
 	// string into the background before turning
 	// it into a texture
+	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0);
+/*
 	draw_chars = W_GetLumpName ("conchars");
 	for (i=0 ; i<256*64 ; i++)
 		if (draw_chars[i] == 0)
 			draw_chars[i] = 255;	// proper transparent color
+*/
 
 	// now turn them into textures
-	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, FALSE, TRUE, TRUE, 1);
-
+	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, FALSE, TRUE, TRUE, 4);
+/*
 	start = Hunk_LowMark();
 
 	cb = (qpic_t *)COM_LoadTempFile ("gfx/conback.lmp");	
@@ -263,71 +275,12 @@ void Draw_Init (void)
 
 	// free loaded console
 	Hunk_FreeToLowMark(start);
-
-	player_pic = Draw_CachePic("gfx/menuplyr.lmp");
-	// save a texture slot for translated picture
-	translate_texture = GL_LoadTexture("player_translate", player_pic->width, player_pic->height, player_pic->data,
-		FALSE, FALSE, TRUE, 1);
-
-	//
-	// get the other pics we need
-	//
-	draw_disc = Draw_PicFromWad ("disc");
-	draw_backtile = Draw_PicFromWad ("backtile");
-
-	white_texturenum = GL_LoadTexture("white_texturenum", 8, 8, white_texture, FALSE, FALSE, TRUE, 1);
-}
-
-
-
-/*
-================
-Draw_Character
-
-Draws one 8*8 graphics character with 0 being transparent.
-It can be clipped to the top of the screen to allow the console to be
-smoothly scrolled off.
-================
 */
-void Draw_Character (int x, int y, int num)
-{
-	int				row, col;
-	float			frow, fcol, size;
-
-	if (num == 32)
-		return;		// space
-
-	num &= 255;
+	white_texturenum = GL_LoadTexture("white_texturenum", 8, 8, white_texture, FALSE, FALSE, TRUE, 1);
 	
-	if (y <= -8)
-		return;			// totally off screen
-
-	row = num>>4;
-	col = num&15;
-
-	frow = row*0.0625;
-	fcol = col*0.0625;
-	size = 0.0625;
-
-	GL_Bind0 (char_texture);
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-
-	GX_Position3f32(x, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(fcol, frow);
-
-	GX_Position3f32(x + 8, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(fcol + size, frow);
-
-	GX_Position3f32(x + 8, y + 8, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(fcol + size, frow + size);
-
-	GX_Position3f32(x, y + 8, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(fcol, frow + size);
-	GX_End();
+	sniper_scope = Draw_CachePic ("gfx/hud/scope");
+	
+	//Clear_LoadingFill ();
 }
 
 /*
@@ -360,6 +313,8 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	size = 0.0625*(float)scale;
 
 	GL_Bind0 (char_texture);
+	
+	GX_SetMinMag (GX_NEAR, GX_NEAR);
 
 	//glEnable(GL_BLEND);
 	QGX_Blend(TRUE);
@@ -406,9 +361,64 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 	//glEnable(GL_ALPHA_TEST);
-	QGX_Alpha(FALSE);
+	QGX_Alpha(TRUE);
 	//glDisable (GL_BLEND);
 	QGX_Blend(FALSE);
+}
+
+
+/*
+================
+Draw_Character
+
+Draws one 8*8 graphics character with 0 being transparent.
+It can be clipped to the top of the screen to allow the console to be
+smoothly scrolled off.
+================
+*/
+void Draw_Character (int x, int y, int num)
+{
+	/*
+	int				row, col;
+	float			frow, fcol, size;
+
+	if (num == 32)
+		return;		// space
+
+	num &= 255;
+	
+	if (y <= -8)
+		return;			// totally off screen
+
+	row = num>>4;
+	col = num&15;
+
+	frow = row*0.0625;
+	fcol = col*0.0625;
+	size = 0.0625;
+
+	GL_Bind0 (char_texture);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+
+	GX_Position3f32(x, y, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
+	GX_TexCoord2f32(fcol, frow);
+
+	GX_Position3f32(x + 8, y, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
+	GX_TexCoord2f32(fcol + size, frow);
+
+	GX_Position3f32(x + 8, y + 8, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
+	GX_TexCoord2f32(fcol + size, frow + size);
+
+	GX_Position3f32(x, y + 8, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
+	GX_TexCoord2f32(fcol, frow + size);
+	GX_End();
+	*/
+	
+	Draw_CharacterRGBA(x, y, num, 255, 255, 255, 255, 1);
 }
 
 void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, int scale) 
@@ -428,12 +438,7 @@ Draw_String
 */
 void Draw_String (int x, int y, char *str)
 {
-	while (*str)
-	{
-		Draw_Character (x, y, *str);
-		str++;
-		x += 8;
-	}
+	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1); 
 }
 
 /*
@@ -451,40 +456,81 @@ void Draw_DebugChar (char num)
 
 /*
 =============
-Draw_AlphaPic
+Draw_ColoredStretchPic
 =============
 */
-void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
+void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, float r, float g , float b, float a)
 {
+	/*
+	glpic_t			*gl;
+
+	if (scrap_dirty)
+		Scrap_Upload ();
+	gl = (glpic_t *)pic->data;
+
+	glEnable(GL_BLEND);
+	glDisable(GL_ALPHA_TEST);
+	glColor4f(r/255.0,g/255.0,b/255.0,a/255.0);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+	GL_Bind (gl->texnum);
+	glBegin (GL_QUADS);
+	glTexCoord2f (0, 0);
+	glVertex2f (x, y);
+	glTexCoord2f (1, 0);
+	glVertex2f (x+x_value, y);
+	glTexCoord2f (1, 1);
+	glVertex2f (x+x_value, y+y_value);
+	glTexCoord2f (0, 1);
+	glVertex2f (x, y+y_value);
+	glEnd ();
+
+	glColor4f(1,1,1,1);
+	*/
+	/////////////////////////////////////////////////////
 	glpic_t			*gl;
 
 	gl = (glpic_t *)pic->data;
-
+	
 	QGX_Alpha(FALSE);
 	QGX_Blend(TRUE);
-
+	
+	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+	
 	GL_Bind0 (gl->texnum);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-
+	
 	GX_Position3f32(x, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
-	GX_TexCoord2f32(gl->sl, gl->tl);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(0, 0);
 
-	GX_Position3f32(x + pic->width, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
-	GX_TexCoord2f32(gl->sh, gl->tl);
+	GX_Position3f32(x+x_value, y, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(1, 0);
 
-	GX_Position3f32(x + pic->width, y + pic->height, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
-	GX_TexCoord2f32(gl->sh, gl->th);
+	GX_Position3f32(x+x_value, y+y_value, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(1, 1);
 
-	GX_Position3f32(x, y + pic->height, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
-	GX_TexCoord2f32(gl->sl, gl->th);
+	GX_Position3f32(x, y+y_value, 0.0f);
+	GX_Color4u8(r, g, b, a);
+	GX_TexCoord2f32(0, 1);
+	
 	GX_End();
 
 	QGX_Blend(FALSE);
 	QGX_Alpha(TRUE);
+}
+
+/*
+=============
+Draw_StretchPic
+=============
+*/
+void Draw_StretchPic (int x, int y, qpic_t *pic, int x_value, int y_value)
+{
+	Draw_ColoredStretchPic (x, y, pic, x_value, y_value, 255, 255, 255, 255);
 }
 
 /*
@@ -505,25 +551,66 @@ void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
 	GX_Position3f32(x, y, 0.0f);
-	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_Color4u8(r, g, b, a);
 	GX_TexCoord2f32(gl->sl, gl->tl);
 
 	GX_Position3f32(x + pic->width, y, 0.0f);
-	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_Color4u8(r, g, b, a);
 	GX_TexCoord2f32(gl->sh, gl->tl);
 
 	GX_Position3f32(x + pic->width, y + pic->height, 0.0f);
-	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_Color4u8(r, g, b, a);
 	GX_TexCoord2f32(gl->sh, gl->th);
 
 	GX_Position3f32(x, y + pic->height, 0.0f);
-	GX_Color4u8(r, g, b, (u8)(0xff * a));
+	GX_Color4u8(r, g, b, a);
 	GX_TexCoord2f32(gl->sl, gl->th);
 	
 	GX_End();
 
 	QGX_Blend(FALSE);
 	QGX_Alpha(TRUE);
+}
+
+/*
+=============
+Draw_AlphaPic
+=============
+*/
+void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha)
+{
+	/*
+	glpic_t			*gl;
+
+	gl = (glpic_t *)pic->data;
+
+	QGX_Alpha(FALSE);
+	QGX_Blend(TRUE);
+
+	GL_Bind0 (gl->texnum);
+	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+
+	GX_Position3f32(x, y, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_TexCoord2f32(gl->sl, gl->tl);
+
+	GX_Position3f32(x + pic->width, y, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_TexCoord2f32(gl->sh, gl->tl);
+
+	GX_Position3f32(x + pic->width, y + pic->height, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_TexCoord2f32(gl->sh, gl->th);
+
+	GX_Position3f32(x, y + pic->height, 0.0f);
+	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_TexCoord2f32(gl->sl, gl->th);
+	GX_End();
+
+	QGX_Blend(FALSE);
+	QGX_Alpha(TRUE);
+	*/
+	Draw_ColorPic(x, y, pic, 255, 255, 255, alpha);
 }
 
 
@@ -534,6 +621,7 @@ Draw_Pic
 */
 void Draw_Pic (int x, int y, qpic_t *pic)
 {
+	/*
 	glpic_t			*gl;
 
 	gl = (glpic_t *)pic->data;
@@ -557,6 +645,9 @@ void Draw_Pic (int x, int y, qpic_t *pic)
 	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
 	GX_TexCoord2f32(gl->sl, gl->th);
 	GX_End();
+	*/
+	
+	Draw_ColorPic(x, y, pic, 255, 255, 255, 255);
 }
 
 
@@ -641,21 +732,61 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
 	GX_End();
 }
 
-
 /*
 ================
-Draw_ConsoleBackground
-
+Draw_LoadingFill
+By Crow_bar
 ================
 */
-void Draw_ConsoleBackground (int lines)
+void Draw_LoadingFill(void)
 {
-	int y = (vid.conheight * 3) >> 2;
+    if(!loading_num_step)
+		return;
 
-	if (lines > y)
-		Draw_Pic(0, lines - vid.conheight, conback);
-	else
-		Draw_AlphaPic (0, lines - vid.conheight, conback, (float)(1.2 * lines)/y);
+	int size       	= 8;
+	int max_step   	= 350;
+    int x          	= (vid.width  / 2) - (max_step / 2);
+    int y          	= vid.height - (size/ 2) - 25;
+	int l;
+	char str[64];
+	char* text;
+
+
+	if(loading_cur_step > loading_num_step)
+	      loading_cur_step = loading_num_step;
+
+	if (loading_cur_step < loading_cur_step_bk)
+		loading_cur_step = loading_cur_step_bk;
+
+	if (loading_cur_step == loading_num_step && loading_cur_step_bk != loading_num_step)
+		loading_cur_step = loading_cur_step_bk;
+
+    float loadsize = loading_cur_step * (max_step / loading_num_step);
+	Draw_FillByColor (x - 2, y - 2, max_step + 4, size + 4, 69, 69, 69, 255);
+	Draw_FillByColor (x, y, (int)loadsize, size, 0, 0, 0, 200);
+
+	switch(loading_step) {
+		case 1: text = "Loading Models.."; break;
+		case 2: text = "Loading World.."; break;
+		case 3: text = "Running Test Frame.."; break;
+		case 4: text = "Loading Sounds.."; break;
+		default: text = "Initializing.."; break;
+	}
+
+	l = strlen (text);
+	Draw_String((vid.width - l*8)/2, y, text);
+
+	loading_cur_step_bk = loading_cur_step;
+}
+
+void Clear_LoadingFill (void)
+{
+    //it is end loading
+	loading_cur_step = 0;
+	loading_cur_step_bk = 0;
+	loading_num_step = 0;
+	loading_step = -1;
+	memset(loading_name, 0, sizeof(loading_name));
 }
 
 
@@ -729,14 +860,10 @@ Draw_Fill
 Fills a box of pixels with a single color
 =============
 */
-void Draw_FillByColor (int x, int y, int w, int h, float r, float g, float b, float a)
+void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a)
 {
 	//glDisable (GL_TEXTURE_2D);
-	/*
-	GX_SetVtxDesc(GX_VA_TEX0, GX_NONE);
-	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
-	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
-	*/
+	
 	GL_Bind0 (white_texturenum);
 	//glEnable (GL_BLEND); //johnfitz -- for alpha
 	QGX_Blend(TRUE);
@@ -779,11 +906,38 @@ void Draw_FillByColor (int x, int y, int w, int h, float r, float g, float b, fl
 	//glEnable(GL_ALPHA_TEST); //johnfitz -- for alpha
 	QGX_Alpha(TRUE);
 	//glEnable (GL_TEXTURE_2D);
+}
+
+/*
+================
+Draw_ConsoleBackground
+
+================
+*/
+void Draw_ConsoleBackground (int lines)
+{
 	/*
-	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
- 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	int y = (vid.conheight * 3) >> 2;
+
+	if (lines > y)
+		Draw_Pic(0, lines - vid.conheight, conback);
+	else
+		Draw_AlphaPic (0, lines - vid.conheight, conback, (float)(1.2 * lines)/y);
 	*/
+	
+	Draw_Fill(0, 0, vid.width, lines, 0, 0, 0, 255);
+}
+
+/*
+=============
+Draw_FillByColor
+
+Fills a box of pixels with a single color
+=============
+*/
+void Draw_FillByColor (int x, int y, int w, int h, float r, float g, float b, float a)
+{
+	Draw_Fill(x, y, w, h, r, g, b, a);
 }
 
 
@@ -793,7 +947,7 @@ Draw_Fill
 
 Fills a box of pixels with a single color
 =============
-*/
+
 void Draw_Fill (int x, int y, int w, int h, int c)
 {
 	// ELUTODO: do not use a texture
@@ -817,6 +971,7 @@ void Draw_Fill (int x, int y, int w, int h, int c)
 	GX_TexCoord2f32(0, 1);
 	GX_End();
 }
+*/
 //=============================================================================
 
 extern cvar_t crosshair;
@@ -997,9 +1152,10 @@ Draw_Crosshair
 extern float crosshair_opacity;
 extern cvar_t cl_crosshair_debug;
 extern qboolean crosshair_pulse_grenade;
+extern cvar_t cl_crossx, cl_crossy;
 void Draw_Crosshair (void)
 {	
-/*
+
 	if (cl_crosshair_debug.value) {
 		Draw_FillByColor(vid.width/2, 0, 1, 240, 255, 0, 0, 255);
 		Draw_FillByColor(0, vid.height/2, 400, 1, 0, 255, 0, 255);
@@ -1008,17 +1164,33 @@ void Draw_Crosshair (void)
 	if (cl.stats[STAT_HEALTH] <= 20)
 		return;
 
-	if (cl.stats[STAT_ZOOM] == 2)
-		Draw_Pic (-39, -15, sniper_scope);
-   	if (Hitmark_Time > sv.time)
-        Draw_Pic ((vid.width - hitmark->width)/2,(vid.height - hitmark->height)/2, hitmark);
+	if (cl.stats[STAT_ZOOM] == 2) {
+		Draw_StretchPic (0, 0, sniper_scope, vid.width, vid.height);
+	}
+	
+	if (cl.stats[STAT_ZOOM] == 3)
+		return;
+	
+	
+   	if (Hitmark_Time > sv.time) { 
+		if (cl.stats[STAT_ZOOM] != 2) {
+        Draw_AlphaPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 8/* - hitmark->width*/,
+				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 8/* - hitmark->height*/, hitmark, 185);
+		}
+	}
+	
+				 
+	/*
+	Draw_Character ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width,
+					(scr_vrect.y + scr_vrect.height/2 + cl_crossy.value - hitmark->height) * vid.conheight/vid.height, '+');
+	*/
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
 		return;
 
 	if (!crosshair_opacity)
-		crosshair_opacity = 255;
+		crosshair_opacity = 215;
 
 	float col;
 
@@ -1041,7 +1213,7 @@ void Draw_Crosshair (void)
     else if (crosshair_spread_time < sv.time && crosshair_spread_time)
     {
         cur_spread = cur_spread - 4;
-		crosshair_opacity = 255;
+		crosshair_opacity = 215;
 
 		if (cur_spread <= 0) {
 			cur_spread = 0;
@@ -1063,32 +1235,50 @@ void Draw_Crosshair (void)
 		} else if (sv_player->v.view_ofs[2] == -10) {
 			crosshair_offset *= 0.65;
 		}
+		
+		/*
+		Draw_Character ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width,
+						(scr_vrect.y + scr_vrect.height/2 + cl_crossy.value - hitmark->height) * vid.conheight/vid.height, '+');
+		*/
+		
+		/*
+		Draw_Pic ((scr_vrect.x + scr_vrect.width - hitmark->width/2 + cl_crossx.value) * vid.conwidth/vid.width,
+				 (scr_vrect.y + scr_vrect.height - hitmark->height/2 + cl_crossy.value) * vid.conheight/vid.height, hitmark);
+		*/
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 
-		x_value = (vid.width - 3)/2 - crosshair_offset_step;
-		y_value = (vid.height - 1)/2;
+		//x_value = (vid.width - 3)/2 - crosshair_offset_step;
+		//y_value = (vid.height - 1)/2;
+		x_value = ((scr_vrect.x + scr_vrect.width - 3)/2 + cl_crossx.value) * vid.conwidth/vid.width- crosshair_offset_step;
+		y_value = ((scr_vrect.y + scr_vrect.height - 1)/2 + cl_crossy.value) * vid.conheight/vid.height;
 		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
-		x_value = (vid.width - 3)/2 + crosshair_offset_step;
-		y_value = (vid.height - 1)/2;
+		//x_value = (vid.width - 3)/2 + crosshair_offset_step;
+		//y_value = (vid.height - 1)/2;
+		x_value = ((scr_vrect.x + scr_vrect.width - 3)/2 + cl_crossx.value) * vid.conwidth/vid.width + crosshair_offset_step;
+		y_value = ((scr_vrect.y + scr_vrect.height - 1)/2 + cl_crossy.value) * vid.conheight/vid.height;
 		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
 
-		x_value = (vid.width - 1)/2;
-		y_value = (vid.height - 3)/2 - crosshair_offset_step;
+		//x_value = (vid.width - 1)/2;
+		//y_value = (vid.height - 3)/2 - crosshair_offset_step;
+		x_value = ((scr_vrect.x + scr_vrect.width - 1)/2 + cl_crossx.value) * vid.conwidth/vid.width;
+		y_value = ((scr_vrect.y + scr_vrect.height - 3)/2 + cl_crossy.value) * vid.conheight/vid.height - crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
 
-		x_value = (vid.width - 1)/2;
-		y_value = (vid.height - 3)/2 + crosshair_offset_step;
+		//x_value = (vid.width - 1)/2;
+		//y_value = (vid.height - 3)/2 + crosshair_offset_step;
+		x_value = ((scr_vrect.x + scr_vrect.width - 1)/2 + cl_crossx.value) * vid.conwidth/vid.width;
+		y_value = ((scr_vrect.y + scr_vrect.height - 3)/2 + cl_crossy.value) * vid.conheight/vid.height + crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
-		Draw_CharacterRGBA((vid.width)/2-4, (vid.height)/2, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
 	}
 	// Dot crosshair (.)
 	else if (crosshair.value == 3) {
-		Draw_CharacterRGBA((vid.width - 8)/2, (vid.height - 8)/2, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 8, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
 	}
 	// Grenade crosshair
 	else if (crosshair.value == 4) {
@@ -1118,7 +1308,7 @@ void Draw_Crosshair (void)
 		y_value = (vid.height - 3)/2 + crosshair_offset_step;
 		Draw_FillByColor(x_value, y_value, 1, 3, 255, 255, 255, 255);
 	}
-	*/
+	
 }
 
 

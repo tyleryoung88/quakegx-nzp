@@ -47,6 +47,10 @@ typedef struct edict_s
 // other fields from progs come immediately after
 } edict_t;
 #define	EDICT_FROM_AREA(l) STRUCT_FROM_LINK(l,edict_t,area)
+//extern	int	eval_gravity;
+//extern  int eval_idealpitch, eval_pitch_speed;
+// Half_life modes. Crow_bar
+//extern	int	eval_renderamt, eval_rendermode, eval_rendercolor;
 
 //============================================================================
 
@@ -134,4 +138,4 @@ void ED_PrintEdicts (void);
 void ED_PrintNum (int ent);
 
 eval_t *GetEdictFieldValue(edict_t *ed, char *field);
-
+//#define	GETEDICTFIELDVALUE(ed, fieldoffset) (fieldoffset ? (eval_t *)((byte *)&ed->v + fieldoffset) : NULL)

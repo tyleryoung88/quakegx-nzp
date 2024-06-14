@@ -78,10 +78,10 @@ void R_InitOtherTextures (void)
 
 	// external zombie skins
 	
-	zombie_skins[0] = loadtextureimage ("models/ai/zfull.mdl_0", 0, 0, true, true);
-	zombie_skins[1] = loadtextureimage ("models/ai/zfull.mdl_1", 0, 0, true, true);
-	zombie_skins[2] = loadtextureimage ("models/ai/zfull.mdl_2", 0, 0, true, true);
-	zombie_skins[3] = loadtextureimage ("models/ai/zfull.mdl_3", 0, 0, true, true);
+	zombie_skins[0] = loadtextureimage ("models/ai/zfull0", 0, 0, false, false);
+	zombie_skins[1] = loadtextureimage ("models/ai/zfull1", 0, 0, false, false);
+	zombie_skins[2] = loadtextureimage ("models/ai/zfull2", 0, 0, false, false);
+	zombie_skins[3] = loadtextureimage ("models/ai/zfull3", 0, 0, false, false);
 	
 }
 

@@ -26,18 +26,6 @@ int			num_temp_entities;
 entity_t	cl_temp_entities[MAX_TEMP_ENTITIES];
 beam_t		cl_beams[MAX_BEAMS];
 
-sfx_t			*cl_sfx_wizhit;
-sfx_t			*cl_sfx_knighthit;
-sfx_t			*cl_sfx_tink1;
-sfx_t			*cl_sfx_ric1;
-sfx_t			*cl_sfx_ric2;
-sfx_t			*cl_sfx_ric3;
-sfx_t			*cl_sfx_r_exp3;
-#ifdef QUAKE2
-sfx_t			*cl_sfx_imp;
-sfx_t			*cl_sfx_rail;
-#endif
-
 /*
 =================
 CL_ParseTEnt
@@ -110,6 +98,7 @@ void CL_ParseBeam (model_t *m)
 	Con_Printf ("beam list overflow!\n");	
 }
 
+extern int decal_mark;
 /*
 =================
 CL_ParseTEnt
@@ -134,7 +123,6 @@ void CL_ParseTEnt (void)
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
 		R_RunParticleEffect (pos, vec3_origin, 20, 30);
-		S_StartSound (-1, 0, cl_sfx_wizhit, pos, 1, 1);
 		break;
 		
 	case TE_KNIGHTSPIKE:			// spike hitting wall
@@ -142,7 +130,6 @@ void CL_ParseTEnt (void)
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
 		R_RunParticleEffect (pos, vec3_origin, 226, 20);
-		S_StartSound (-1, 0, cl_sfx_knighthit, pos, 1, 1);
 		break;
 		
 	case TE_SPIKE:			// spike hitting wall
@@ -154,43 +141,27 @@ void CL_ParseTEnt (void)
 #else
 		R_RunParticleEffect (pos, vec3_origin, 0, 10);
 #endif
-		if ( rand() % 5 )
-			S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
-		else
-		{
-			rnd = rand() & 3;
-			if (rnd == 1)
-				S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-			else if (rnd == 2)
-				S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-			else
-				S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
-		}
 		break;
+		
 	case TE_SUPERSPIKE:			// super spike hitting wall
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
 		R_RunParticleEffect (pos, vec3_origin, 0, 20);
-
-		if ( rand() % 5 )
-			S_StartSound (-1, 0, cl_sfx_tink1, pos, 1, 1);
-		else
-		{
-			rnd = rand() & 3;
-			if (rnd == 1)
-				S_StartSound (-1, 0, cl_sfx_ric1, pos, 1, 1);
-			else if (rnd == 2)
-				S_StartSound (-1, 0, cl_sfx_ric2, pos, 1, 1);
-			else
-				S_StartSound (-1, 0, cl_sfx_ric3, pos, 1, 1);
-		}
 		break;
 		
 	case TE_GUNSHOT:			// bullet hitting wall
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
+		//R00k--start
+		/*
+		if (r_decal_bullets.value)
+		{
+			R_SpawnDecalStatic(pos, decal_mark, 8);
+		}
+		*/
+		//R00k--end
 		R_RunParticleEffect (pos, vec3_origin, 0, 20);
 		break;
 		
@@ -204,24 +175,52 @@ void CL_ParseTEnt (void)
 		dl->radius = 350;
 		dl->die = cl.time + 0.5f;
 		dl->decay = 300;
-		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 		break;
-		
+/*	
+	case TE_RAYSPLASHGREEN:
+		pos[0] = MSG_ReadCoord ();
+		pos[1] = MSG_ReadCoord ();
+		pos[2] = MSG_ReadCoord ();
+		dl = CL_AllocDlight (0);
+		VectorCopy (pos, dl->origin);
+		dl->radius = 65;
+		dl->die = cl.time + 0.3;
+		dl->decay = 300;
+		dl->color[0] = 0;
+		dl->color[1] = 255;
+		dl->color[2] = 0; 
+		R_RunParticleEffect (pos, vec3_origin, 0, 256);
+		//S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 0.5); // NZPFIXME - add raygun hum
+		break;
+	case TE_RAYSPLASHRED:
+		pos[0] = MSG_ReadCoord ();
+		pos[1] = MSG_ReadCoord ();
+		pos[2] = MSG_ReadCoord ();
+		dl = CL_AllocDlight (0);
+		VectorCopy (pos, dl->origin);
+		dl->radius = 65;
+		dl->die = cl.time + 0.3;
+		dl->decay = 300;
+		dl->color[0] = 255;
+		dl->color[1] = 0;
+		dl->color[2] = 0; 
+		R_RunParticleEffect (pos, vec3_origin, 0, 512);
+		//S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 0.5); // NZPFIXME - add raygun hum
+		break;
+*/		
 	case TE_TAREXPLOSION:			// tarbaby explosion
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
 		R_BlobExplosion (pos);
-
-		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 		break;
-/*
+
 	case TE_LIGHTNING1:				// lightning bolts
-		CL_ParseBeam (Mod_ForName("progs/bolt.mdl", TRUE));
+		CL_ParseBeam (Mod_ForName("models/misc/bolt.mdl", TRUE));
 		break;
 	
 	case TE_LIGHTNING2:				// lightning bolts
-		CL_ParseBeam (Mod_ForName("progs/bolt2.mdl", TRUE));
+		CL_ParseBeam (Mod_ForName("models/misc/bolt2.mdl", TRUE));
 		break;
 	
 	case TE_LIGHTNING3:				// lightning bolts
@@ -233,7 +232,7 @@ void CL_ParseTEnt (void)
 		CL_ParseBeam (Mod_ForName("progs/beam.mdl", TRUE));
 		break;
 // PGM 01/21/97
-*/
+
 	case TE_LAVASPLASH:	
 		pos[0] = MSG_ReadCoord ();
 		pos[1] = MSG_ReadCoord ();
@@ -260,35 +259,7 @@ void CL_ParseTEnt (void)
 		dl->radius = 350;
 		dl->die = cl.time + 0.5f;
 		dl->decay = 300;
-		S_StartSound (-1, 0, cl_sfx_r_exp3, pos, 1, 1);
 		break;
-		
-#ifdef QUAKE2
-	case TE_IMPLOSION:
-		pos[0] = MSG_ReadCoord ();
-		pos[1] = MSG_ReadCoord ();
-		pos[2] = MSG_ReadCoord ();
-		S_StartSound (-1, 0, cl_sfx_imp, pos, 1, 1);
-		break;
-
-	case TE_RAILTRAIL:
-		pos[0] = MSG_ReadCoord ();
-		pos[1] = MSG_ReadCoord ();
-		pos[2] = MSG_ReadCoord ();
-		endpos[0] = MSG_ReadCoord ();
-		endpos[1] = MSG_ReadCoord ();
-		endpos[2] = MSG_ReadCoord ();
-		S_StartSound (-1, 0, cl_sfx_rail, pos, 1, 1);
-		S_StartSound (-1, 1, cl_sfx_r_exp3, endpos, 1, 1);
-		R_RocketTrail (pos, endpos, 0+128);
-		R_ParticleExplosion (endpos);
-		dl = CL_AllocDlight (-1);
-		VectorCopy (endpos, dl->origin);
-		dl->radius = 350;
-		dl->die = cl.time + 0.5f;
-		dl->decay = 300;
-		break;
-#endif
 
 	default:
 		Sys_Error ("CL_ParseTEnt: bad type");
@@ -319,6 +290,30 @@ entity_t *CL_NewTempEntity (void)
 	return ent;
 }
 
+/*
+=================
+TraceLineN
+=================
+*/
+qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal)
+{
+	trace_t	trace;
+
+	memset (&trace, 0, sizeof(trace));
+	if (!SV_RecursiveHullCheck(cl.worldmodel->hulls, 0, 0, 1, start, end, &trace))
+	{
+		if (trace.fraction < 1)
+		{
+			VectorCopy (trace.endpos, impact);
+			if (normal)
+				VectorCopy (trace.plane.normal, normal);
+
+			return true;
+		}
+	}
+
+	return false;
+}
 
 /*
 =================

@@ -135,7 +135,7 @@ qboolean SV_movestep (edict_t *ent, vec3_t move, qboolean relink)
 				if (dz < 30)
 					neworg[2] += 8;
 			}
-			trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, neworg, FALSE, ent);
+			trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, neworg, FALSE, ent); //sB fixing zombies, was FALSE thanks blubs
 	
 			if (trace.fraction == 1)
 			{

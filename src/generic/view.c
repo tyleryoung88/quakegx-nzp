@@ -48,14 +48,14 @@ cvar_t	cl_bobup = {"cl_bobup","0.02", FALSE};
 
 cvar_t	cl_sidebobbing = {"cl_sidebobbing","1"};
 cvar_t	cl_bobside = {"cl_bobside","0.02"};
-cvar_t	cl_bobsidecycle = {"cl_bobsidecycle","0.9"};
-cvar_t	cl_bobsideup = {"cl_bobsideup","0.5"};
+cvar_t	cl_bobsidecycle = {"cl_bobsidecycle","0.06"};
+cvar_t	cl_bobsideup = {"cl_bobsideup","0.02"};
 
 cvar_t	v_kicktime = {"v_kicktime", "0.5", FALSE};
 cvar_t	v_kickroll = {"v_kickroll", "0.6", FALSE};
 cvar_t	v_kickpitch = {"v_kickpitch", "0.6", FALSE};
 
-cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "1", TRUE};
+cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", TRUE};
 
 cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", FALSE};
 cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", FALSE};
@@ -66,7 +66,7 @@ cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", FALSE};
 
 cvar_t	v_idlescale = {"v_idlescale", "0", FALSE};
 
-cvar_t	crosshair = {"crosshair", "0", TRUE};
+cvar_t	crosshair = {"crosshair", "1", TRUE};
 cvar_t	cl_crossx = {"cl_crossx", "0", FALSE};
 cvar_t	cl_crossy = {"cl_crossy", "0", FALSE};
 
@@ -289,7 +289,7 @@ void V_DriftPitch (void)
 // don't count small mouse motion
 	if (cl.nodrift)
 	{
-		if ( fabsf(cl.cmd.forwardmove) < cl_forwardspeed.value)
+		if ( fabsf(cl.cmd.forwardmove) < cl_forwardspeed)
 			cl.driftmove = 0;
 		else
 			cl.driftmove += host_frametime;
@@ -653,7 +653,7 @@ void CalcGunAngle (void)
 	float side;
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
 	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5));
-/*
+
 	// ELUTODO: all around the code: scr_vrect.height doesn't count the status bar
 	if (!cls.demoplayback && !in_osk)
 	{
@@ -673,7 +673,7 @@ void CalcGunAngle (void)
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 	cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
 	cl.viewent.angles[YAW] -= v_idlescale.value * sinf(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
-*/	
+/*	
 	//^^^ Model swaying
 	if(cl.stats[STAT_ZOOM] == 1)
 	{
@@ -685,8 +685,9 @@ void CalcGunAngle (void)
 	}
 
 	cl.viewent.angles[PITCH] = -1 * ((r_refdef.viewangles[PITCH] + pitch) - (angledelta((r_refdef.viewangles[PITCH] + pitch) + OldPitchTheta ) * 0.2));
-	
+*/
 	//BLUBS STOPS HERE
+	
 	OldYawTheta = cl.viewent.angles[YAW];
 	OldPitchTheta = cl.viewent.angles[PITCH];
 	
@@ -694,6 +695,7 @@ void CalcGunAngle (void)
 	cl.viewent2.angles[ROLL] = cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value * 2) * v_iroll_level.value;
 	cl.viewent2.angles[PITCH] = cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value * 2) * v_ipitch_level.value;
 	cl.viewent2.angles[YAW] = cl.viewent.angles[YAW] -= v_idlescale.value * sinf(cl.time*v_iyaw_cycle.value * 2) * v_iyaw_level.value;
+	
 	
 	//Evaluating total offset
 		CWeaponRot[PITCH] -= cl.viewent.angles[PITCH];
@@ -775,17 +777,19 @@ V_CalcIntermissionRefdef
 */
 void V_CalcIntermissionRefdef (void)
 {
-	entity_t	*ent, *view;
+	entity_t	*ent, *view, *view2;
 	float		old;
 
 // ent is the player model (visible when out of body)
 	ent = &cl_entities[cl.viewentity];
 // view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
+	view2 = &cl.viewent2;
 
 	VectorCopy (ent->origin, r_refdef.vieworg);
 	VectorCopy (ent->angles, r_refdef.viewangles);
 	view->model = NULL;
+	view2->model = NULL;
 
 // allways idle in intermission
 	old = v_idlescale.value;
@@ -793,105 +797,6 @@ void V_CalcIntermissionRefdef (void)
 	V_AddIdle ();
 	v_idlescale.value = old;
 }
-
-/*
-==================
-Weapon ADS Declarations
-==================
-*/
-void GetWeaponADSOfs(vec2_t out)
-{
-	switch(cl.stats[STAT_ACTIVEWEAPON])
-	{
-		case W_COLT:
-		{
-			//out[0] = -15.281;
-			//out[1] =  5.0677;
-			out[0] = -5.4792;
-			out[1] = 1.6500;
-			return;
-		}
-		case W_KAR:
-		{
-			//out[0] =  -15.4472;
-			//out[1] = 8.75790;
-			out[0] = -5.4959;
-			out[1] = 3.1869;
-			return;
-		}
-		case W_KAR_SCOPE:
-		{
-			//out[0] =  -15.4472;
-			//out[1] = 1.8985;
-			out[0] = -5.2860;
-			out[1] = 0.7061;
-			return;
-		}
-		case W_THOMPSON:
-		{
-			//out[0] = -14.0936;
-			//out[1] = 6.7265;
-			out[0] = -6.0693;
-			out[1] = 3.0076;
-			return;
-		}
-		case W_TRENCH:
-		{
-			//out[0] = -20.5952;
-			//out[1] = 10.1903;
-			out[0] = -5.5271;
-			out[1] = 2.8803;
-			return;
-		}
-		case W_357:
-		{
-			//out[0] = -15.3425;
-			//out[1] =  3.7888;
-			out[0] = -8.3065;
-			out[1] = 0.8792;
-			return;
-		}
-		case W_MG:
-		{
-			out[0] = -6.6437;
-			out[1] = 3.5092;
-			return;
-		}
-		case W_DB:
-		{
-			out[0] = -5.8017;
-			out[1] = 2.9121;
-			return;
-		}
-		case W_SAWNOFF:
-		{
-			out[0] = -5.8017;
-			out[1] = 2.9121;
-			return;
-		}
-		case W_M1A1:
-		{
-			out[0] = -5.3878;
-			out[1] = 3.6719;
-			return;
-		}
-		case W_BAR:
-		{
-			out[0] = -3.8833;
-			//out[1] = 2.3745;
-			out[1] = 2.6745;
-			return;
-		}
-		default:
-		{
-			//Large values > 20ish cause weapon to flicker, scale model down if we encounter!
-			//Scale better be 4.3, or else viewbobbing is going to be inaccurate.
-			out[0] = -5.4792;
-			out[1] = 1.6500;
-			return;
-		}
-	}
-};
 
 /*
 ==================
@@ -925,10 +830,11 @@ void DropRecoilKick (void)
 vec3_t lastPunchAngle;
 void V_CalcRefdef (void)
 {
-	entity_t	*ent, *view;
+	entity_t	*ent, *view, *view2;
 	int			i;
 	vec3_t		forward, right, up;
 	vec3_t		angles;
+	
 	static float oldz = 0;
 
 	V_DriftPitch ();
@@ -938,7 +844,7 @@ void V_CalcRefdef (void)
 	ent = &cl_entities[cl.viewentity];
 // view is the weapon model (only visible from inside body)
 	view = &cl.viewent;
-	
+	view2 = &cl.viewent2;
 
 // transform the view offset by the model's matrix to get the offset from
 // model origin for the view
@@ -947,10 +853,12 @@ void V_CalcRefdef (void)
 	ent->angles[PITCH] = -cl.viewangles[PITCH];	// the model should face
 										// the view dir
 	
+	//Blubs Bobbing calculations were here, moved them down to be right above bob code block
+
 // refresh position
 	VectorCopy (ent->origin, r_refdef.vieworg);
-	r_refdef.vieworg[2] += cl.viewheight;
-
+	r_refdef.vieworg[2] += cl.viewheight;//blubs removed "+ bob", it's added again below actually...
+	
 // never let it sit exactly on a node line, because a water plane can
 // dissapear when viewed with the eye exactly on it.
 // the server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
@@ -978,6 +886,7 @@ void V_CalcRefdef (void)
 		
 // set up gun position
 	VectorCopy (cl.viewangles, view->angles);
+	//cl.oldviewangles = cl.viewangles;
 	
 	CalcGunAngle ();
 	
@@ -985,11 +894,13 @@ void V_CalcRefdef (void)
 	view->angles[YAW] = view->angles[YAW] + cl.gun_kick[YAW];
 	VectorCopy (ent->origin, view->origin);
 	view->origin[2] += cl.viewheight;
+	view->origin[2] -= 2; //sB doing something//
 	
-		//Storing base location, later to calculate total offset
+	//Storing base location, later to calculate total offset
 		CWeaponOffset[0]= view->origin[0] * -1;
 		CWeaponOffset[1]= view->origin[1] * -1;
 		CWeaponOffset[2]= view->origin[2] * -1;
+		
 		
 	//Angle Vectors used by landing and iron sights, so do it here
 	vec3_t		temp_up,temp_right,temp_forward;
@@ -1026,15 +937,13 @@ void V_CalcRefdef (void)
 	vec3_t ADSOffset;
 	if(cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
 	{
-		Con_Printf("in aim offset");
-		
-		ADSOffset[0] = sv_player->v.ADS_Offset[2];
+		ADSOffset[0] = sv_player->v.ADS_Offset[0];
 		ADSOffset[1] = sv_player->v.ADS_Offset[1];
-		ADSOffset[2] = sv_player->v.ADS_Offset[0];
+		ADSOffset[2] = sv_player->v.ADS_Offset[2];
 		
-		ADSOffset[0] = ADSOffset[2]/1000;
+		ADSOffset[0] = ADSOffset[0]/1000;
 		ADSOffset[1] = ADSOffset[1]/1000;
-		ADSOffset[2] = ADSOffset[0]/1000;
+		ADSOffset[2] = ADSOffset[2]/1000;
 	}
 	else
 	{
@@ -1106,29 +1015,30 @@ void V_CalcRefdef (void)
 	r_refdef.viewangles[PITCH] = angledelta(r_refdef.viewangles[PITCH] + (vbob[1] * 0.1));
 	r_refdef.viewangles[ROLL] = anglemod(r_refdef.viewangles[ROLL] + (vbob[2] * 0.05));
 
-
-
+	// ELUTODO: are these the best values?
+	//if (scr_viewsize.value == 110)
+		//view->origin[2] += 2;
+	//else if (scr_viewsize.value == 100)
+		
 	//Here we finally set CWeaponOffset by the total weapon model offset, used for mzfl which uses CWeaponOffset variable.
 		CWeaponOffset[0] += view->origin[0];
 		CWeaponOffset[1] += view->origin[1];
 		CWeaponOffset[2] += view->origin[2];
 //I don't know what the comments below this are, but blubs didn't add them...
 
-#if 0
-	if (cl.model_precache[cl.stats[STAT_WEAPON]] && strcmp (cl.model_precache[cl.stats[STAT_WEAPON]]->name,  "progs/v_shot2.mdl"))
-#endif
-	/*
-	// ELUTODO: are these the best values?
-	if (scr_viewsize.value == 110)
-		view->origin[2] += 2;
-	else if (scr_viewsize.value == 100)
-		view->origin[2] += 3;
-	*/
+// fudge position around to keep amount of weapon visible
+// roughly equal with different FOV
 
 	view->model = cl.model_precache[cl.stats[STAT_WEAPON]];
 	view->frame = cl.stats[STAT_WEAPONFRAME];
 	view->skinnum = cl.stats[STAT_WEAPONSKIN];
 	view->colormap = vid.colormap;
+	
+	view2->model = cl.model_precache[cl.stats[STAT_WEAPON2]];
+	view2->frame = cl.stats[STAT_WEAPON2FRAME];
+	view2->skinnum = cl.stats[STAT_WEAPON2SKIN];
+	view2->colormap = vid.colormap;
+// set up the refresh position
 	
 	//blubs's punchangle interpolation
 	lastPunchAngle[0] += (cl.punchangle[0] - lastPunchAngle[0]) * 0.5;
@@ -1140,7 +1050,7 @@ void V_CalcRefdef (void)
 	VectorAdd (r_refdef.viewangles, lastPunchAngle, r_refdef.viewangles);
 	
 	VectorAdd (r_refdef.viewangles, cl.gun_kick, r_refdef.viewangles);
-/*
+
 	// smooth out stair step ups
 	if (cl.onground && ent->origin[2] - oldz > 0)
 	{
@@ -1166,40 +1076,16 @@ void V_CalcRefdef (void)
 
 		if (chase_active.value)
 			Chase_Update ();
+		
+		view2->origin[0] = view->origin[0];
+		view2->origin[1] = view->origin[1];
+		view2->origin[2] = view->origin[2];
+
+		view2->angles[0] = view->angles[0];
+		view2->angles[1] = view->angles[1];
+		view2->angles[2] = view->angles[2];
 	}
-*/
-	// smooth out stair step ups
-if (cl.onground && ent->origin[2] - oldz > 0)
-{
-	float steptime;
 
-	steptime = cl.time - cl.oldtime;
-	if (steptime < 0)
-//FIXME		I_Error ("steptime < 0");
-		steptime = 0;
-
-	oldz += steptime * 80;
-	if (oldz > ent->origin[2])
-		oldz = ent->origin[2];
-	if (ent->origin[2] - oldz > 12)
-		oldz = ent->origin[2] - 12;
-	r_refdef.vieworg[2] += oldz - ent->origin[2];
-	view->origin[2] += oldz - ent->origin[2];
-}/*
-else
-	oldz = ent->origin[2];
-
-	if (chase_active.value)
-		Chase_Update ();
-
-	view2->origin[0] = view->origin[0];
-	view2->origin[1] = view->origin[1];
-	view2->origin[2] = view->origin[2];
-
-	view2->angles[0] = view->angles[0];
-	view2->angles[1] = view->angles[1];
-	view2->angles[2] = view->angles[2];
-	*/
 }
 
 /*

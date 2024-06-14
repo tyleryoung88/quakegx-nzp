@@ -122,7 +122,7 @@ typedef struct {
 } daliasskininterval_t;
 
 typedef struct {
-	aliasframetype_t	type;
+	aliasframetype_t type;
 } daliasframetype_t;
 
 typedef struct {

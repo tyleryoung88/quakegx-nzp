@@ -324,6 +324,7 @@ void R_ClearSkyBox (void);
 void EmitBothSkyLayers (msurface_t *fa);
 
 int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
+byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight);
 int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
 
 //ZOMBIE AI STUFF

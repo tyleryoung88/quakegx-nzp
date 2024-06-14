@@ -255,9 +255,9 @@ extern	cvar_t	cl_name;
 extern	cvar_t	cl_color;
 
 extern	cvar_t	cl_upspeed;
-extern	cvar_t	cl_forwardspeed;
-extern	cvar_t	cl_backspeed;
-extern	cvar_t	cl_sidespeed;
+extern	float	cl_forwardspeed;
+extern	float	cl_backspeed;
+extern	float	cl_sidespeed;
 
 extern	cvar_t	cl_movespeedkey;
 
@@ -275,6 +275,7 @@ extern	cvar_t	cl_pitchdriftspeed;
 extern	cvar_t	lookspring;
 extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
+extern 	cvar_t 	in_aimassist;
 
 extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;
@@ -388,3 +389,5 @@ void V_SetContentsColor (int contents);
 //
 void CL_InitTEnts (void);
 void CL_SignonReply (void);
+
+qboolean TraceLineN (vec3_t start, vec3_t end, vec3_t impact, vec3_t normal);

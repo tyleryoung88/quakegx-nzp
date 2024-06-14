@@ -118,6 +118,9 @@ typedef struct {
 //johnfitz
 
 extern	cvar_t	gl_ztrick;
+extern 	cvar_t 	scr_fov;
+extern 	cvar_t 	scr_fov_viewmodel;
+
 float viewport_size[4];
 
 /*
@@ -640,7 +643,7 @@ R_DrawZombieLimb
 */
 //Blubs Z hacks: need this declaration.
 model_t *Mod_FindName (char *name);
-
+extern int zombie_skins[4];
 void R_DrawZombieLimb (entity_t *e, int which)
 {
 	model_t		*clmodel;
@@ -648,9 +651,7 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	entity_t 	*limb_ent;
 	lerpdata_t	lerpdata;
 	Mtx			temp;
-	
-	return;
-#if 1
+
 	switch(which) {
 		case 1:
 			limb_ent = &cl_entities[e->z_head];
@@ -688,9 +689,9 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	}
 
 	//glPushMatrix ();
-	//R_RotateForEntity (e, e->scale);
 	c_guMtxIdentity(model);
 	R_RotateForEntity (e);
+	//R_RotateForEntity (e);
 
 	//glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 	//glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
@@ -699,6 +700,9 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	c_guMtxConcat(model, temp, model);
 	c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 	c_guMtxConcat(model, temp, model);
+	
+	c_guMtxConcat(view,model,modelview);
+	GX_LoadPosMtxImm(modelview, GX_PNMTX0); //(modelview, GX_PNMTX0)
 /*
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
@@ -709,6 +713,26 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 */
+	switch(e->skinnum)
+	{
+		case 0:
+			GL_Bind0(zombie_skins[0]);
+			break;
+		case 1:
+			GL_Bind0(zombie_skins[1]);
+			break;
+		case 2:
+			GL_Bind0(zombie_skins[2]);
+			break;
+		case 3:
+			GL_Bind0(zombie_skins[3]);
+			break;
+		default: //out of bounds? assuming 0
+			Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
+			GL_Bind0(zombie_skins[0]);
+			break;
+	}
+
 	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
 	GL_DrawAliasFrame(paliashdr, lerpdata);
@@ -721,10 +745,6 @@ void R_DrawZombieLimb (entity_t *e, int which)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
 */
 	//glPopMatrix ();
-	
-	c_guMtxConcat(view,model,modelview);
-	GX_LoadPosMtxImm(view, GX_PNMTX0); //(modelview, GX_PNMTX0)
-#endif
 }
 
 
@@ -735,7 +755,6 @@ R_DrawAliasModel
 =================
 */
 int doZHack;
-extern int zombie_skins[4];
 void R_DrawAliasModel (entity_t *e)
 {
 	char		specChar;
@@ -873,15 +892,41 @@ void R_DrawAliasModel (entity_t *e)
 		c_guMtxScale (temp, paliashdr->scale[0]*2, paliashdr->scale[1]*2, paliashdr->scale[2]*2);
 		c_guMtxConcat(model, temp, model);
 	} else {
+		/*
+		// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
+		if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
+			float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
+				scale *= ENTSCALE_DECODE(e->scale);
+			//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+			//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
+			c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+			c_guMtxConcat(model, temp, model);
+			c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
+			c_guMtxConcat(model, temp, model);
+		} else {
+			float scale = 1.0f;
+			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
+				scale *= ENTSCALE_DECODE(e->scale);	
+			//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
+			//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
+			c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2] * scale);
+			c_guMtxConcat(model, temp, model);
+			c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2] * scale);
+			c_guMtxConcat(model, temp, model);
+		}
+		*/
+		
 		c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 		c_guMtxConcat(model, temp, model);
 		c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 		c_guMtxConcat(model, temp, model);
+		
 	}
 
 	c_guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
-
+	
 	if (specChar == '%')//Zombie body
 	{
 		switch(e->skinnum)
@@ -996,7 +1041,7 @@ void R_DrawEntitiesOnList (void)
 		}
 		doZHack = 0;
 		if(specChar == '%')
-		{
+		{	
 			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
 			{
 				doZHack = 1;
@@ -1047,6 +1092,73 @@ void R_DrawEntitiesOnList (void)
 				break;
 		}
 	}
+}
+
+/*
+=============
+R_DrawView2Model
+=============
+*/
+void R_DrawView2Model (void)
+{
+	float		ambient[4], diffuse[4];
+	int			j;
+	int			lnum;
+	vec3_t		dist;
+	float		add;
+	dlight_t	*dl;
+	int			ambientlight, shadelight;
+
+	if (!r_drawviewmodel.value)
+		return;
+
+	if (chase_active.value)
+		return;
+
+	if (envmap)
+		return;
+
+	if (!r_drawentities.value)
+		return;
+
+	if (cl.stats[STAT_HEALTH] <= 0)
+		return;
+
+	currententity = &cl.viewent2;
+	if (!currententity->model)
+		return;
+
+	j = R_LightPoint (currententity->origin);
+
+	if (j < 24)
+		j = 24;		// allways give some light on gun
+	ambientlight = j;
+	shadelight = j;
+
+// add dynamic lights		
+	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+	{
+		dl = &cl_dlights[lnum];
+		if (!dl->radius)
+			continue;
+		if (!dl->radius)
+			continue;
+		if (dl->die < cl.time)
+			continue;
+
+		VectorSubtract (currententity->origin, dl->origin, dist);
+		add = dl->radius - Length(dist);
+		if (add > 0)
+			ambientlight += add;
+	}
+
+	ambient[0] = ambient[1] = ambient[2] = ambient[3] = (float)ambientlight / 128;
+	diffuse[0] = diffuse[1] = diffuse[2] = diffuse[3] = (float)shadelight / 128;
+
+	// hack the depth range to prevent view model from poking into walls
+	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 0.3f);
+	R_DrawAliasModel (currententity);
+	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
 /*
@@ -1116,7 +1228,7 @@ void R_DrawViewModel (void)
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
-#if 0
+#if 1
 /*
 ============
 R_PolyBlend
@@ -1196,9 +1308,7 @@ void R_PolyBlend (void)
 	QGX_Alpha(TRUE);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 }
-#endif
-
-
+#else
 /*
 ============
 R_PolyBlend
@@ -1262,7 +1372,7 @@ void R_PolyBlend (void)
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 	QGX_Alpha(TRUE);
 }
-
+#endif
 
 int SignbitsForPlane (mplane_t *out)
 {
@@ -1588,6 +1698,7 @@ void R_RenderView (void)
 
 	R_RenderScene ();
 	R_DrawViewModel ();
+	R_DrawView2Model ();
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	R_DrawWaterSurfaces ();
 

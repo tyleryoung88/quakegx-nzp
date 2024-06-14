@@ -863,19 +863,23 @@ void IN_Move (usercmd_t *cmd)
 
 	yaw_rate = x2;
 	pitch_rate = y2;
+	
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+	cl_sidespeed *= 0.8;
+	cl_backspeed *= 0.7;
 
 	// Move using the main stick.
 	//Send the stick movement commands
 	if (!(nunchuk_stick_as_arrows.value&&nunchuk_connected))
 	{
-		cmd->sidemove += cl_sidespeed.value * x1;
-		if (y1>0) cmd->forwardmove += cl_forwardspeed.value * y1; /* TODO: use cl_backspeed when going backwards? */
-			else cmd->forwardmove += cl_backspeed.value * y1; 
+		cmd->sidemove += cl_sidespeed * x1;
+		if (y1>0) cmd->forwardmove += cl_forwardspeed * y1; /* TODO: use cl_backspeed when going backwards? */
+			else cmd->forwardmove += cl_backspeed * y1; 
 
 		//if the nunchuk c button is pressed it speeds up
 		if (in_speed.state & 1)
 		{
-			if (cl_forwardspeed.value > 200)
+			if (cl_forwardspeed > 200)
 			{
 				cmd->forwardmove /= cl_movespeedkey.value;
 				cmd->sidemove /= cl_movespeedkey.value;
@@ -894,7 +898,7 @@ void IN_Move (usercmd_t *cmd)
 	const float turn_rate = sensitivity.value * 50.0f;
 	if (in_speed.state & 1)
 	{
-		if (cl_forwardspeed.value > 200)
+		if (cl_forwardspeed > 200)
 			cl.viewangles[YAW] -= turn_rate * yaw_rate * host_frametime / cl_anglespeedkey.value;
 		else
 			cl.viewangles[YAW] -= turn_rate * yaw_rate * host_frametime * cl_anglespeedkey.value;
@@ -906,7 +910,7 @@ void IN_Move (usercmd_t *cmd)
 	float pitch_offset;
 	if (in_speed.state & 1)
 	{
-		if (cl_forwardspeed.value > 200)
+		if (cl_forwardspeed > 200)
 			pitch_offset = turn_rate * pitch_rate * host_frametime / cl_anglespeedkey.value;
 		else
 			pitch_offset = turn_rate * pitch_rate * host_frametime * cl_anglespeedkey.value;
@@ -947,20 +951,22 @@ void IN_Move (usercmd_t *cmd)
 		in_yawangle = .0f;
 		in_rollangle = .0f;
 	}
-	/*
+	
+	//Con_Printf("%f\n", x2);
+	
 	// crosshair stuff
-	if (x2 < 50 && x2 > -50 && y2 < 50 && y2 > -50) {
+	if (x2 < 0.03f && x2 > -0.03f && y2 < 0.03f && y2 > -0.03f) {
 		croshhairmoving = false;
 
 		crosshair_opacity += 22;
 
-		if (crosshair_opacity >= 255)
-			crosshair_opacity = 255;
+		if (crosshair_opacity >= 215)
+			crosshair_opacity = 215;
 	} else {
 		croshhairmoving = true;
 		crosshair_opacity -= 8;
 		if (crosshair_opacity <= 128)
 			crosshair_opacity = 128;
 	}
-	*/
+	
 }

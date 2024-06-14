@@ -19,58 +19,104 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "quakedef.h"
 
-enum {m_none, m_main, m_singleplayer, m_load, m_save, m_multiplayer, m_setup, m_net, m_options, m_keys, m_options2, m_help, m_quit, m_lanconfig, m_gameoptions, m_search, m_slist} m_state;
+enum 
+{
+	m_none, 
+	m_main, 
+	m_paused_menu, 
+	m_singleplayer, 
+	m_load, 
+	m_save, 
+	m_custommaps, 
+	m_setup, 
+	m_net, 
+	m_options, 
+	m_video, 
+	m_keys, 
+	m_help, 
+	m_quit, 
+	m_restart,
+	m_credits,
+	m_exit,
+	m_serialconfig, 
+	m_modemconfig, 
+	m_lanconfig, 
+	m_gameoptions, 
+	m_search, 
+	m_slist,
+} m_state;
 
-void M_Menu_Main_f (void);
-	void M_Menu_SinglePlayer_f (void);
 		void M_Menu_Load_f (void);
 		void M_Menu_Save_f (void);
 	void M_Menu_MultiPlayer_f (void);
 		void M_Menu_Setup_f (void);
 		void M_Menu_Net_f (void);
 	void M_Menu_Options_f (void);
-		void M_Menu_Keys_f (void);
 		void M_Menu_Options2_f (void);
 	void M_Menu_Help_f (void);
-	void M_Menu_Quit_f (void);
 void M_Menu_LanConfig_f (void);
 void M_Menu_GameOptions_f (void);
 void M_Menu_Search_f (void);
 void M_Menu_ServerList_f (void);
 
-void M_Main_Draw (void);
-	void M_SinglePlayer_Draw (void);
 		void M_Load_Draw (void);
 		void M_Save_Draw (void);
 	void M_MultiPlayer_Draw (void);
 		void M_Setup_Draw (void);
 		void M_Net_Draw (void);
 	void M_Options_Draw (void);
-		void M_Keys_Draw (void);
 		void M_Options2_Draw (void);
 	void M_Help_Draw (void);
-	void M_Quit_Draw (void);
 void M_LanConfig_Draw (void);
 void M_GameOptions_Draw (void);
 void M_Search_Draw (void);
 void M_ServerList_Draw (void);
 
-void M_Main_Key (int key);
-	void M_SinglePlayer_Key (int key);
 		void M_Load_Key (int key);
 		void M_Save_Key (int key);
 	void M_MultiPlayer_Key (int key);
 		void M_Setup_Key (int key);
 		void M_Net_Key (int key);
 	void M_Options_Key (int key);
-		void M_Keys_Key (int key);
 		void M_Options2_Key (int key);
 	void M_Help_Key (int key);
-	void M_Quit_Key (int key);
 void M_LanConfig_Key (int key);
 void M_GameOptions_Key (int key);
 void M_Search_Key (int key);
 void M_ServerList_Key (int key);
+
+
+void M_Menu_Main_f (void);
+	void M_Menu_SinglePlayer_f (void);
+		void M_Menu_CustomMaps_f (void);
+	void M_Menu_Options_f (void);
+		void M_Menu_Keys_f (void);
+		void M_Menu_Video_f (void);
+	void M_Menu_Credits_f (void);
+	void M_Menu_Quit_f (void);
+void M_Menu_GameOptions_f (void);
+
+void M_Main_Draw (void);
+	void M_SinglePlayer_Draw (void);
+		void M_Menu_CustomMaps_Draw (void);
+	void M_Options_Draw (void);
+		void M_Keys_Draw (void);
+		void M_Video_Draw (void);
+	void M_Menu_Credits_Draw (void);
+	void M_Quit_Draw (void);
+
+void M_Main_Key (int key);
+	void M_SinglePlayer_Key (int key);
+		void M_Menu_CustomMaps_Key (int key);
+	void M_Options_Key (int key);
+		void M_Keys_Key (int key);
+		void M_Video_Key (int key);
+	void M_Menu_Credits_Key (int key);
+	void M_Quit_Key (int key);
+void M_GameOptions_Key (int key);
+
+void M_Menu_Restart_f (void);
+void M_Menu_Exit_f (void);
 
 qboolean	m_entersound;		// play after drawing a frame, so caching
 								// won't disrupt the sound
@@ -79,6 +125,49 @@ qboolean	m_recursiveDraw;
 int			m_return_state;
 qboolean	m_return_onerror;
 char		m_return_reason [32];
+
+typedef struct
+{
+	int 		occupied;
+	int 	 	map_allow_game_settings;
+	int 	 	map_use_thumbnail;
+	char* 		map_name;
+	char* 		map_name_pretty;
+	char* 		map_desc_1;
+	char* 		map_desc_2;
+	char* 		map_desc_3;
+	char* 		map_desc_4;
+	char* 		map_desc_5;
+	char* 		map_desc_6;
+	char* 		map_desc_7;
+	char* 		map_desc_8;
+	char* 		map_author;
+	char* 		map_thumbnail_path;
+} usermap_t;
+
+usermap_t custom_maps[50];
+
+// Backgrounds
+qpic_t *menu_bk;
+
+// Map screens
+qpic_t *menu_ndu;
+qpic_t *menu_wh;
+qpic_t *menu_wh2;
+//qpic_t *menu_kn;
+qpic_t *menu_ch;
+//qpic_t *menu_wn;
+qpic_t *menu_custom;
+qpic_t *menu_cuthum;
+
+extern cvar_t	waypoint_mode;
+
+extern int loadingScreen;
+extern char* loadname2;
+extern char* loadnamespec;
+extern qboolean loadscreeninit;
+
+char* game_build_date;
 
 #define StartingGame	(m_multiplayer_cursor == 1)
 #define JoiningGame		(m_multiplayer_cursor == 0)
@@ -219,6 +308,18 @@ void M_DrawTextBox (int x, int y, int width, int lines)
 
 //=============================================================================
 
+void M_Load_Menu_Pics ()
+{
+	menu_bk 	= Draw_CachePic("gfx/menu/menu_background");
+	menu_ndu 	= Draw_CachePic("gfx/menu/nacht_der_untoten");
+	//menu_kn 	= Draw_CachePic("gfx/menu/kino_der_toten");
+	menu_wh 	= Draw_CachePic("gfx/menu/nzp_warehouse");
+	menu_wh2 	= Draw_CachePic("gfx/menu/nzp_warehouse2");
+	//menu_wn 	= Draw_CachePic("gfx/menu/wahnsinn");
+	menu_ch 	= Draw_CachePic("gfx/menu/christmas_special");
+	menu_custom = Draw_CachePic("gfx/menu/custom");
+}
+
 int m_save_demonum;
 
 /*
@@ -251,6 +352,302 @@ void M_ToggleMenu_f (void)
 	}
 }
 
+int M_Paused_Cusor;
+#define Max_Paused_Iteams 5
+
+void M_Paused_Menu_f ()
+{
+	key_dest = key_menu_pause;
+	m_state = m_paused_menu;
+	m_entersound = true;
+	loadingScreen = 0;
+	loadscreeninit = false;
+	M_Paused_Cusor = 0;
+}
+
+static void M_Paused_Menu_Draw ()
+{
+	// Fill black to make everything easier to see
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
+
+	// Header
+	Draw_ColoredString(10, 10, "PAUSED", 255, 255, 255, 255, 2);
+
+	if ((M_Paused_Cusor == 0))
+		Draw_ColoredString(10, 135, "Resume", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(10, 135, "Resume", 255, 255, 255, 255, 1);
+
+	if ((M_Paused_Cusor == 1))
+		Draw_ColoredString(10, 145, "Restart", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(10, 145, "Restart", 255, 255, 255, 255, 1);
+
+	if ((M_Paused_Cusor == 2))
+		Draw_ColoredString(10, 155, "Settings", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(10, 155, "Settings", 255, 255, 255, 255, 1);
+
+	if (waypoint_mode.value) {
+		if ((M_Paused_Cusor == 3))
+			Draw_ColoredString(10, 165, "Save Waypoints", 255, 0, 0, 255, 1);
+		else
+			Draw_ColoredString(10, 165, "Save Waypoints", 255, 255, 255, 255, 1);
+	} else {
+		if ((M_Paused_Cusor == 3))
+			Draw_ColoredString(10, 165, "Achievements", 255, 0, 0, 255, 1);
+		else
+			Draw_ColoredString(10, 165, "Achievements", 255, 255, 255, 255, 1);
+	}
+
+	if ((M_Paused_Cusor == 4))
+		Draw_ColoredString(10, 175, "Main Menu", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(10, 175, "Main Menu", 255, 255, 255, 255, 1);
+}
+
+static void M_Paused_Menu_Key (int key)
+{
+	switch (key)
+	{
+		case K_ESCAPE:
+			S_LocalSound ("sounds/menu/enter.wav");
+			Cbuf_AddText("togglemenu\n");
+			break;
+
+		case K_DOWNARROW:
+			S_LocalSound ("sounds/menu/navigate.wav");
+			if (++M_Paused_Cusor >= Max_Paused_Iteams)
+				M_Paused_Cusor = 0;
+			break;
+
+		case K_UPARROW:
+			S_LocalSound ("sounds/menu/navigate.wav");
+			if (--M_Paused_Cusor < 0)
+				M_Paused_Cusor = Max_Paused_Iteams - 1;
+			break;
+
+		case K_ENTER:
+			m_entersound = true;
+
+			switch (M_Paused_Cusor)
+			{
+			case 0:
+				key_dest = key_game;
+				m_state = m_none;
+				break;
+			case 1:
+				M_Menu_Restart_f();
+				break;
+			case 2:
+				M_Menu_Options_f();
+				key_dest = key_menu_pause;
+				break;
+			case 3:
+				if (waypoint_mode.value) {
+					Cbuf_AddText("impulse 101\n");
+				}
+				/*else
+					M_Menu_Achievement_f();
+				*/ // naievil -- fixme: do not have achievements
+				key_dest = key_menu_pause;
+				break;
+			case 4:
+				M_Menu_Exit_f();
+				break;
+			}
+		}
+}
+
+//=============================================================================
+/* CREDITS MENU */
+
+
+void M_Menu_Credits_f (void)
+{
+	key_dest = key_menu;
+	m_state = m_credits;
+	m_entersound = true;
+}
+
+void M_Credits_Draw (void)
+{
+   	// Background
+	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
+
+	// Fill black to make everything easier to see
+	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+
+	// Header
+	Draw_ColoredString(5, 5, "CREDITS", 255, 255, 255, 255, 2);
+
+	Draw_ColoredString(5, 30, "Programming:", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 40, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 50, "Cypress, ScatterBox", 255, 255, 255, 255, 1);
+
+	Draw_ColoredString(5, 70, "Models:", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 80, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1);
+
+	Draw_ColoredString(5, 100, "GFX:", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 110, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1);
+
+	Draw_ColoredString(5, 130, "Sounds/Music:", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 140, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1);
+
+	Draw_ColoredString(5, 160, "Special Thanks:", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 170, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 180, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 190, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 200, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 210, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 220, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1);
+
+	Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1);
+}
+
+
+void M_Credits_Key (int key)
+{
+	switch (key)
+	{
+		case K_ENTER:
+            M_Menu_Main_f ();
+            break;
+	}
+}
+
+//=============================================================================
+/* RESTART MENU */
+
+qboolean	wasInMenus;
+
+
+char *restartMessage [] =
+{
+
+  " Are you sure you want",
+  "  to restart this game? ",  //msg:0
+  "                               ",
+  "   A :Yes    B : No       "
+};
+
+
+void M_Menu_Restart_f (void)
+{
+	wasInMenus = (key_dest == key_menu_pause);
+	key_dest = key_menu_pause;
+	m_state = m_restart;
+	m_entersound = true;
+}
+
+
+void M_Restart_Key (int key)
+{
+	switch (key)
+	{
+	case K_ESCAPE:
+	case 'n':
+	case 'N':
+		m_state = m_paused_menu;
+		m_entersound = true;
+		break;
+
+	case 'Y':
+	case 'y':
+	case K_ENTER:
+		key_dest = key_game;
+		m_state = m_none;
+		// Cbuf_AddText ("restart\n"); // nai -- old, now do soft reset
+		PR_ExecuteProgram (pr_global_struct->Soft_Restart);
+		break;
+
+	default:
+		break;
+	}
+
+}
+
+
+void M_Restart_Draw (void)
+{
+	m_state = m_paused_menu;
+	m_recursiveDraw = true;
+	M_Draw ();
+	m_state = m_restart;
+
+	M_DrawTextBox (56, 76, 24, 4);
+	M_Print (64, 84,  restartMessage[0]);
+	M_Print (64, 92,  restartMessage[1]);
+	M_Print (64, 100, restartMessage[2]);
+	M_Print (64, 108, restartMessage[3]);
+}
+
+
+//=============================================================================
+/* EXIT MENU */
+
+
+char *exitMessage [] =
+{
+
+  " Are you sure you want  ",
+  "to quit to the Main Menu?",  //msg:0
+  "                                  ",
+  "   A :Yes    B : No       "
+};
+
+
+void M_Menu_Exit_f (void)
+{
+	wasInMenus = (key_dest == key_menu_pause);
+	key_dest = key_menu_pause;
+	m_state = m_exit;
+	m_entersound = true;
+}
+
+
+void M_Exit_Key (int key)
+{
+	switch (key)
+	{
+	case K_ESCAPE:
+	case 'n':
+	case 'N':
+		m_state = m_paused_menu;
+		m_entersound = true;
+		break;
+
+	case 'Y':
+	case 'y':
+	case K_ENTER:
+		Cbuf_AddText("disconnect\n");
+		CL_ClearState ();
+		M_Menu_Main_f();
+		break;
+
+	default:
+		break;
+	}
+
+}
+
+
+void M_Exit_Draw (void)
+{
+	m_state = m_paused_menu;
+	m_recursiveDraw = true;
+	M_Draw ();
+	m_state = m_exit;
+
+	M_DrawTextBox (56, 76, 24, 4);
+	M_Print (64, 84,  exitMessage[0]);
+	M_Print (64, 92,  exitMessage[1]);
+	M_Print (64, 100, exitMessage[2]);
+	M_Print (64, 108, exitMessage[3]);
+}
+
+
 
 //=============================================================================
 /* MAIN MENU */
@@ -268,23 +665,76 @@ void M_Menu_Main_f (void)
 	}
 	key_dest = key_menu;
 	m_state = m_main;
-	m_entersound = TRUE;
+	m_entersound = true;
 }
 
 
 void M_Main_Draw (void)
 {
-	int		f;
-	qpic_t	*p;
+	// Background
+	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/ttl_main.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/mainmenu.lmp") );
+	// Fill black to make everything easier to see
+	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
 
-	f = (int)(host_time * 10)%6;
+	// Version String
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 8)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
 
-	M_DrawTransPic (54, 32 + m_main_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
+	// Header
+	Draw_ColoredString(5, 5, "MAIN MENU", 255, 255, 255, 255, 2);
+
+	// Solo
+	if (m_main_cursor == 0)
+		Draw_ColoredString(5, 40, "Solo", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 40, "Solo", 255, 255, 255, 255, 1);
+
+
+	// Co-Op (Unfinished, so non-selectable)
+	Draw_ColoredString(5, 50, "Co-Op (Coming Soon!)", 128, 128, 128, 255, 1);
+
+	// Divider
+	Draw_FillByColor(5, 63, 160, 2, 130, 130, 130, 255);
+
+	if (m_main_cursor == 1)
+		Draw_ColoredString(5, 70, "Settings", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 70, "Settings", 255, 255, 255, 255, 1);
+
+	Draw_ColoredString(5, 80, "Achievements", 128, 128, 128, 255, 1);
+
+	// Divider
+	Draw_FillByColor(5, 93, 160, 2, 130, 130, 130, 255);
+
+	if (m_main_cursor == 2)
+		Draw_ColoredString(5, 100, "Credits", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 100, "Credits", 255, 255, 255, 255, 1);
+
+	// Divider
+	Draw_FillByColor(5, 113, 160, 2, 130, 130, 130, 255);
+
+	if (m_main_cursor == 3)
+		Draw_ColoredString(5, 120, "Exit", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 120, "Exit", 255, 255, 255, 255, 1);
+
+	// Descriptions
+	switch(m_main_cursor) {
+		case 0: // Solo
+			Draw_ColoredString(5, 220, "Take on the Hordes by yourself.", 255, 255, 255, 255, 1);
+			break;
+		case 1: // Settings
+			Draw_ColoredString(5, 220, "Adjust your Settings to Optimize your Experience.", 255, 255, 255, 255, 1);
+			break;
+		case 2: // Credits
+			Draw_ColoredString(5, 220, "See who made NZ:P possible.", 255, 255, 255, 255, 1);
+			break;
+		case 3: // Exit
+			Draw_ColoredString(5, 220, "Return to Home Menu.", 255, 255, 255, 255, 1);
+			break;
+	}
 }
 
 
@@ -292,25 +742,14 @@ void M_Main_Key (int key)
 {
 	switch (key)
 	{
-	case K_ESCAPE:
-	case K_JOY1:
-	case K_JOY10:
-	case K_JOY21:
-		key_dest = key_game;
-		m_state = m_none;
-		cls.demonum = m_save_demonum;
-		if (cls.demonum != -1 && !cls.demoplayback && cls.state != ca_connected)
-			CL_NextDemo ();
-		break;
-
 	case K_DOWNARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		if (++m_main_cursor >= MAIN_ITEMS)
 			m_main_cursor = 0;
 		break;
 
 	case K_UPARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		if (--m_main_cursor < 0)
 			m_main_cursor = MAIN_ITEMS - 1;
 		break;
@@ -319,7 +758,7 @@ void M_Main_Key (int key)
 	case K_JOY0:
 	case K_JOY9:
 	case K_JOY20:
-		m_entersound = TRUE;
+		m_entersound = true;
 
 		switch (m_main_cursor)
 		{
@@ -328,18 +767,14 @@ void M_Main_Key (int key)
 			break;
 
 		case 1:
-			M_Menu_MultiPlayer_f ();
-			break;
-
-		case 2:
 			M_Menu_Options_f ();
 			break;
 
-		case 3:
-			M_Menu_Help_f ();
+		case 2:
+			M_Menu_Credits_f ();
 			break;
 
-		case 4:
+		case 3:
 			M_Menu_Quit_f ();
 			break;
 		}
@@ -350,7 +785,7 @@ void M_Main_Key (int key)
 /* SINGLE PLAYER MENU */
 
 int	m_singleplayer_cursor;
-#define	SINGLEPLAYER_ITEMS	3
+#define	SINGLEPLAYER_ITEMS	6 //6
 
 
 void M_Menu_SinglePlayer_f (void)
@@ -363,17 +798,104 @@ void M_Menu_SinglePlayer_f (void)
 
 void M_SinglePlayer_Draw (void)
 {
-	int		f;
-	qpic_t	*p;
+	// Background
+	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/ttl_sgl.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
-	M_DrawTransPic (72, 32, Draw_CachePic ("gfx/sp_menu.lmp") );
+	// Fill black to make everything easier to see
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
-	f = (int)(host_time * 10)%6;
+	// Header
+	Draw_ColoredString(5, 5, "SOLO", 255, 255, 255, 255, 2);
 
-	M_DrawTransPic (54, 32 + m_singleplayer_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
+	// Nacht der Untoten
+	if (m_singleplayer_cursor == 0)
+		Draw_ColoredString(5, 40, "Nacht der Untoten", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 40, "Nacht der Untoten", 255, 255, 255, 255, 1);
+
+	// Divider
+	Draw_FillByColor(5, 53, 160, 2, 130, 130, 130, 255);
+
+	// Warehouse
+	if (m_singleplayer_cursor == 1)
+		Draw_ColoredString(5, 60, "Warehouse", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 60, "Warehouse", 255, 255, 255, 255, 1);
+
+	// Warehouse (Classic)
+	if (m_singleplayer_cursor == 2)
+		Draw_ColoredString(5, 70, "Warehouse (Classic)", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 70, "Warehouse (Classic)", 255, 255, 255, 255, 1);
+
+	// Christmas Special
+	if (m_singleplayer_cursor == 3)
+		Draw_ColoredString(5, 80, "Christmas Special", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 80, "Christmas Special", 255, 255, 255, 255, 1);
+
+	// Divider
+	Draw_FillByColor(5, 93, 160, 2, 130, 130, 130, 255);
+
+	// Custom Maps
+	if (m_singleplayer_cursor == 4)
+		Draw_ColoredString(5, 100, "Custom Maps", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 100, "Custom Maps", 255, 255, 255, 255, 1);
+
+	// Back
+	if (m_singleplayer_cursor == 5)
+		Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 230, "Back", 255, 255, 255, 255, 1);
+
+	// Map description & pic
+	switch(m_singleplayer_cursor) {
+		case 0:
+			menu_ndu = Draw_CachePic("gfx/menu/nacht_der_untoten");
+			Draw_StretchPic(170, 40, menu_ndu, 145, 100);
+			Draw_ColoredString(30, 148, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 158, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 168, "brutal plane crash surrounded by", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 178, "hordes of undead. Exploit myste-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 188, "rious forces at play and hold o-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 198, "ut against relentless waves. Der", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 208, "Anstieg ist jetzt. Will you fall", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 218, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
+			break;
+		case 1:
+			menu_wh2 = Draw_CachePic("gfx/menu/nzp_warehouse2");
+			Draw_StretchPic(170, 40, menu_wh2, 145, 100);
+			Draw_ColoredString(30, 148, "Four nameless marines find them-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 158, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 168, "or is it something more? Fight", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 178, "your way to uncovering its sec-", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 188, "rets, though you may not like", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 198, "what you find..", 255, 255, 255, 255, 1);
+			break;
+		case 2:
+			menu_wh = Draw_CachePic("gfx/menu/nzp_warehouse");
+			Draw_StretchPic(170, 40, menu_wh, 145, 100);
+			Draw_ColoredString(30, 148, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 158, "Fight your way to the Power", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 168, "Switch through the Hordes!", 255, 255, 255, 255, 1);
+			break;
+		case 3:
+			menu_ch = Draw_CachePic("gfx/menu/christmas_special");
+			Draw_StretchPic(170, 40, menu_ch, 145, 100);
+			Draw_ColoredString(30, 148, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 158, "sure you will get presents from", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 168, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
+			break;
+		case 4:
+			menu_custom = Draw_CachePic("gfx/menu/custom");
+			Draw_StretchPic(170, 40, menu_custom, 145, 100);
+			Draw_ColoredString(30, 148, "Custom Maps made by Community", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 158, "Members on GitHub and on the", 255, 255, 255, 255, 1);
+			Draw_ColoredString(30, 168, "NZ:P Forum!", 255, 255, 255, 255, 1);
+			break;
+	}
 }
 
 
@@ -381,21 +903,14 @@ void M_SinglePlayer_Key (int key)
 {
 	switch (key)
 	{
-	case K_ESCAPE:
-	case K_JOY1:
-	case K_JOY10:
-	case K_JOY21:
-		M_Menu_Main_f ();
-		break;
-
 	case K_DOWNARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		if (++m_singleplayer_cursor >= SINGLEPLAYER_ITEMS)
 			m_singleplayer_cursor = 0;
 		break;
 
 	case K_UPARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		if (--m_singleplayer_cursor < 0)
 			m_singleplayer_cursor = SINGLEPLAYER_ITEMS - 1;
 		break;
@@ -404,218 +919,420 @@ void M_SinglePlayer_Key (int key)
 	case K_JOY0:
 	case K_JOY9:
 	case K_JOY20:
-		m_entersound = TRUE;
+		m_entersound = true;
 
 		switch (m_singleplayer_cursor)
 		{
 		case 0:
-			if (sv.active)
-			{
-				static char message[128];
-				sprintf(
-					message,
-					"Are you sure you want to\n"
-					"start a new game?\n"
-					"\n"
-					"Y or button A: Yes\n"
-					"N or button B: No\n");
-				if (!SCR_ModalMessage(message))
-					break;
-			}
 			key_dest = key_game;
 			if (sv.active)
 				Cbuf_AddText ("disconnect\n");
 			Cbuf_AddText ("maxplayers 1\n");
 			Cbuf_AddText ("map ndu\n");
+			loadingScreen = 1;
+			loadname2 = "ndu";
+			loadnamespec = "Nacht der Untoten";
 			break;
 
 		case 1:
-			M_Menu_Load_f ();
+			key_dest = key_game;
+			if (sv.active)
+				Cbuf_AddText ("disconnect\n");
+			Cbuf_AddText ("maxplayers 1\n");
+			Cbuf_AddText ("map nzp_warehouse2\n");
+			loadingScreen = 1;
+			loadname2 = "nzp_warehouse2";
+			loadnamespec = "Warehouse";
 			break;
 
 		case 2:
-			M_Menu_Save_f ();
+			key_dest = key_game;
+			if (sv.active)
+				Cbuf_AddText ("disconnect\n");
+			Cbuf_AddText ("maxplayers 1\n");
+			Cbuf_AddText ("map nzp_warehouse\n");
+			loadingScreen = 1;
+			loadname2 = "nzp_warehouse";
+			loadnamespec = "Warehouse (Classic)";
+			break;
+
+		case 3:
+			key_dest = key_game;
+			if (sv.active)
+				Cbuf_AddText ("disconnect\n");
+			Cbuf_AddText ("maxplayers 1\n");
+			Cbuf_AddText ("map christmas_special\n");
+			loadingScreen = 1;
+			loadname2 = "christmas_special";
+			loadnamespec = "Christmas Special";
+			break;
+
+		case 4:
+			M_Menu_CustomMaps_f ();
+			break;
+		case 5:
+			M_Menu_Main_f ();
 			break;
 		}
+		break;
+		
+	// b button
+	case K_BACKSPACE:
+		M_Menu_Main_f();
+		break;
 	}
 }
 
 //=============================================================================
-/* LOAD/SAVE MENU */
+/* SINGLE PLAYER MENU */
 
-int		load_cursor;		// 0 < load_cursor < MAX_SAVEGAMES
+int	m_map_cursor;
+int	MAP_ITEMS;
+int user_maps_num = 0;
+int current_custom_map_page;
+int custom_map_pages;
+int multiplier;
+char  user_levels[256][MAX_QPATH];
 
-#define	MAX_SAVEGAMES		12
-char	m_filenames[MAX_SAVEGAMES][SAVEGAME_COMMENT_LENGTH+1];
-int		loadable[MAX_SAVEGAMES];
-
-void M_ScanSaves (void)
+// UGHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHHH
+// fuck windows
+char* remove_windows_newlines(const char* line)
 {
-	int		i, j;
-	char	name[MAX_OSPATH];
-	FILE	*f;
-	int		version;
+    const char* p = line;
+    size_t len = strlen(line);
+    char* result = (char*)malloc(len + 1);
+    
+    if (result == NULL) {
+        return NULL;
+    }
+    
+    char* q = result;
+    
+    for (size_t i = 0; i < len; i++) {
+        if (p[i] == '\r') {
+            continue;
+        }
+        *q++ = p[i];
+    }
+    
+    *q = '\0';
+    
+    return result;
+}
+#include <fat.h>
+#include <sys/dir.h>
+char *COM_FileExtension (char *in);
+void Map_Finder(void)
+{
+	struct dirent *dp;
+    DIR *dir = opendir(va("%s/maps", com_gamedir)); // Open the directory - dir contains a pointer to manage the dir
 
-	for (i=0 ; i<MAX_SAVEGAMES ; i++)
+	if(dir < 0)
 	{
-		strcpy (m_filenames[i], "--- UNUSED SLOT ---");
-		loadable[i] = FALSE;
-		sprintf (name, "%s/s%i.sav", com_gamedir, i);
-		f = fopen (name, "rb");
-		if (!f)
+		Sys_Error ("Map_Finder");
+		return;
+	}
+
+	for (int i = 0; i < 50; i++) {
+		custom_maps[i].occupied = false;
+	}
+	
+	while(dp=readdir(dir))
+	{
+		
+		if(dp->d_name[0] == '.')
+		{
 			continue;
-		fscanf (f, "%i\n", &version);
-		fscanf (f, "%79s\n", name);
-		strncpy (m_filenames[i], name, sizeof(m_filenames[i])-1);
+		}
 
-	// change _ back to space
-		for (j=0 ; j<SAVEGAME_COMMENT_LENGTH ; j++)
-			if (m_filenames[i][j] == '_')
-				m_filenames[i][j] = ' ';
-		loadable[i] = TRUE;
-		fclose (f);
+		if(!strcmp(COM_FileExtension(dp->d_name),"bsp")|| !strcmp(COM_FileExtension(dp->d_name),"BSP"))
+	    {
+			char ntype[32];
+
+			COM_StripExtension(dp->d_name, ntype);
+			custom_maps[user_maps_num].occupied = true;
+			custom_maps[user_maps_num].map_name = malloc(sizeof(char)*32);
+			sprintf(custom_maps[user_maps_num].map_name, "%s", ntype);
+
+			char* 		setting_path;
+
+			setting_path 								  	= malloc(sizeof(char)*64);
+			custom_maps[user_maps_num].map_thumbnail_path 	= malloc(sizeof(char)*64);
+			strcpy(setting_path, 									va("%s/maps/", com_gamedir));
+			strcpy(custom_maps[user_maps_num].map_thumbnail_path, 	"gfx/menu/custom/");
+			strcat(setting_path, 									custom_maps[user_maps_num].map_name);
+			strcat(custom_maps[user_maps_num].map_thumbnail_path, 	custom_maps[user_maps_num].map_name);
+			strcat(setting_path, ".txt");
+
+			FILE    *setting_file;			
+			setting_file = fopen(setting_path, "rb");
+			if (setting_file != NULL) {
+
+				fseek(setting_file, 0L, SEEK_END);
+				size_t sz = ftell(setting_file);
+				fseek(setting_file, 0L, SEEK_SET);
+
+				int state;
+				state = 0;
+				int value;
+
+				custom_maps[user_maps_num].map_name_pretty = malloc(sizeof(char)*32);
+				custom_maps[user_maps_num].map_desc_1 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_2 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_3 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_4 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_5 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_6 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_7 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_desc_8 = malloc(sizeof(char)*40);
+				custom_maps[user_maps_num].map_author = malloc(sizeof(char)*40);
+
+				char* buffer = (char*)calloc(sz+1, sizeof(char));
+				fread(buffer, sz, 1, setting_file);
+
+				strtok(buffer, "\n");
+				while(buffer != NULL) {
+					switch(state) {
+						case 0: strcpy(custom_maps[user_maps_num].map_name_pretty, remove_windows_newlines(buffer)); break;
+						case 1: strcpy(custom_maps[user_maps_num].map_desc_1, remove_windows_newlines(buffer)); break;
+						case 2: strcpy(custom_maps[user_maps_num].map_desc_2, remove_windows_newlines(buffer)); break;
+						case 3: strcpy(custom_maps[user_maps_num].map_desc_3, remove_windows_newlines(buffer)); break;
+						case 4: strcpy(custom_maps[user_maps_num].map_desc_4, remove_windows_newlines(buffer)); break;
+						case 5: strcpy(custom_maps[user_maps_num].map_desc_5, remove_windows_newlines(buffer)); break;
+						case 6: strcpy(custom_maps[user_maps_num].map_desc_6, remove_windows_newlines(buffer)); break;
+						case 7: strcpy(custom_maps[user_maps_num].map_desc_7, remove_windows_newlines(buffer)); break;
+						case 8: strcpy(custom_maps[user_maps_num].map_desc_8, remove_windows_newlines(buffer)); break;
+						case 9: strcpy(custom_maps[user_maps_num].map_author, remove_windows_newlines(buffer)); break;
+						case 10: value = 0; sscanf(remove_windows_newlines(buffer), "%d", &value); custom_maps[user_maps_num].map_use_thumbnail = value; break;
+						case 11: value = 0; sscanf(remove_windows_newlines(buffer), "%d", &value); custom_maps[user_maps_num].map_allow_game_settings = value; break;
+						default: break;
+					}
+					state++;
+					buffer = strtok(NULL, "\n");
+				}
+				free(buffer);
+				buffer = 0;
+				fclose(setting_file);
+			}
+			user_maps_num++;
+		}
 	}
+    closedir(dir); // close the handle (pointer)
+	custom_map_pages = (int)ceil((double)(user_maps_num)/15);
 }
 
-void M_Menu_Load_f (void)
+void M_Menu_CustomMaps_f (void)
 {
-	m_entersound = TRUE;
-	m_state = m_load;
 	key_dest = key_menu;
-	M_ScanSaves ();
+	m_state = m_custommaps;
+	m_entersound = true;
+	MAP_ITEMS = 13;
+	current_custom_map_page = 1;
 }
 
 
-void M_Menu_Save_f (void)
+void M_Menu_CustomMaps_Draw (void)
 {
-	if (!sv.active)
-		return;
-	if (cl.intermission)
-		return;
-	if (svs.maxclients != 1)
-		return;
-	m_entersound = TRUE;
-	m_state = m_save;
-	key_dest = key_menu;
-	M_ScanSaves ();
-}
+	// Background
+	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
+	// Fill black to make everything easier to see
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
-void M_Load_Draw (void)
-{
-	int		i;
-	qpic_t	*p;
+	// Header
+	Draw_ColoredString(5, 5, "CUSTOM MAPS", 255, 255, 255, 255, 2);
 
-	p = Draw_CachePic ("gfx/p_load.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	int 	line_increment;
 
-	for (i=0 ; i< MAX_SAVEGAMES; i++)
-		M_Print (16, 32 + 8*i, m_filenames[i]);
+	line_increment = 0;
 
-// line cursor
-	M_DrawCharacter (8, 32 + load_cursor*8, 12+((int)(realtime*4)&1));
-}
+	if (current_custom_map_page > 1)
+		multiplier = (current_custom_map_page - 1) * 15;
+	else
+		multiplier = 0;
 
+	for (int i = 0; i < 15; i++) {
+		if (custom_maps[i + multiplier].occupied == false)
+			continue;
 
-void M_Save_Draw (void)
-{
-	int		i;
-	qpic_t	*p;
+		if (m_map_cursor == i) {
 
-	p = Draw_CachePic ("gfx/p_save.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
+				menu_cuthum = Draw_CachePic(custom_maps[i + multiplier].map_thumbnail_path);
+				if (menu_cuthum != NULL) {
+					Draw_StretchPic(162, 40, menu_cuthum, 175, 100);
+				}
+			}
+			
+			if (custom_maps[i + multiplier].map_name_pretty != 0)
+				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name_pretty, 255, 0, 0, 255, 1);
+			else
+				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name, 255, 0, 0, 255, 1);
 
-	for (i=0 ; i<MAX_SAVEGAMES ; i++)
-		M_Print (16, 32 + 8*i, m_filenames[i]);
-
-// line cursor
-	M_DrawCharacter (8, 32 + load_cursor*8, 12+((int)(realtime*4)&1));
-}
-
-
-void M_Load_Key (int k)
-{
-	switch (k)
-	{
-	case K_ESCAPE:
-	case K_JOY1:
-	case K_JOY10:
-	case K_JOY21:
-		M_Menu_SinglePlayer_f ();
-		break;
-
-	case K_ENTER:
-	case K_JOY0:
-	case K_JOY9:
-	case K_JOY20:
-		S_LocalSound ("misc/menu2.wav");
-		if (!loadable[load_cursor])
-			return;
-		m_state = m_none;
-		key_dest = key_game;
-
-	// Host_Loadgame_f can't bring up the loading plaque because too much
-	// stack space has been used, so do it now
-		SCR_BeginLoadingPlaque ();
-
-	// issue the load command
-		Cbuf_AddText (va ("load s%i\n", load_cursor) );
-		return;
-
-	case K_UPARROW:
-	case K_LEFTARROW:
-		//S_LocalSound ("misc/menu1.wav");
-		load_cursor--;
-		if (load_cursor < 0)
-			load_cursor = MAX_SAVEGAMES-1;
-		break;
-
-	case K_DOWNARROW:
-	case K_RIGHTARROW:
-		//S_LocalSound ("misc/menu1.wav");
-		load_cursor++;
-		if (load_cursor >= MAX_SAVEGAMES)
-			load_cursor = 0;
-		break;
+			if (custom_maps[i + multiplier].map_desc_1 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_1, " ") != 0) {
+					Draw_ColoredString(140, 148, custom_maps[i + multiplier].map_desc_1, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_desc_2 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_2, " ") != 0) {
+					line_increment++;
+					Draw_ColoredString(140, 158, custom_maps[i + multiplier].map_desc_2, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_desc_3 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_3, " ") != 0) {
+					line_increment++;
+					Draw_ColoredString(140, 168, custom_maps[i + multiplier].map_desc_3, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_desc_4 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_4, " ") != 0) {
+					line_increment++;
+					Draw_ColoredString(140, 178, custom_maps[i + multiplier].map_desc_4, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_desc_5 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_5, " ") != 0) {
+					line_increment++;
+					Draw_ColoredString(140, 188, custom_maps[i + multiplier].map_desc_5, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_desc_6 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_6, " ") != 0) {
+					line_increment++;
+					Draw_ColoredString(140, 198, custom_maps[i + multiplier].map_desc_6, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_desc_7 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_7, " ") != 0) {
+					line_increment++;
+					Draw_ColoredString(140, 208, custom_maps[i + multiplier].map_desc_7, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_desc_8 != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_desc_8, " ") != 0) {
+					line_increment++;
+					Draw_ColoredString(140, 218, custom_maps[i + multiplier].map_desc_8, 255, 255, 255, 255, 1);
+				}
+			}
+			if (custom_maps[i + multiplier].map_author != 0) {
+				if (strcmp(custom_maps[i + multiplier].map_author, " ") != 0) {
+					int y = 158 + (10 * line_increment);
+					Draw_ColoredString(140, y, custom_maps[i + multiplier].map_author, 255, 255, 0, 255, 1);
+				}
+			}
+		} else {
+			if (custom_maps[i + multiplier].map_name_pretty != 0)
+				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name_pretty, 255, 255, 255, 255, 1);
+			else
+				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name, 255, 255, 255, 255, 1);
+		}
 	}
+
+	if (current_custom_map_page != custom_map_pages) {
+		if (m_map_cursor == 15)
+			Draw_ColoredString(5, 210, "Next Page", 255, 0, 0, 255, 1);
+		else
+			Draw_ColoredString(5, 210, "Next Page", 255, 255, 255, 255, 1);
+	} else {
+		Draw_ColoredString(5, 210, "Next Page", 128, 128, 128, 255, 1);
+	}
+
+	if (current_custom_map_page != 1) {
+		if (m_map_cursor == 16)
+			Draw_ColoredString(5, 220, "Previous Page", 255, 0, 0, 255, 1);
+		else
+			Draw_ColoredString(5, 220, "Previous Page", 255, 255, 255, 255, 1);
+	} else {
+		Draw_ColoredString(5, 220, "Previous Page", 128, 128, 128, 255, 1);
+	}
+
+
+
+	if (m_map_cursor == 17)
+		Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1);
+	else
+		Draw_ColoredString(5, 230, "Back", 255, 255, 255, 255, 1);
 }
 
 
-void M_Save_Key (int k)
+void M_Menu_CustomMaps_Key (int key)
 {
-	switch (k)
+	switch (key)
 	{
-	case K_ESCAPE:
-	case K_JOY1:
-	case K_JOY10:
-	case K_JOY21:
-		M_Menu_SinglePlayer_f ();
-		break;
+		case K_ESCAPE:
+		case K_JOY1:
+			M_Menu_SinglePlayer_f ();
+			break;
+		case K_DOWNARROW:
+			S_LocalSound ("sounds/menu/navigate.wav");
 
-	case K_ENTER:
-	case K_JOY0:
-	case K_JOY9:
-	case K_JOY20:
-		m_state = m_none;
-		key_dest = key_game;
-		Cbuf_AddText (va("save s%i\n", load_cursor));
-		return;
+			m_map_cursor++;
 
-	case K_UPARROW:
-	case K_LEFTARROW:
-		//S_LocalSound ("misc/menu1.wav");
-		load_cursor--;
-		if (load_cursor < 0)
-			load_cursor = MAX_SAVEGAMES-1;
-		break;
+			if (m_map_cursor < 14 && custom_maps[m_map_cursor + multiplier].occupied == false) {
+				m_map_cursor = 15;
+			}
 
-	case K_DOWNARROW:
-	case K_RIGHTARROW:
-		//S_LocalSound ("misc/menu1.wav");
-		load_cursor++;
-		if (load_cursor >= MAX_SAVEGAMES)
-			load_cursor = 0;
-		break;
+			if (m_map_cursor == 15 && current_custom_map_page == custom_map_pages)
+				m_map_cursor = 16;
+			
+			if (m_map_cursor == 16 && current_custom_map_page == 1)
+				m_map_cursor = 17;
+
+			if (m_map_cursor >= 18)
+				m_map_cursor = 0;
+			break;
+		case K_UPARROW:
+			S_LocalSound ("sounds/menu/navigate.wav");
+
+			m_map_cursor--;
+
+			if (m_map_cursor < 0)
+				m_map_cursor = 17;
+
+			if (m_map_cursor == 16 && current_custom_map_page == 1)
+				m_map_cursor = 15;
+
+			if (m_map_cursor == 15 && current_custom_map_page == custom_map_pages)
+				m_map_cursor = 14;
+
+			if (m_map_cursor <= 14 && custom_maps[m_map_cursor + multiplier].occupied == false) {
+				for (int i = 14; i > -1; i--) {
+					if (custom_maps[i + multiplier].occupied == true) {
+						m_map_cursor = i;
+						break;
+					}
+				}
+			}
+			break;
+		case K_ENTER:
+		case K_JOY0:
+			m_entersound = true;
+			if (m_map_cursor == 17) {
+				M_Menu_SinglePlayer_f ();
+			} else if (m_map_cursor == 16) {
+				current_custom_map_page--;
+				m_map_cursor = 0;
+			} else if (m_map_cursor == 15) {
+				current_custom_map_page++;
+				m_map_cursor = 0;
+			} else
+			{
+				key_dest = key_game;
+				if (sv.active)
+					Cbuf_AddText ("disconnect\n");
+				Cbuf_AddText ("maxplayers 1\n");
+				Cbuf_AddText (va("map %s\n", custom_maps[m_map_cursor + multiplier].map_name));
+				loadingScreen = 1;
+				loadname2 = custom_maps[m_map_cursor + multiplier].map_name;
+				if (custom_maps[m_map_cursor + multiplier].map_name_pretty != 0)
+					loadnamespec = custom_maps[m_map_cursor + multiplier].map_name_pretty;
+				else
+					loadnamespec = custom_maps[m_map_cursor + multiplier].map_name;
+			}
+			break;
 	}
 }
 
@@ -629,7 +1346,7 @@ int	m_multiplayer_cursor;
 void M_Menu_MultiPlayer_f (void)
 {
 	key_dest = key_menu;
-	m_state = m_multiplayer;
+	//m_state = m_multiplayer;
 	m_entersound = TRUE;
 }
 
@@ -1106,15 +1823,15 @@ void M_AdjustSliders (int dir)
 		break;
 
 	case 8:	// allways run
-		if (cl_forwardspeed.value > 200)
+		if (cl_forwardspeed > 200)
 		{
-			Cvar_SetValue ("cl_forwardspeed", 200);
-			Cvar_SetValue ("cl_backspeed", 200);
+			//Cvar_SetValue ("cl_forwardspeed", 200);
+			//Cvar_SetValue ("cl_backspeed", 200);
 		}
 		else
 		{
-			Cvar_SetValue ("cl_forwardspeed", 400);
-			Cvar_SetValue ("cl_backspeed", 400);
+			//Cvar_SetValue ("cl_forwardspeed", 400);
+			//Cvar_SetValue ("cl_backspeed", 400);
 		}
 		break;
 
@@ -1188,7 +1905,7 @@ void M_Options_Draw (void)
 	M_DrawSlider (220, 88, r);
 
 	M_Print (16, 96, "        Run by Default");
-	M_DrawCheckbox (220, 96, cl_forwardspeed.value > 200);
+	//M_DrawCheckbox (220, 96, cl_forwardspeed.value > 200);
 
 	M_Print (16, 104,"    NK stick as arrows");
 	M_DrawCheckbox (220, 104, nunchuk_stick_as_arrows.value);
@@ -1267,21 +1984,21 @@ void M_Options_Key (int k)
 char *bindnames[][2] =
 {
 {"+attack", 		"attack"},
-{"impulse 10", 		"change weapon"},
+{"+switch", 		"change weapon"},
 {"+jump", 			"jump / swim up"},
 {"+forward", 		"walk forward"},
 {"+back", 			"backpedal"},
 {"+left", 			"turn left"},
 {"+right", 			"turn right"},
-{"+speed", 			"run/walk"},
+{"impulse 23", 		"sprint"},
 {"+moveleft", 		"step left"},
 {"+moveright", 		"step right"},
 {"+strafe", 		"sidestep"},
 {"+lookup", 		"look up"},
 {"+lookdown", 		"look down"},
-{"centerview", 		"center view"},
-{"+mlook", 			"mouse look"},
-{"+klook", 			"keyboard look"},
+{"+aim", 			"ADS"},
+{"+knife", 			"knife"},
+{"+grenade", 		"grenade"},
 {"+moveup",			"swim up"},
 {"+movedown",		"swim down"}
 };
@@ -1471,7 +2188,7 @@ int		options2_cursor;
 void M_Menu_Options2_f (void)
 {
 	key_dest = key_menu;
-	m_state = m_options2;
+	//m_state = m_options2;
 	m_entersound = TRUE;
 }
 
@@ -1505,7 +2222,7 @@ void M_AdjustSliders2 (int dir)
 		vid.recalc_refdef = 1;
 		break;
 	case 2:	// crosshair
-		Cvar_SetValue ("crosshair", !crosshair.value);
+		Cvar_SetValue ("crosshair", 1);
 		break;
 	case 3:	// weapon roll by input
 		Cvar_SetValue ("cl_weapon_inrollangle", !cl_weapon_inrollangle.value);
@@ -2573,6 +3290,28 @@ void M_ServerList_Key (int k)
 }
 
 //=============================================================================
+/* VIDEO MENU */
+
+void M_Menu_Video_f (void)
+{
+	key_dest = key_menu;
+	m_state = m_video;
+	m_entersound = true;
+}
+
+
+void M_Video_Draw (void)
+{
+	//(*vid_menudrawfn) ();
+}
+
+
+void M_Video_Key (int key)
+{
+	//(*vid_menukeyfn) (key);
+}
+
+//=============================================================================
 /* Menu Subsystem */
 
 
@@ -2582,21 +3321,38 @@ void M_Init (void)
 
 	Cmd_AddCommand ("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand ("menu_singleplayer", M_Menu_SinglePlayer_f);
-	Cmd_AddCommand ("menu_load", M_Menu_Load_f);
-	Cmd_AddCommand ("menu_save", M_Menu_Save_f);
-	Cmd_AddCommand ("menu_multiplayer", M_Menu_MultiPlayer_f);
-	Cmd_AddCommand ("menu_setup", M_Menu_Setup_f);
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);
 	Cmd_AddCommand ("menu_keys", M_Menu_Keys_f);
-	Cmd_AddCommand ("menu_options2", M_Menu_Options2_f);
-	Cmd_AddCommand ("help", M_Menu_Help_f);
+	Cmd_AddCommand ("menu_video", M_Menu_Video_f);
 	Cmd_AddCommand ("menu_quit", M_Menu_Quit_f);
+	
+	// Snag the game version
+	long length;
+	FILE* f = fopen(va("%s/version.txt", com_gamedir), "rb");
+
+	if (f)
+	{
+		fseek (f, 0, SEEK_END);
+		length = ftell (f);
+		fseek (f, 0, SEEK_SET);
+		game_build_date = malloc(length);
+
+		if (game_build_date)
+			fread (game_build_date, 1, length, f);
+
+		fclose (f);
+	} else {
+		game_build_date = "version.txt not found.";
+	}
+
+	//M_Load_Menu_Pics();
+	Map_Finder();
 }
 
 
 void M_Draw (void)
 {
-	if (m_state == m_none || key_dest != key_menu)
+	if (m_state == m_none || key_dest != key_menu && key_dest != key_menu_pause)
 		return;
 
 	if (!m_recursiveDraw)
@@ -2625,32 +3381,16 @@ void M_Draw (void)
 	case m_none:
 		break;
 
+	case m_paused_menu:
+		M_Paused_Menu_Draw();
+		break;
+
 	case m_main:
 		M_Main_Draw ();
 		break;
 
 	case m_singleplayer:
 		M_SinglePlayer_Draw ();
-		break;
-
-	case m_load:
-		M_Load_Draw ();
-		break;
-
-	case m_save:
-		M_Save_Draw ();
-		break;
-
-	case m_multiplayer:
-		M_MultiPlayer_Draw ();
-		break;
-
-	case m_setup:
-		M_Setup_Draw ();
-		break;
-
-	case m_net:
-		M_Net_Draw ();
 		break;
 
 	case m_options:
@@ -2661,39 +3401,42 @@ void M_Draw (void)
 		M_Keys_Draw ();
 		break;
 
-	case m_options2:
-		M_Options2_Draw ();
-		break;
-
-	case m_help:
-		M_Help_Draw ();
+	case m_video:
+		//M_Video_Draw ();
 		break;
 
 	case m_quit:
 		M_Quit_Draw ();
 		break;
 
-	case m_lanconfig:
-		M_LanConfig_Draw ();
+	case m_restart:
+		M_Restart_Draw ();
+		break;
+
+	case m_credits:
+		M_Credits_Draw ();
+		break;
+
+	case m_exit:
+		M_Exit_Draw ();
 		break;
 
 	case m_gameoptions:
-		M_GameOptions_Draw ();
+		//M_GameOptions_Draw ();
 		break;
 
-	case m_search:
-		M_Search_Draw ();
-		break;
-
-	case m_slist:
-		M_ServerList_Draw ();
-		break;
+	case m_custommaps:
+		M_Menu_CustomMaps_Draw ();
+		return;
+		
+	default:
+		Con_Printf("Cannot identify menu for case %d\n", m_state);
 	}
 
 	if (m_entersound)
 	{
-		//S_LocalSound ("misc/menu2.wav");
-		m_entersound = FALSE;
+		S_LocalSound ("sounds/menu/enter.wav");
+		m_entersound = false;
 	}
 
 	VID_UnlockBuffer ();
@@ -2709,32 +3452,16 @@ void M_Keydown (int key)
 	case m_none:
 		return;
 
+	case m_paused_menu:
+		M_Paused_Menu_Key (key);
+		break;
+
 	case m_main:
 		M_Main_Key (key);
 		return;
 
 	case m_singleplayer:
 		M_SinglePlayer_Key (key);
-		return;
-
-	case m_load:
-		M_Load_Key (key);
-		return;
-
-	case m_save:
-		M_Save_Key (key);
-		return;
-
-	case m_multiplayer:
-		M_MultiPlayer_Key (key);
-		return;
-
-	case m_setup:
-		M_Setup_Key (key);
-		return;
-
-	case m_net:
-		M_Net_Key (key);
 		return;
 
 	case m_options:
@@ -2745,33 +3472,36 @@ void M_Keydown (int key)
 		M_Keys_Key (key);
 		return;
 
-	case m_options2:
-		M_Options2_Key (key);
+	case m_restart:
+		M_Restart_Key (key);
 		return;
 
-	case m_help:
-		M_Help_Key (key);
+	case m_credits:
+		M_Credits_Key (key);
+		return;
+
+	case m_video:
+		//M_Video_Key (key);
 		return;
 
 	case m_quit:
 		M_Quit_Key (key);
 		return;
 
-	case m_lanconfig:
-		M_LanConfig_Key (key);
+	case m_exit:
+		M_Exit_Key (key);
 		return;
 
 	case m_gameoptions:
-		M_GameOptions_Key (key);
+		//M_GameOptions_Key (key);
 		return;
 
-	case m_search:
-		M_Search_Key (key);
-		break;
-
-	case m_slist:
-		M_ServerList_Key (key);
+	case m_custommaps:
+		M_Menu_CustomMaps_Key (key);
 		return;
+
+	default:
+		Con_Printf("Cannot identify menu for case %d\n", m_state);
 	}
 }
 

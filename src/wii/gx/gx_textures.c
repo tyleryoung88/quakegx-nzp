@@ -131,6 +131,14 @@ void GL_Bind1 (int texnum)
 	GX_LoadTexObj(&(gltextures[texnum].gx_tex), GX_TEXMAP1);
 }
 
+void GX_SetMinMag (int minfilt, int magfilt)
+{
+	if(gltextures[currenttexture0].data != NULL)
+	{
+		GX_InitTexObjFilterMode(&gltextures[currenttexture0].gx_tex, minfilt, magfilt);
+	};
+}
+
 void QGX_ZMode(qboolean state)
 {
 	if (state)
@@ -332,6 +340,8 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
 
 	DCFlushRange(destination->data, scaled_width * scaled_height * sizeof(unsigned));
+	
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 }
 
 /*
@@ -879,29 +889,26 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	int		x, y;
 	int		dataByte, runLength;
 	int		count;
-	byte	*pcxdata;
+	
+	FILE*	f;
 
 //
 // parse the PCX file
 //
 	// Figure out the length
-    int handle;
-    int len = COM_OpenFile (filename, &handle);
+    COM_FOpenFile(filename, &f);
+
+	fread (&pcxbuf, 1, sizeof(pcxbuf), f);
+	pcx = &pcxbuf;
 	
-	// Load the raw data into memory, then store it
-    pcxdata = COM_LoadFile(filename, 5);
-
-	if (pcxdata == NULL) {
-		Con_Printf("NULL: %s", filename);
-		return NULL;
-	}
-
-
-	//fread (&pcxbuf, 1, sizeof(pcxbuf), f);
-	pcx = (pcx_t *)pcxdata;
-	
-	pcx->xmax = LittleShort(pcx->xmax);
+	pcx->xmin = LittleShort(pcx->xmin);
+    pcx->ymin = LittleShort(pcx->ymin);
+    pcx->xmax = LittleShort(pcx->xmax);
     pcx->ymax = LittleShort(pcx->ymax);
+    pcx->hres = LittleShort(pcx->hres);
+    pcx->vres = LittleShort(pcx->vres);
+    pcx->bytes_per_line = LittleShort(pcx->bytes_per_line);
+    pcx->palette_type = LittleShort(pcx->palette_type);
 
 	if (pcx->manufacturer != 0x0a //0x0a
 		|| pcx->version != 5
@@ -910,7 +917,7 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 		|| pcx->xmax >= 514
 		|| pcx->ymax >= 514)
 	{
-		Con_Printf ("Bad pcx file\n");
+		Con_Printf ("Bad pcx file %s\n", filename);
 		return NULL;
 	}
 
@@ -919,9 +926,10 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	if (matchheight && (pcx->ymax+1) != matchheight)
 		return NULL;
 	// seek to palette
-	fseek (handle, -768, SEEK_END);
-	fread (palette, 1, 768, handle);
-	fseek (handle, sizeof(pcxbuf) - 4, SEEK_SET);
+	fseek(f, -768, SEEK_END);
+    fread(palette, 1, 768, f);
+    fseek(f, sizeof(pcxbuf) - 4, SEEK_SET);
+	
 	count = (pcx->xmax+1) * (pcx->ymax+1);
 	image_rgba = (byte*)malloc( count * 4);
 
@@ -930,21 +938,21 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 		pix = image_rgba + 4*y*(pcx->xmax+1);
 		for (x=0 ; x<=pcx->xmax ; ) // muff - fixed - was referencing ymax
 		{
-			dataByte = fgetc(handle);
+			dataByte = fgetc(f);
 			if((dataByte & 0xC0) == 0xC0)
 			{
 				runLength = dataByte & 0x3F;
-				dataByte = fgetc(handle);
+				dataByte = fgetc(f);
 			}
 			else
 				runLength = 1;
 
 			while(runLength-- > 0)
 			{
-				pix[0] = palette[dataByte*3];
-				pix[1] = palette[dataByte*3+1];
-				pix[2] = palette[dataByte*3+2];
-				pix[3] = 255;
+				pix[3] = palette[dataByte*3];
+				pix[2] = palette[dataByte*3+1];
+				pix[1] = palette[dataByte*3+2];
+				pix[0] = 255;
 				pix += 4;
 				x++;
 			}
@@ -952,10 +960,8 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	}
 	image_width = pcx->xmax+1;
 	image_height = pcx->ymax+1;
-	
-	COM_CloseFile(handle);
 
-	//fclose(f);
+	fclose(f);
 	return image_rgba;
 }
 
@@ -966,7 +972,7 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
 //#define STBI_ONLY_JPEG
-//#define STBI_ONLY_PNG
+#define STBI_ONLY_PNG
 #define STBI_ONLY_TGA
 //#define STBI_ONLY_PIC
 #include "stb_image.h"
@@ -998,7 +1004,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 		Con_Printf("%s\n", stbi_failure_reason());
 		return NULL;
 	}
-	
+
 	//Swap the colors the lazy way
 	for (i = 0; i < (width*height)*4; i++) {
 		image[i] = image[i+3];
@@ -1045,7 +1051,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0) {
 		//Con_Printf("Trying to load: %s", name);
-		data = LoadPCX (name, matchwidth, matchheight);
+		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 1);
 		
@@ -1059,9 +1065,8 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);	
-		//Con_Printf("Trying to load: %s\n", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
-		
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		//Con_Printf("%s : %i\n", name, texnum);
 		free(data);
 		COM_CloseFile (f);
 		return texnum;
@@ -1071,7 +1076,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
-		Con_Printf("Trying to load: %s", name);
+		//Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
@@ -1193,7 +1198,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 1);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
 		COM_CloseFile (f);

@@ -157,7 +157,6 @@ void IN_UseDown (void) {KeyDown(&in_use);}
 void IN_UseUp (void) {KeyUp(&in_use);}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
-
 void IN_GrenadeDown (void) {KeyDown(&in_grenade);}
 void IN_GrenadeUp (void) {KeyUp(&in_grenade);}
 void IN_SwitchDown (void) {KeyDown(&in_switch);}
@@ -194,7 +193,7 @@ float CL_KeyState (kbutton_t *key)
 	if (impulsedown && !impulseup)
 	{
 		if (down)
-			val = 0.5;	// pressed and held this frame
+			val = 0.5f;	// pressed and held this frame
 		else
 			val = 0;	//	I_Error ();
 	}
@@ -208,7 +207,7 @@ float CL_KeyState (kbutton_t *key)
 	if (!impulsedown && !impulseup)
 	{
 		if (down)
-			val = 1.0;	// held the entire frame
+			val = 1.0f;	// held the entire frame
 		else
 			val = 0;	// up the entire frame
 	}
@@ -231,9 +230,11 @@ float CL_KeyState (kbutton_t *key)
 //==========================================================================
 
 cvar_t	cl_upspeed = {"cl_upspeed","200"};
-cvar_t	cl_forwardspeed = {"cl_forwardspeed","190", TRUE};
-cvar_t	cl_backspeed = {"cl_backspeed","150", TRUE};
-cvar_t	cl_sidespeed = {"cl_sidespeed","190"};
+
+float	cl_forwardspeed;// = {"cl_forwardspeed","190", TRUE};
+float	cl_backspeed;// = {"cl_backspeed","150", TRUE};
+float	cl_sidespeed;// = {"cl_sidespeed","190"};
+
 
 cvar_t	cl_movespeedkey = {"cl_movespeedkey","1.5"};
 
@@ -242,6 +243,10 @@ cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
 cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
 
+cvar_t	in_aimassist = {"in_aimassist", "0", true};
+
+//Shpuld - Porting over lower sens for lower fov
+extern cvar_t scr_fov;
 
 /*
 ================
@@ -256,14 +261,11 @@ void CL_AdjustAngles (void)
 	float	up, down;
 	
 	if (in_speed.state & 1)
-	{
-		if (cl_forwardspeed.value > 200)
-			speed = host_frametime / cl_anglespeedkey.value;
-		else
-			speed = host_frametime * cl_anglespeedkey.value;
-	}
+		speed = host_frametime * cl_anglespeedkey.value;
 	else
 		speed = host_frametime;
+	
+	speed = speed * scr_fov.value/90;
 
 	if (!(in_strafe.state & 1))
 	{
@@ -306,6 +308,8 @@ CL_BaseMove
 Send the intended movement message to the server
 ================
 */
+extern cvar_t waypoint_mode;
+float crosshair_opacity;
 void CL_BaseMove (usercmd_t *cmd)
 {	
 	if (cls.signon != SIGNONS)
@@ -315,22 +319,28 @@ void CL_BaseMove (usercmd_t *cmd)
 	
 	memset (cmd, 0, sizeof(*cmd));
 	
+	// crosshair stuff
+	croshhairmoving = true;
+	crosshair_opacity -= 8;
+	if (crosshair_opacity <= 128)
+		crosshair_opacity = 128;
+/*	
 	if (in_strafe.state & 1)
 	{
 		cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_right);
 		cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_left);
 	}
-
-	cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_moveright);
-	cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_moveleft);
+*/
+	cmd->sidemove += cl_sidespeed * CL_KeyState (&in_moveright);
+	cmd->sidemove -= cl_sidespeed * CL_KeyState (&in_moveleft);
 
 	cmd->upmove += cl_upspeed.value * CL_KeyState (&in_up);
 	cmd->upmove -= cl_upspeed.value * CL_KeyState (&in_down);
 
 	if (! (in_klook.state & 1) )
 	{	
-		cmd->forwardmove += cl_forwardspeed.value * CL_KeyState (&in_forward);
-		cmd->forwardmove -= cl_backspeed.value * CL_KeyState (&in_back);
+		cmd->forwardmove += cl_forwardspeed * CL_KeyState (&in_forward);
+		cmd->forwardmove -= cl_backspeed * CL_KeyState (&in_back);
 	}	
 
 //
@@ -338,18 +348,19 @@ void CL_BaseMove (usercmd_t *cmd)
 //
 	if (in_speed.state & 1)
 	{
-		if (cl_forwardspeed.value > 200)
-		{
-			cmd->forwardmove /= cl_movespeedkey.value;
-			cmd->sidemove /= cl_movespeedkey.value;
-			cmd->upmove /= cl_movespeedkey.value;
-		}
-		else
-		{
-			cmd->forwardmove *= cl_movespeedkey.value;
-			cmd->sidemove *= cl_movespeedkey.value;
-			cmd->upmove *= cl_movespeedkey.value;
-		}
+		cmd->forwardmove *= cl_movespeedkey.value;
+		cmd->sidemove *= cl_movespeedkey.value;
+		cmd->upmove *= cl_movespeedkey.value;
+	}
+	
+	// reset crosshair
+	if (!CL_KeyState (&in_moveright) && !CL_KeyState (&in_moveleft) && !CL_KeyState (&in_forward) && !CL_KeyState (&in_back)) {
+		croshhairmoving = false;
+
+		crosshair_opacity += 22;
+
+		if (crosshair_opacity >= 215)
+			crosshair_opacity = 215;
 	}
 
 #ifdef QUAKE2
@@ -447,10 +458,13 @@ void CL_Aim_Snap(void)
 				}
 			}
 		}
-		if (cl.perks & 64)
+		if (cl.perks & 64) {
 		  	znum = EN_Find(znum,"ai_zombie_head");
-    	else
+		}
+    	else {
       		znum = EN_Find(znum,"ai_zombie");
+		}
+		
 		z = EDICT_NUM(znum);
 	}
 
@@ -478,6 +492,9 @@ extern cvar_t cl_crossx, cl_crossy;
 CL_SendMove
 ==============
 */
+int zoom_snap;
+float angledelta(float a);
+float deltaPitch,deltaYaw;
 void CL_SendMove (usercmd_t *cmd)
 {
 	int		bits, i;
@@ -490,7 +507,7 @@ void CL_SendMove (usercmd_t *cmd)
 	
 	cl.cmd = *cmd;
 	
-	/*
+/*	
 	//==== Aim Assist Code ====
 	if((cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2) && ((in_aimassist.value) || (cl.perks & 64)))
 	{
@@ -503,7 +520,29 @@ void CL_SendMove (usercmd_t *cmd)
 	else {
 		zoom_snap = 0;
 	}
-	*/	
+*/	
+	zoom_snap = 0;
+	//==== Sniper Scope Swaying ====
+	if(cl.stats[STAT_ZOOM] == 2 && !(cl.perks & 64))
+	{
+		vec3_t vang;
+
+		VectorCopy(cl.viewangles,vang);
+
+		vang[0] -= deltaPitch;
+		vang[1] -= deltaYaw;
+
+		deltaPitch =(cos(cl.time/0.7) + cos(cl.time) + sin(cl.time/1.1)) * 0.5;
+		deltaYaw = (sin(cl.time/0.4) + cos(cl.time/0.56) + sin(cl.time)) * 0.5;
+
+		vang[0] += deltaPitch;
+		vang[1] += deltaYaw;
+		vang[0] = angledelta(vang[0]);
+		vang[1] = angledelta(vang[1]);
+
+		VectorCopy(vang,cl.viewangles);
+		//return 0;
+	}
 //
 // send the movement message
 //
@@ -519,14 +558,15 @@ void CL_SendMove (usercmd_t *cmd)
 	 *
 	 * It's also possible to bypass the client-side PITCH limits. Beware, this may be considered cheating!
 	 */
-	/* 
+	
 	MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
 	MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
 	MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
-	*/
 	
+	/*	
 	for (i=0 ; i<3 ; i++)
 		MSG_WriteAngle (&buf, cl.viewangles[i]);
+	*/
 	
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);
@@ -569,7 +609,7 @@ void CL_SendMove (usercmd_t *cmd)
 		bits |= 256;
 	in_aim.state &= ~2; 
 	
-    MSG_WriteByte (&buf, bits);
+    MSG_WriteLong (&buf, bits);
 
     MSG_WriteByte (&buf, in_impulse);
 	in_impulse = 0;
@@ -640,6 +680,8 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("-jump", IN_JumpUp);
 	Cmd_AddCommand ("+grenade", IN_GrenadeDown);
 	Cmd_AddCommand ("-grenade", IN_GrenadeUp);
+	Cmd_AddCommand ("+switch", IN_SwitchDown);
+	Cmd_AddCommand ("-switch", IN_SwitchUp);
 	Cmd_AddCommand ("+reload", IN_ReloadDown);
 	Cmd_AddCommand ("-reload", IN_ReloadUp);
 	Cmd_AddCommand ("+knife", IN_KnifeDown);
@@ -649,8 +691,6 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
-	Cmd_AddCommand ("+mlook", IN_MLookDown);
-	Cmd_AddCommand ("-mlook", IN_MLookUp);
 
 }
 

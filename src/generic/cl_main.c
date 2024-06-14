@@ -459,6 +459,61 @@ SetPal(2);
 	return frac;
 }
 
+float 	mdlflag_poweruprotate_duration 	= 0.0f;
+float 	mdlflag_poweruprotate_starttime = 0.0f;
+
+vec3_t 	mdlflag_poweruprotate_startangles;
+vec3_t 	mdlflag_poweruprotate_differenceangles;
+vec3_t 	mdlflag_poweruprotate_currentangles;
+
+double 	last_puframetime = 0.0f;
+
+/*
+===============
+CL_UpdatePowerUpAngles
+===============
+*/
+void CL_UpdatePowerUpAngles (void)
+{
+	// Don't update more than once per frame.
+	if (last_puframetime != host_frametime) {
+		// New cycle, dictate new rotation time and target angle. 
+		if (mdlflag_poweruprotate_duration <= cl.time) {
+			mdlflag_poweruprotate_starttime = cl.time;
+			mdlflag_poweruprotate_duration = cl.time + (float)((rand() % 25 + 25)/10.0f); // Take between 2.5 and 5 seconds.
+
+			mdlflag_poweruprotate_startangles[0] = mdlflag_poweruprotate_currentangles[0];
+			mdlflag_poweruprotate_startangles[1] = mdlflag_poweruprotate_currentangles[1];
+			mdlflag_poweruprotate_startangles[2] = mdlflag_poweruprotate_currentangles[2];
+
+			int target_pitch = rand() % 120 - 60;
+			int target_yaw = rand() % 240 + 60;
+			int target_roll = rand() % 90 - 45;
+
+			vec3_t target_angles;
+			target_angles[0] = target_pitch;
+			target_angles[1] = target_yaw;
+			target_angles[2] = target_roll;
+
+			// Calculate the difference from our start to our target.
+			for(int i = 0; i < 2; i++) {
+				if (mdlflag_poweruprotate_currentangles[i] > target_angles[i])
+					mdlflag_poweruprotate_differenceangles[i] = (mdlflag_poweruprotate_currentangles[i] - target_angles[i]) * -1;
+				else
+					mdlflag_poweruprotate_differenceangles[i] = fabs(mdlflag_poweruprotate_currentangles[i] - target_angles[i]);
+			}
+		}
+
+		float percentage_complete = (cl.time - mdlflag_poweruprotate_starttime) / (mdlflag_poweruprotate_duration - mdlflag_poweruprotate_starttime);
+
+		for(int j = 0; j < 2; j++) {
+			mdlflag_poweruprotate_currentangles[j] = mdlflag_poweruprotate_startangles[j] + (mdlflag_poweruprotate_differenceangles[j] * percentage_complete);
+		}
+
+		last_puframetime = host_frametime;
+	}
+}
+
 
 /*
 ===============
@@ -477,9 +532,13 @@ void CL_RelinkEntities (void)
 
 // determine partial update time	
 	frac = CL_LerpPoint();
+	
+	//CL_UpdatePowerUpAngles();
 
 	cl_numvisedicts = 0;
 	cl_numstaticbrushmodels = 0;
+	
+	bobjrotate = anglemod(100*cl.time);
 
 //
 // interpolate player info
@@ -501,8 +560,6 @@ void CL_RelinkEntities (void)
 			cl.viewangles[j] = cl.mviewangles[1][j] + frac*d;
 		}
 	}
-	
-	bobjrotate = anglemod(100*cl.time);
 	
 // start on the entity after the world
 	for (i=1,ent=cl_entities+1 ; i<cl.num_entities ; i++,ent++)
@@ -570,15 +627,19 @@ void CL_RelinkEntities (void)
 		}
 
 // rotate binary objects locally
-		if (ent->model->flags & EF_ROTATE)
+		if (ent->model->flags & EF_ROTATE) {
+			/*
+			ent->angles[0] = mdlflag_poweruprotate_currentangles[0];
+			ent->angles[1] = mdlflag_poweruprotate_currentangles[1];
+			ent->angles[2] = mdlflag_poweruprotate_currentangles[2];
+			*/
+			
 			ent->angles[1] = bobjrotate;
-
+		}
+		
 		if (ent->effects & EF_BRIGHTFIELD)
 			R_EntityParticles (ent);
-#ifdef QUAKE2
-		if (ent->effects & EF_DARKFIELD)
-			R_DarkFieldParticles (ent);
-#endif
+
 		if (ent->effects & EF_MUZZLEFLASH)
 		{
 			vec3_t		fv, rv, uv;
@@ -592,7 +653,39 @@ void CL_RelinkEntities (void)
 			dl->radius = 200 + (rand()&31);
 			dl->minlight = 32;
 			dl->die = cl.time + 0.1f;
+			/*
+			if (i == cl.viewentity && qmb_initialized && r_part_muzzleflash.value)
+			{
+				vec3_t		start, smokeorg, v_forward, v_right, v_up;
+				vec3_t tempangles;
+				float forward_offset, up_offset, right_offset;
+
+				VectorAdd(cl.viewangles,CWeaponRot,tempangles);
+				VectorAdd(tempangles,cl.gun_kick,tempangles);
+
+
+				AngleVectors (tempangles, v_forward, v_right, v_up);
+				VectorCopy (cl_entities[cl.viewentity].origin, smokeorg);
+				smokeorg[2] += cl.viewheight;
+				VectorCopy(smokeorg,start);
+
+				right_offset	 = sv_player->v.Flash_Offset[0];
+				up_offset		 = sv_player->v.Flash_Offset[1];
+				forward_offset 	 = sv_player->v.Flash_Offset[2];
+				
+				right_offset	= right_offset/1000;
+				up_offset		= up_offset/1000;
+				forward_offset  = forward_offset/1000;
+				
+				VectorMA (start, forward_offset, v_forward ,smokeorg);
+				VectorMA (smokeorg, up_offset, v_up ,smokeorg);
+				VectorMA (smokeorg, right_offset, v_right ,smokeorg);
+				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
+				//QMB_MuzzleFlash (smokeorg);
+			}
+			*/
 		}
+		
 		if (ent->effects & EF_BRIGHTLIGHT)
 		{			
 			dl = CL_AllocDlight (i);
@@ -608,23 +701,6 @@ void CL_RelinkEntities (void)
 			dl->radius = 200 + (rand()&31);
 			dl->die = cl.time + 0.001f;
 		}
-#ifdef QUAKE2
-		if (ent->effects & EF_DARKLIGHT)
-		{			
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->radius = 200.0 + (rand()&31);
-			dl->die = cl.time + 0.001f;
-			dl->dark = TRUE;
-		}
-		if (ent->effects & EF_LIGHT)
-		{			
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->radius = 200;
-			dl->die = cl.time + 0.001f;
-		}
-#endif
 
 		if (ent->effects & EF_BLUELIGHT)
 		{
@@ -776,6 +852,7 @@ void CL_RelinkEntities (void)
 		else if (ent->model->flags & EF_TRACER3)
 			R_RocketTrail (oldorg, ent->origin, 6);
 		
+		
 		// Tomaz - QC Glow Begin
         if (ISLMPOINT(ent))
         {
@@ -911,9 +988,9 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&cl_name);
 	Cvar_RegisterVariable (&cl_color);
 	Cvar_RegisterVariable (&cl_upspeed);
-	Cvar_RegisterVariable (&cl_forwardspeed);
-	Cvar_RegisterVariable (&cl_backspeed);
-	Cvar_RegisterVariable (&cl_sidespeed);
+	//Cvar_RegisterVariable (&cl_forwardspeed);
+	//Cvar_RegisterVariable (&cl_backspeed);
+	//Cvar_RegisterVariable (&cl_sidespeed);
 	Cvar_RegisterVariable (&cl_movespeedkey);
 	Cvar_RegisterVariable (&cl_yawspeed);
 	Cvar_RegisterVariable (&cl_pitchspeed);
@@ -923,6 +1000,7 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&lookspring);
 	Cvar_RegisterVariable (&lookstrafe);
 	Cvar_RegisterVariable (&sensitivity);
+	Cvar_RegisterVariable (&in_aimassist);
 
 	Cvar_RegisterVariable (&m_pitch);
 	Cvar_RegisterVariable (&m_yaw);

@@ -26,9 +26,28 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 vec3_t vec3_origin = {0,0,0};
 int nanmask = 255<<23;
 
-/*-----------------------------------------------------------------*/
+int  _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
+float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
+vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
 
-#define DEG2RAD( a ) ( a * Q_PI ) / 180.0F
+float rsqrt( float number )
+{
+	int	i;
+	float	x, y;
+
+	if( number == 0.0f )
+		return 0.0f;
+
+	x = number * 0.5f;
+	i = *(int *)&number;	// evil floating point bit level hacking
+	i = 0x5f3759df - (i >> 1);	// what the fuck?
+	y = *(float *)&i;
+	y = y * (1.5f - (x * y * y));	// first iteration
+
+	return y;
+}
+
+/*-----------------------------------------------------------------*/
 
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
 {

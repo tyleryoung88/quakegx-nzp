@@ -44,6 +44,8 @@ extern	int			clearnotify;	// set to 0 whenever notify text is drawn
 extern	qboolean	scr_disabled_for_loading;
 extern	qboolean	scr_skipupdate;
 
+extern	qboolean	scr_disabled_for_loading;
+
 extern	cvar_t		scr_viewsize;
 
 extern cvar_t scr_viewsize;

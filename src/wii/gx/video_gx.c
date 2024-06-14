@@ -144,8 +144,8 @@ void VID_ConModeUpdate(void)
 	if (vid.conwidth > scr_width)
 		vid.conwidth = scr_width;
 
-	conback->width = vid.conwidth;
-	conback->height = vid.conheight;
+	//conback->width = vid.conwidth;
+	//conback->height = vid.conheight;
 }
 
 /*
@@ -180,11 +180,13 @@ void GL_Init (void)
 	GX_SetDispCopyDst(rmode->fbWidth,xfbHeight);
 	GX_SetCopyFilter(rmode->aa,rmode->sample_pattern,GX_TRUE,rmode->vfilter);
 	GX_SetFieldMode(rmode->field_rendering,((rmode->viHeight==2*rmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
-
-	//if (rmode->aa)
-		//GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
-	//else
+	
+	if (rmode->aa)
+		GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
+	else
 		GX_SetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR);
+	
+	//GX_SetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR); //sB testing performance metrics
 
 	GX_CopyDisp(framebuffer[fb],GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
@@ -236,7 +238,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 	GX_SetScissor(*x,*y,*width,*height);
 	
-	//GX_SetDstAlpha(GX_ENABLE, 0);
+	GX_SetDstAlpha(GX_ENABLE, 0);
 
 	// ELUTODO: really necessary?
 	//GX_InvVtxCache();
@@ -252,9 +254,9 @@ void GL_EndRendering (void)
 
 		fb ^= 1;
 
-		//GX_SetColorUpdate(GX_TRUE);
-		//GX_SetAlphaUpdate(GX_TRUE);
-		//GX_SetDstAlpha(GX_DISABLE, 0xFF); // ELUTODO
+		GX_SetColorUpdate(GX_TRUE);
+		GX_SetAlphaUpdate(GX_TRUE);
+		GX_SetDstAlpha(GX_DISABLE, 0xFF); // 0xFF
 		// Start copying the frame buffer every vsync.
 		GX_CopyDisp(framebuffer[fb], GX_TRUE);
 
@@ -312,15 +314,15 @@ void VID_Init(unsigned char *palette)
 	scr_width = rmode->fbWidth;
 	scr_height = rmode->efbHeight;
 
-	vid.width = 320;
-	vid.height = 240;
+	vid.width = 320; //320
+	vid.height = 240; //240
 
 	if (vid.height > scr_height)
 		vid.height = scr_height;
 	if (vid.width > scr_width)
 		vid.width = scr_width;
 
-	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0);
+	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0); //320.0/240.0
 	vid.numpages = 2;
 
 	GL_Init();
