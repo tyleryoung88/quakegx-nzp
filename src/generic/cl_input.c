@@ -231,8 +231,8 @@ float CL_KeyState (kbutton_t *key)
 
 cvar_t	cl_upspeed = {"cl_upspeed","200"};
 
-float	cl_forwardspeed;// = {"cl_forwardspeed","190", TRUE};
-float	cl_backspeed;// = {"cl_backspeed","150", TRUE};
+float	cl_forwardspeed;// = {"cl_forwardspeed","190", true};
+float	cl_backspeed;// = {"cl_backspeed","150", true};
 float	cl_sidespeed;// = {"cl_sidespeed","190"};
 
 

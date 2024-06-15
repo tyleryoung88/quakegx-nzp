@@ -596,7 +596,7 @@ int SV_PointContents (vec3_t p)
 	return cont;
 }
 
-int SV_TruePointContents (vec3_t p)
+int SV_TRUEPointContents (vec3_t p)
 {
 	return SV_HullPointContents (&sv.worldmodel->hulls[0], 0, p);
 }
@@ -830,7 +830,7 @@ trace_t SV_ClipMoveToEntity (edict_t *ent, vec3_t start, vec3_t mins, vec3_t max
 // fill in a default trace
 	memset (&trace, 0, sizeof(trace_t));
 	trace.fraction = 1;
-	trace.allsolid = TRUE;
+	trace.allsolid = true;
 	VectorCopy (end, trace.endpos);
 
 // get the clipping hull
@@ -966,13 +966,13 @@ void SV_ClipToLinks ( areanode_t *node, moveclip_t *clip )
 		 	if (clip->trace.startsolid)
 			{
 				clip->trace = trace;
-				clip->trace.startsolid = TRUE;
+				clip->trace.startsolid = true;
 			}
 			else
 				clip->trace = trace;
 		}
 		else if (trace.startsolid)
-			clip->trace.startsolid = TRUE;
+			clip->trace.startsolid = true;
 	}
 	
 // recurse down both sides

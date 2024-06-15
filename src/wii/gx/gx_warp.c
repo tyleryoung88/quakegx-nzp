@@ -207,7 +207,7 @@ void EmitWaterPolys (msurface_t *fa)
 	int			i;
 	float		s, t, os, ot;
 	
-	QGX_Blend(TRUE);
+	QGX_Blend(true);
 
 	for (p=fa->polys ; p ; p=p->next)
 	{
@@ -230,7 +230,7 @@ void EmitWaterPolys (msurface_t *fa)
 		GX_End ();
 	}
 	
-	QGX_Blend(FALSE);
+	QGX_Blend(false);
 }
 
 
@@ -290,19 +290,21 @@ void EmitBothSkyLayers (msurface_t *fa)
 	GL_DisableMultitexture();
 
 	GL_Bind0 (solidskytexture);
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127 ;
 
 	EmitSkyPolys (fa);
 
-	QGX_Blend(TRUE);
+	QGX_Blend(true);
 	GL_Bind0 (alphaskytexture);
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*16;
 	speedscale -= (int)speedscale & ~127 ;
 
 	EmitSkyPolys (fa);
 
-	QGX_Blend(FALSE);
+	QGX_Blend(false);
 }
 
 #ifndef QUAKE2
@@ -319,21 +321,23 @@ void R_DrawSkyChain (msurface_t *s)
 	//GL_DisableMultitexture();
 
 	GL_Bind0(solidskytexture);
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127 ;
 
 	for (fa=s ; fa ; fa=fa->texturechain)
 		EmitSkyPolys (fa);
 
-	QGX_Blend(TRUE);
+	QGX_Blend(true);
 	GL_Bind0 (alphaskytexture);
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*16;
 	speedscale -= (int)speedscale & ~127 ;
 
 	for (fa=s ; fa ; fa=fa->texturechain)
 		EmitSkyPolys (fa);
 
-	QGX_Blend(FALSE);
+	QGX_Blend(false);
 }
 
 #endif
@@ -633,10 +637,10 @@ void R_DrawSkyBox (void)
 #if 1
 	float skydepth = 1000.0f;
 	
-	//QGX_Blend(FALSE);
-	//QGX_Alpha(FALSE);
+	//QGX_Blend(false);
+	//QGX_Alpha(false);
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
-	QGX_ZMode(FALSE);
+	QGX_ZMode(false);
 	
 	for (i=0 ; i<5 ; i++)
 	{
@@ -649,6 +653,7 @@ void R_DrawSkyBox (void)
 		if (dot < -0.25f) continue;
 		
 		GL_Bind0(skyimage[skytexorder[i]]);
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 
 		// if direction is not up, cut "down" vector to zero to only render half cube
 		//float upnegfact = i == 4 ? 1.0f : 0.0f;
@@ -717,8 +722,8 @@ void R_DrawSkyBox (void)
 
 		GX_End ();
 	}
-	QGX_ZMode(TRUE);
-	//QGX_Alpha(TRUE);
+	QGX_ZMode(true);
+	//QGX_Alpha(true);
 #endif
 }
 
@@ -745,7 +750,7 @@ void R_InitSky (texture_t *mt)
 		for (j=0 ; j<128 ; j++)
 			trans[(i*128) + j] = src[i*256 + j + 128];
 
-	solidskytexture = GL_LoadTexture("render_solidskytexture", 128, 128, trans, TRUE, TRUE, FALSE, 1);
+	solidskytexture = GL_LoadTexture("render_solidskytexture", 128, 128, trans, true, true, false, 1);
 
 	for (i=0 ; i<128 ; i++)
 		for (j=0 ; j<128 ; j++)
@@ -757,6 +762,6 @@ void R_InitSky (texture_t *mt)
 				trans[(i*128) + j] = p;
 		}
 
-	alphaskytexture = GL_LoadTexture("render_alphaskytexture", 128, 128, trans, TRUE, TRUE, FALSE, 1);
+	alphaskytexture = GL_LoadTexture("render_alphaskytexture", 128, 128, trans, true, true, false, 1);
 }
 

@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../generic/quakedef.h"
 
-cvar_t		gl_cshiftpercent = {"gl_cshiftpercent", "100", FALSE};
+cvar_t		gl_cshiftpercent = {"gl_cshiftpercent", "100", false};
 
 int zombie_skins[4];
 
@@ -55,7 +55,7 @@ void R_InitParticleTexture (void)
 		}
 	}
 
-	particletexture = GL_LoadTexture("", 8, 8, (byte *)data, FALSE, TRUE, TRUE, 1);
+	particletexture = GL_LoadTexture("", 8, 8, (byte *)data, false, true, true, 1);
 }
 
 /*
@@ -78,10 +78,10 @@ void R_InitOtherTextures (void)
 
 	// external zombie skins
 	
-	zombie_skins[0] = loadtextureimage ("models/ai/zfull0", 0, 0, false, false);
-	zombie_skins[1] = loadtextureimage ("models/ai/zfull1", 0, 0, false, false);
-	zombie_skins[2] = loadtextureimage ("models/ai/zfull2", 0, 0, false, false);
-	zombie_skins[3] = loadtextureimage ("models/ai/zfull3", 0, 0, false, false);
+	zombie_skins[0] = loadtextureimage ("models/ai/zfull0", 0, 0, true, false, true);
+	zombie_skins[1] = loadtextureimage ("models/ai/zfull1", 0, 0, true, false, true);
+	zombie_skins[2] = loadtextureimage ("models/ai/zfull2", 0, 0, true, false, true);
+	zombie_skins[3] = loadtextureimage ("models/ai/zfull3", 0, 0, true, false, true);
 	
 }
 
@@ -100,7 +100,7 @@ void R_Envmap_f (void)
 
 	glDrawBuffer  (GL_FRONT);
 	glReadBuffer  (GL_FRONT);
-	envmap = TRUE;
+	envmap = true;
 
 	r_refdef.vrect.x = 0;
 	r_refdef.vrect.y = 0;
@@ -147,7 +147,7 @@ void R_Envmap_f (void)
 	glReadPixels (0, 0, 256, 256, GL_RGBA, GL_UNSIGNED_BYTE, buffer);
 	COM_WriteFile ("env5.rgb", buffer, sizeof(buffer));		
 
-	envmap = FALSE;
+	envmap = false;
 	glDrawBuffer  (GL_BACK);
 	glReadBuffer  (GL_BACK);
 	GL_EndRendering ();
@@ -315,10 +315,10 @@ void R_TranslatePlayerSkin (int playernum)
 	// ELUTODO: skin changes, cache mismatches, ugly hacks
 	if (playertextures[playernum] < 0 || playertextures[playernum] >= MAX_GLTEXTURES)
 	{
-		playertextures[playernum] = GL_LoadTexture (va("player%d_skin", playernum), scaled_width, scaled_height, (u8 *)pixels, TRUE, TRUE, TRUE, 1); // HACK HACK HACK
+		playertextures[playernum] = GL_LoadTexture (va("player%d_skin", playernum), scaled_width, scaled_height, (u8 *)pixels, true, true, true, 1); // HACK HACK HACK
 	}
 
-	GL_Update32 (&gltextures[playertextures[playernum]], pixels, scaled_width, scaled_height, TRUE, TRUE);
+	GL_Update32 (&gltextures[playertextures[playernum]], pixels, scaled_width, scaled_height, true, true);
 }
 
 
@@ -466,19 +466,19 @@ void V_UpdatePalette (void)
 
 	V_CalcPowerupCshift ();
 	
-	new = FALSE;
+	new = false;
 	
 	for (i=0 ; i<NUM_CSHIFTS ; i++)
 	{
 		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent)
 		{
-			new = TRUE;
+			new = true;
 			cl.prev_cshifts[i].percent = cl.cshifts[i].percent;
 		}
 		for (j=0 ; j<3 ; j++)
 			if (cl.cshifts[i].destcolor[j] != cl.prev_cshifts[i].destcolor[j])
 			{
-				new = TRUE;
+				new = true;
 				cl.prev_cshifts[i].destcolor[j] = cl.cshifts[i].destcolor[j];
 			}
 	}

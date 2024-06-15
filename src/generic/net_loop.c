@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "quakedef.h"
 #include "net_loop.h"
 
-qboolean	localconnectpending = FALSE;
+qboolean	localconnectpending = false;
 qsocket_t	*loop_client = NULL;
 qsocket_t	*loop_server = NULL;
 
@@ -67,7 +67,7 @@ qsocket_t *Loop_Connect (char *host)
 	if (strcmp(host,"local") != 0)
 		return NULL;
 	
-	localconnectpending = TRUE;
+	localconnectpending = true;
 
 	if (!loop_client)
 	{
@@ -80,7 +80,7 @@ qsocket_t *Loop_Connect (char *host)
 	}
 	loop_client->receiveMessageLength = 0;
 	loop_client->sendMessageLength = 0;
-	loop_client->canSend = TRUE;
+	loop_client->canSend = true;
 
 	if (!loop_server)
 	{
@@ -93,7 +93,7 @@ qsocket_t *Loop_Connect (char *host)
 	}
 	loop_server->receiveMessageLength = 0;
 	loop_server->sendMessageLength = 0;
-	loop_server->canSend = TRUE;
+	loop_server->canSend = true;
 
 	loop_client->driverdata = (void *)loop_server;
 	loop_server->driverdata = (void *)loop_client;
@@ -107,13 +107,13 @@ qsocket_t *Loop_CheckNewConnections (void)
 	if (!localconnectpending)
 		return NULL;
 
-	localconnectpending = FALSE;
+	localconnectpending = false;
 	loop_server->sendMessageLength = 0;
 	loop_server->receiveMessageLength = 0;
-	loop_server->canSend = TRUE;
+	loop_server->canSend = true;
 	loop_client->sendMessageLength = 0;
 	loop_client->receiveMessageLength = 0;
-	loop_client->canSend = TRUE;
+	loop_client->canSend = true;
 	return loop_server;
 }
 
@@ -145,7 +145,7 @@ int Loop_GetMessage (qsocket_t *sock)
 		memcpy(sock->receiveMessage, &sock->receiveMessage[length], sock->receiveMessageLength);
 
 	if (sock->driverdata && ret == 1)
-		((qsocket_t *)sock->driverdata)->canSend = TRUE;
+		((qsocket_t *)sock->driverdata)->canSend = true;
 
 	return ret;
 }
@@ -180,7 +180,7 @@ int Loop_SendMessage (qsocket_t *sock, sizebuf_t *data)
 	memcpy(buffer, data->data, data->cursize);
 	*bufferLength = IntAlign(*bufferLength + data->cursize + 4);
 
-	sock->canSend = FALSE;
+	sock->canSend = false;
 	return 1;
 }
 
@@ -220,14 +220,14 @@ int Loop_SendUnreliableMessage (qsocket_t *sock, sizebuf_t *data)
 qboolean Loop_CanSendMessage (qsocket_t *sock)
 {
 	if (!sock->driverdata)
-		return FALSE;
+		return false;
 	return sock->canSend;
 }
 
 
 qboolean Loop_CanSendUnreliableMessage (qsocket_t *sock)
 {
-	return TRUE;
+	return true;
 }
 
 
@@ -237,7 +237,7 @@ void Loop_Close (qsocket_t *sock)
 		((qsocket_t *)sock->driverdata)->driverdata = NULL;
 	sock->receiveMessageLength = 0;
 	sock->sendMessageLength = 0;
-	sock->canSend = TRUE;
+	sock->canSend = true;
 	if (sock == loop_client)
 		loop_client = NULL;
 	else

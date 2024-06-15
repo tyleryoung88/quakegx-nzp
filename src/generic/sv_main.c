@@ -230,8 +230,8 @@ void SV_SendServerinfo (client_t *client)
 	MSG_WriteByte (&client->message, svc_signonnum);
 	MSG_WriteByte (&client->message, 1);
 
-	client->sendsignon = TRUE;
-	client->spawned = FALSE;		// need prespawn, spawn, etc
+	client->sendsignon = true;
+	client->spawned = false;		// need prespawn, spawn, etc
 }
 
 /*
@@ -268,17 +268,17 @@ void SV_ConnectClient (int clientnum)
 	client->netconnection = netconnection;
 
 	strcpy (client->name, "unconnected");
-	client->active = TRUE;
-	client->spawned = FALSE;
+	client->active = true;
+	client->spawned = false;
 	client->edict = ent;
 	client->message.data = client->msgbuf;
 	client->message.maxsize = sizeof(client->msgbuf);
-	client->message.allowoverflow = TRUE;		// we can catch it
+	client->message.allowoverflow = true;		// we can catch it
 
 #ifdef IDGODS
 	client->privileged = IsID(&client->netconnection->addr);
 #else	
-	client->privileged = FALSE;				
+	client->privileged = false;				
 #endif
 
 	if (sv.loadgame)
@@ -813,11 +813,11 @@ qboolean SV_SendClientDatagram (client_t *client)
 // send the datagram
 	if (NET_SendUnreliableMessage (client->netconnection, &msg) == -1)
 	{
-		SV_DropClient (TRUE);// if the message couldn't send, kick off
-		return FALSE;
+		SV_DropClient (true);// if the message couldn't send, kick off
+		return false;
 	}
 	
-	return TRUE;
+	return true;
 }
 
 /*
@@ -895,7 +895,7 @@ void SV_SendNop (client_t *client)
 	MSG_WriteChar (&msg, svc_nop);
 
 	if (NET_SendUnreliableMessage (client->netconnection, &msg) == -1)
-		SV_DropClient (TRUE);	// if the message couldn't send, kick off
+		SV_DropClient (true);	// if the message couldn't send, kick off
 	client->last_message = realtime;
 }
 
@@ -1145,7 +1145,7 @@ void SV_SpawnServer (char *server)
 	scr_centertime_off = 0;
 
 	Con_DPrintf ("SpawnServer: %s\n",server);
-	svs.changelevel_issued = FALSE;		// now safe to issue another
+	svs.changelevel_issued = false;		// now safe to issue another
 
 //
 // tell all connected clients that we are going to a new level
@@ -1210,13 +1210,13 @@ void SV_SpawnServer (char *server)
 	}
 	
 	sv.state = ss_loading;
-	sv.paused = FALSE;
+	sv.paused = false;
 
 	sv.time = 1.0;
 	
 	strcpy (sv.name, server);
 	sprintf (sv.modelname,"maps/%s.bsp", server);
-	sv.worldmodel = Mod_ForName (sv.modelname, FALSE);
+	sv.worldmodel = Mod_ForName (sv.modelname, false);
 	if (!sv.worldmodel)
 	{
 		Con_Printf ("Couldn't spawn server %s\n", sv.modelname);
@@ -1237,7 +1237,7 @@ void SV_SpawnServer (char *server)
 	for (i=1 ; i<sv.worldmodel->numsubmodels ; i++)
 	{
 		sv.model_precache[1+i] = localmodels[i];
-		sv.models[i+1] = Mod_ForName (localmodels[i], FALSE);
+		sv.models[i+1] = Mod_ForName (localmodels[i], false);
 	}
 
 //
@@ -1245,7 +1245,7 @@ void SV_SpawnServer (char *server)
 //	
 	ent = EDICT_NUM(0);
 	memset (&ent->v, 0, progs->entityfields * 4);
-	ent->free = FALSE;
+	ent->free = false;
 	ent->v.model = sv.worldmodel->name - pr_strings;
 	ent->v.modelindex = 1;		// world model
 	ent->v.solid = SOLID_BSP;
@@ -1266,7 +1266,7 @@ void SV_SpawnServer (char *server)
 	
 	ED_LoadFromFile (sv.worldmodel->entities);
 
-	sv.active = TRUE;
+	sv.active = true;
 
 // all setup is completed, any further precache statements are errors
 	sv.state = ss_active;

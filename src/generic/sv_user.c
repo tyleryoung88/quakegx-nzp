@@ -139,7 +139,7 @@ void SV_UserFriction (void)
 	start[2] = origin[2] + sv_player->v.mins[2];
 	stop[2] = start[2] - 34;
 
-	trace = SV_Move (start, vec3_origin, vec3_origin, stop, TRUE, sv_player);
+	trace = SV_Move (start, vec3_origin, vec3_origin, stop, true, sv_player);
 
 	if (trace.fraction == 1.0f)
 		friction = sv_friction.value*sv_edgefriction.value;
@@ -164,7 +164,7 @@ void SV_UserFriction (void)
 SV_Accelerate
 ==============
 */
-cvar_t	sv_maxspeed = {"sv_maxspeed", "320", FALSE, TRUE};
+cvar_t	sv_maxspeed = {"sv_maxspeed", "320", false, true};
 cvar_t	sv_accelerate = {"sv_accelerate", "10"};
 #if 0
 void SV_Accelerate (vec3_t wishvel)
@@ -385,9 +385,9 @@ void SV_ClientThink (void)
 		return;
 	
 	if((int)sv_player->v.flags & FL_ONGROUND)
-		onground = TRUE;
+		onground = true;
 	else
-		onground = FALSE;
+		onground = false;
 
 	origin = sv_player->v.origin;
 	velocity = sv_player->v.velocity;
@@ -486,7 +486,7 @@ void SV_ReadClientMove (usercmd_t *move)
 ===================
 SV_ReadClientMessage
 
-Returns FALSE if the client should be killed
+Returns false if the client should be killed
 ===================
 */
 qboolean SV_ReadClientMessage (void)
@@ -502,22 +502,22 @@ nextmsg:
 		if (ret == -1)
 		{
 			Sys_Printf ("SV_ReadClientMessage: NET_GetMessage failed\n");
-			return FALSE;
+			return false;
 		}
 		if (!ret)
-			return TRUE;
+			return true;
 					
 		MSG_BeginReading ();
 		
 		while (1)
 		{
 			if (!host_client->active)
-				return FALSE;	// a command caused an error
+				return false;	// a command caused an error
 
 			if (msg_badread)
 			{
 				Sys_Printf ("SV_ReadClientMessage: badread\n");
-				return FALSE;
+				return false;
 			}	
 	
 			cmd = MSG_ReadChar ();
@@ -529,7 +529,7 @@ nextmsg:
 				
 			default:
 				Sys_Printf ("SV_ReadClientMessage: unknown command char\n");
-				return FALSE;
+				return false;
 							
 			case clc_nop:
 //				Sys_Printf ("clc_nop\n");
@@ -589,7 +589,7 @@ nextmsg:
 				
 			case clc_disconnect:
 //				Sys_Printf ("SV_ReadClientMessage: client disconnected\n");
-				return FALSE;
+				return false;
 			
 			case clc_move:
 				SV_ReadClientMove (&host_client->cmd);
@@ -598,7 +598,7 @@ nextmsg:
 		}
 	} while (ret == 1);
 	
-	return TRUE;
+	return true;
 }
 
 
@@ -620,7 +620,7 @@ void SV_RunClients (void)
 
 		if (!SV_ReadClientMessage ())
 		{
-			SV_DropClient (FALSE);	// client misbehaved...
+			SV_DropClient (false);	// client misbehaved...
 			continue;
 		}
 

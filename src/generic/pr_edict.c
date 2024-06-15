@@ -44,11 +44,11 @@ cvar_t	scratch1 = {"scratch1", "0"};
 cvar_t	scratch2 = {"scratch2", "0"};
 cvar_t	scratch3 = {"scratch3", "0"};
 cvar_t	scratch4 = {"scratch4", "0"};
-cvar_t	savedgamecfg = {"savedgamecfg", "0", TRUE};
-cvar_t	saved1 = {"saved1", "0", TRUE};
-cvar_t	saved2 = {"saved2", "0", TRUE};
-cvar_t	saved3 = {"saved3", "0", TRUE};
-cvar_t	saved4 = {"saved4", "0", TRUE};
+cvar_t	savedgamecfg = {"savedgamecfg", "0", true};
+cvar_t	saved1 = {"saved1", "0", true};
+cvar_t	saved2 = {"saved2", "0", true};
+cvar_t	saved3 = {"saved3", "0", true};
+cvar_t	saved4 = {"saved4", "0", true};
 
 // evaluation shortcuts
 int	eval_gravity;
@@ -77,7 +77,7 @@ Sets everything to NULL
 void ED_ClearEdict (edict_t *e)
 {
 	memset (&e->v, 0, progs->entityfields * 4);
-	e->free = FALSE;
+	e->free = false;
 }
 
 /*
@@ -133,7 +133,7 @@ void ED_Free (edict_t *ed)
 	
 	SV_UnlinkEdict (ed);		// unlink from world bsp
 
-	ed->free = TRUE;
+	ed->free = true;
 	ed->v.model = 0;
 	ed->v.takedamage = 0;
 	ed->v.modelindex = 0;
@@ -752,7 +752,7 @@ char *ED_NewString (char *string)
 ED_ParseEval
 
 Can parse either fields or globals
-returns FALSE if error
+returns false if error
 =============
 */
 qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
@@ -799,7 +799,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 		if (!def)
 		{
 			//Con_Printf ("Can't find field %s\n", s);
-			return FALSE;
+			return false;
 		}
 		*(int *)d = G_INT(def->ofs);
 		break;
@@ -809,7 +809,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 		if (!func)
 		{
 			//Con_Printf ("Can't find function %s\n", s);
-			return FALSE;
+			return false;
 		}
 		*(func_t *)d = func - pr_functions;
 		break;
@@ -817,7 +817,7 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 	default:
 		break;
 	}
-	return TRUE;
+	return true;
 }
 
 /*
@@ -837,7 +837,7 @@ char *ED_ParseEdict (char *data, edict_t *ent)
 	char		keyname[256];
 	int			n;
 
-	init = FALSE;
+	init = false;
 
 // clear it
 	if (ent != sv.edicts)	// hack
@@ -858,10 +858,10 @@ char *ED_ParseEdict (char *data, edict_t *ent)
 if (!strcmp(com_token, "angle"))
 {
 	strcpy (com_token, "angles");
-	anglehack = TRUE;
+	anglehack = true;
 }
 else
-	anglehack = FALSE;
+	anglehack = false;
 
 // FIXME: change light to _light to get rid of this hack
 if (!strcmp(com_token, "light"))
@@ -885,7 +885,7 @@ if (!strcmp(com_token, "light"))
 		if (com_token[0] == '}')
 			Sys_Error ("ED_ParseEntity: closing brace without data");
 
-		init = TRUE;	
+		init = true;	
 
 // keynames with a leading underscore are used for utility comments,
 // and are immediately discarded by quake
@@ -917,7 +917,7 @@ sprintf (com_token, "0 %s 0", temp);
 	}
 
 	if (!init)
-		ent->free = TRUE;
+		ent->free = true;
 
 	return data;
 }

@@ -318,7 +318,7 @@ void CL_ParseServerInfo (void)
 
 	for (i=1 ; i<nummodels ; i++)
 	{
-		cl.model_precache[i] = Mod_ForName (model_precache[i], FALSE);
+		cl.model_precache[i] = Mod_ForName (model_precache[i], false);
 		if (cl.model_precache[i] == NULL)
 		{
 			Con_Printf("Model %s not found\n", model_precache[i]);
@@ -357,7 +357,7 @@ void CL_ParseServerInfo (void)
 	Hunk_Check ();		// make sure nothing is hurt
 	HUD_NewMap ();
 	
-	noclip_anglehack = FALSE;		// noclip is turned off at start	
+	noclip_anglehack = false;		// noclip is turned off at start	
 }
 
 
@@ -420,9 +420,9 @@ void CL_ParseUpdate (int bits)
 	}
 
 	if (ent->msgtime != cl.mtime[1]) {
-		forcelink = TRUE;	// no previous frame to lerp from
+		forcelink = true;	// no previous frame to lerp from
 	} else {
-		forcelink = FALSE;
+		forcelink = false;
 	}
 
 	ent->msgtime = cl.mtime[0];
@@ -450,7 +450,7 @@ void CL_ParseUpdate (int bits)
 				ent->syncbase = 0.0f;
 		}
 		else
-			forcelink = TRUE;	// hack to make null model players work
+			forcelink = true;	// hack to make null model players work
 		if (num > 0 && num <= cl.maxclients)
 			R_TranslatePlayerSkin (num - 1);
 	}
@@ -565,7 +565,7 @@ void CL_ParseUpdate (int bits)
 		ent->scale = ENTSCALE_DEFAULT;
 
 	if ( bits & U_NOLERP )
-		ent->forcelink = TRUE;
+		ent->forcelink = true;
 
 	if ( forcelink )
 	{	// didn't have an update last message
@@ -573,7 +573,7 @@ void CL_ParseUpdate (int bits)
 		VectorCopy (ent->msg_origins[0], ent->origin);
 		VectorCopy (ent->msg_angles[0], ent->msg_angles[1]);
 		VectorCopy (ent->msg_angles[0], ent->angles);
-		ent->forcelink = TRUE;
+		ent->forcelink = true;
 	}
 }
 

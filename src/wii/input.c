@@ -57,7 +57,7 @@ char keycode_shifted[256] = {
 	K_MENU
 };
 
-bool keyboard_shifted = FALSE;
+bool keyboard_shifted = false;
 u8 kb_last_selected = 0x0;
 
 // pass these values to whatever subsystem wants it
@@ -113,10 +113,10 @@ ir_t pointer;
 orient_t orientation;
 expansion_t expansion;
 
-bool wiimote_connected = TRUE;
-bool nunchuk_connected = FALSE;
-bool classic_connected = FALSE;
-bool keyboard_connected = FALSE;
+bool wiimote_connected = true;
+bool nunchuk_connected = false;
+bool classic_connected = false;
+bool keyboard_connected = false;
 
 typedef enum  {LEFT, CENTER_X, RIGHT} stick_x_st_t;
 typedef enum   {UP, CENTER_Y, DOWN} stick_y_st_t;
@@ -297,34 +297,34 @@ void IN_Commands (void)
 		switch(KB_event.type)
 		{
 			case KEYBOARD_CONNECTED:
-				keyboard_connected = TRUE;
+				keyboard_connected = true;
 				break;
 
 			case KEYBOARD_DISCONNECTED:
-				keyboard_connected = FALSE;
+				keyboard_connected = false;
 				break;
 	
 			case KEYBOARD_PRESSED:
 				if(!keyboard_shifted)
-					Key_Event(keycode_normal[KB_event.keycode], TRUE);
+					Key_Event(keycode_normal[KB_event.keycode], true);
 
 				else
-					Key_Event(keycode_shifted[KB_event.keycode], TRUE);
+					Key_Event(keycode_shifted[KB_event.keycode], true);
 
 				if(keycode_normal[KB_event.keycode] == K_LSHIFT || keycode_normal[KB_event.keycode] == K_RSHIFT)
-					keyboard_shifted = TRUE;
+					keyboard_shifted = true;
 
 				break;
 
 			case KEYBOARD_RELEASED:
 				if(!keyboard_shifted)
-					Key_Event(keycode_normal[KB_event.keycode], FALSE);
+					Key_Event(keycode_normal[KB_event.keycode], false);
 
 				else
-					Key_Event(keycode_shifted[KB_event.keycode], FALSE);
+					Key_Event(keycode_shifted[KB_event.keycode], false);
 
 				if(keycode_normal[KB_event.keycode] == K_LSHIFT || keycode_normal[KB_event.keycode] == K_RSHIFT)
-					keyboard_shifted = FALSE;
+					keyboard_shifted = false;
 
 				break;
 		}
@@ -342,8 +342,8 @@ void IN_Commands (void)
 		if(!nunchuk_connected)
 			wpad_previous_keys = 0x0000;
 
-		nunchuk_connected = TRUE;
-		classic_connected = FALSE;
+		nunchuk_connected = true;
+		classic_connected = false;
 		wpad_keys = WPAD_ButtonsHeld(WPAD_CHAN_0);
 		pad_keys = 0x0000;
 		pad_previous_keys = 0x0000;
@@ -354,8 +354,8 @@ void IN_Commands (void)
 		if(!classic_connected)
 			wpad_previous_keys = 0x0000;
 
-		nunchuk_connected = FALSE;
-		classic_connected = TRUE;
+		nunchuk_connected = false;
+		classic_connected = true;
 		wpad_keys = WPAD_ButtonsHeld(WPAD_CHAN_0);
 		pad_keys = 0x0000;
 		pad_previous_keys = 0x0000;
@@ -367,8 +367,8 @@ void IN_Commands (void)
 		if(classic_connected || nunchuk_connected)
 			wpad_previous_keys = 0x0000;
 
-		nunchuk_connected = FALSE;
-		classic_connected = FALSE;
+		nunchuk_connected = false;
+		classic_connected = false;
 		pad_keys = PAD_ButtonsHeld(PAD_CHAN0);
 		wpad_keys = WPAD_ButtonsHeld(WPAD_CHAN_0);
 	}
@@ -400,8 +400,8 @@ void IN_Commands (void)
 
 		if ((wpad_keys & WPAD_BUTTON_B) && osk_selected && (Sys_FloatTime() >= osk_last_press_time + osk_repeat_delay.value || osk_selected != osk_last_selected))
 		{
-			Key_Event((osk_selected), TRUE);
-			Key_Event((osk_selected), FALSE);
+			Key_Event((osk_selected), true);
+			Key_Event((osk_selected), false);
 			osk_last_selected = osk_selected;
 			osk_last_press_time = Sys_FloatTime();
 		}
@@ -597,7 +597,7 @@ void IN_Commands (void)
 						switch (stick_x_st)
 						{
 							
-							case CENTER_X : Key_Event(K_RIGHTARROW, TRUE);break;
+							case CENTER_X : Key_Event(K_RIGHTARROW, true);break;
 							default : break;
 						
 						}
@@ -608,7 +608,7 @@ void IN_Commands (void)
 					{
 						switch (stick_x_st)
 						{
-							case CENTER_X : Key_Event(K_LEFTARROW, TRUE);break;
+							case CENTER_X : Key_Event(K_LEFTARROW, true);break;
 							default: break;
 							
 							
@@ -620,8 +620,8 @@ void IN_Commands (void)
 					{
 						switch (stick_x_st)
 						{
-							case LEFT :	Key_Event(K_LEFTARROW, FALSE);break;							
-							case RIGHT: Key_Event(K_RIGHTARROW, FALSE);break;
+							case LEFT :	Key_Event(K_LEFTARROW, false);break;							
+							case RIGHT: Key_Event(K_RIGHTARROW, false);break;
 							default: break;
 						}
 					stick_x_st = CENTER_X;
@@ -631,7 +631,7 @@ void IN_Commands (void)
 					{
 						switch (stick_y_st)
 						{
-							case CENTER_Y : Key_Event(K_UPARROW, TRUE); break;
+							case CENTER_Y : Key_Event(K_UPARROW, true); break;
 							default: break;	
 							
 						}
@@ -643,7 +643,7 @@ void IN_Commands (void)
 						switch (stick_y_st)
 						{
 							
-							case CENTER_Y : Key_Event(K_DOWNARROW, TRUE);break;
+							case CENTER_Y : Key_Event(K_DOWNARROW, true);break;
 							default: break;
 						}
 					stick_y_st = DOWN;
@@ -654,8 +654,8 @@ void IN_Commands (void)
 					{
 						switch (stick_y_st)
 						{
-							case DOWN :	Key_Event(K_DOWNARROW, FALSE);break;
-							case UP: Key_Event(K_UPARROW, FALSE);break;
+							case DOWN :	Key_Event(K_DOWNARROW, false);break;
+							case UP: Key_Event(K_UPARROW, false);break;
 							default: break;
 						}
 					stick_y_st = CENTER_Y;
@@ -752,7 +752,7 @@ extern float crosshair_opacity;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
-	const float dead_zone = 0.1f;
+	const float dead_zone = 0.3f;
 
 	float x1;
 	float y1;
@@ -895,7 +895,7 @@ void IN_Move (usercmd_t *cmd)
 	// TODO: Use yawspeed and pitchspeed
 
 	// Adjust the yaw.
-	const float turn_rate = sensitivity.value * 50.0f;
+	const float turn_rate = sensitivity.value * 40.0f;
 	if (in_speed.state & 1)
 	{
 		if (cl_forwardspeed > 200)
@@ -955,7 +955,7 @@ void IN_Move (usercmd_t *cmd)
 	//Con_Printf("%f\n", x2);
 	
 	// crosshair stuff
-	if (x2 < 0.03f && x2 > -0.03f && y2 < 0.03f && y2 > -0.03f) {
+	if (x2 < 0.06f && x2 > -0.06f && y2 < 0.06f && y2 > -0.06f) {
 		croshhairmoving = false;
 
 		crosshair_opacity += 22;

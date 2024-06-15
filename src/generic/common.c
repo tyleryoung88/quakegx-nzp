@@ -30,9 +30,9 @@ static char     *safeargvs[NUM_SAFE_ARGVS] =
 	{"-stdvid", "-nolan", "-nosound", "-nocdaudio", "-nojoy", "-nomouse", "-dibonly"};
 
 cvar_t  registered = {"registered","1"};
-cvar_t  cmdline = {"cmdline","0", FALSE, TRUE};
+cvar_t  cmdline = {"cmdline","0", false, true};
 
-qboolean        com_modified;   // set TRUE if using non-id files
+qboolean        com_modified;   // set true if using non-id files
 
 qboolean		proghack;
 
@@ -53,7 +53,7 @@ char	**com_argv;
 #define CMDLINE_LENGTH	256
 char	com_cmdline[CMDLINE_LENGTH];
 
-qboolean		standard_quake = TRUE, rogue, hipnotic;
+qboolean		standard_quake = true, rogue, hipnotic;
 
 // this graphic needs to be in the pak file to use registered features
 unsigned short pop[] =
@@ -600,7 +600,7 @@ qboolean        msg_badread;
 void MSG_BeginReading (void)
 {
 	msg_readcount = 0;
-	msg_badread = FALSE;
+	msg_badread = false;
 }
 
 // returns -1 and sets msg_badread if no more characters are available
@@ -610,7 +610,7 @@ int MSG_ReadChar (void)
 	
 	if (msg_readcount+1 > net_message.cursize)
 	{
-		msg_badread = TRUE;
+		msg_badread = true;
 		return -1;
 	}
 		
@@ -626,7 +626,7 @@ int MSG_ReadByte (void)
 	
 	if (msg_readcount+1 > net_message.cursize)
 	{
-		msg_badread = TRUE;
+		msg_badread = true;
 		return -1;
 	}
 		
@@ -642,7 +642,7 @@ int MSG_ReadShort (void)
 	
 	if (msg_readcount+2 > net_message.cursize)
 	{
-		msg_badread = TRUE;
+		msg_badread = true;
 		return -1;
 	}
 		
@@ -660,7 +660,7 @@ int MSG_ReadLong (void)
 	
 	if (msg_readcount+4 > net_message.cursize)
 	{
-		msg_badread = TRUE;
+		msg_badread = true;
 		return -1;
 	}
 		
@@ -763,7 +763,7 @@ void *SZ_GetSpace (sizebuf_t *buf, int length)
 		if (length > buf->maxsize)
 			Sys_Error ("SZ_GetSpace: %i is > full buffer size", length);
 			
-		buf->overflowed = TRUE;
+		buf->overflowed = true;
 		Con_Printf ("SZ_GetSpace: overflow");
 		SZ_Clear (buf); 
 	}
@@ -1079,14 +1079,14 @@ void COM_InitArgv (int argc, char **argv)
 
 	com_cmdline[n] = 0;
 
-	safe = FALSE;
+	safe = false;
 
 	for (com_argc=0 ; (com_argc<MAX_NUM_ARGVS) && (com_argc < argc) ;
 		 com_argc++)
 	{
 		largv[com_argc] = argv[com_argc];
 		if (!strcmp ("-safe", argv[com_argc]))
-			safe = TRUE;
+			safe = true;
 	}
 
 	if (safe)
@@ -1105,14 +1105,14 @@ void COM_InitArgv (int argc, char **argv)
 
 	if (COM_CheckParm ("-rogue"))
 	{
-		rogue = TRUE;
-		standard_quake = FALSE;
+		rogue = true;
+		standard_quake = false;
 	}
 
 	if (COM_CheckParm ("-hipnotic"))
 	{
-		hipnotic = TRUE;
-		standard_quake = FALSE;
+		hipnotic = true;
+		standard_quake = false;
 	}
 }
 
@@ -1129,7 +1129,7 @@ void COM_Init (char *basedir)
 // set the byte swapping variables in a portable manner 
 	if ( *(short *)swaptest == 1)
 	{
-		bigendien = FALSE;
+		bigendien = false;
 		BigShort = ShortSwap;
 		LittleShort = ShortNoSwap;
 		BigLong = LongSwap;
@@ -1139,7 +1139,7 @@ void COM_Init (char *basedir)
 	}
 	else
 	{
-		bigendien = TRUE;
+		bigendien = true;
 		BigShort = ShortNoSwap;
 		LittleShort = ShortSwap;
 		BigLong = LongNoSwap;
@@ -1642,7 +1642,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 		Sys_Error ("%s has %i files", packfile, numpackfiles);
 
 	if (numpackfiles != PAK0_COUNT)
-		com_modified = TRUE;    // not the original file
+		com_modified = true;    // not the original file
 
 	newfiles = Hunk_AllocName (numpackfiles * sizeof(packfile_t), "packfile");
 
@@ -1655,7 +1655,7 @@ pack_t *COM_LoadPackFile (char *packfile)
 	for (i=0 ; i<header.dirlen ; i++)
 		CRC_ProcessByte (&crc, ((byte *)info)[i]);
 	if (crc != PAK0_CRC)
-		com_modified = TRUE;
+		com_modified = true;
 
 // parse the directory
 	for (i=0 ; i<numpackfiles ; i++)
@@ -1795,7 +1795,7 @@ void COM_InitFilesystem (void)
 	i = COM_CheckParm ("-game");
 	if (i && i < com_argc-1)
 	{
-		com_modified = TRUE;
+		com_modified = true;
 		COM_AddGameDirectory (va("%s/%s", basedir, com_argv[i+1]));
 	}
 
@@ -1806,7 +1806,7 @@ void COM_InitFilesystem (void)
 	i = COM_CheckParm ("-path");
 	if (i)
 	{
-		com_modified = TRUE;
+		com_modified = true;
 		com_searchpaths = NULL;
 		while (++i < com_argc)
 		{
@@ -1828,7 +1828,7 @@ void COM_InitFilesystem (void)
 	}
 
 	if (COM_CheckParm ("-proghack"))
-		proghack = TRUE;
+		proghack = true;
 }
 
 void Q_strncpyz (char *dest, char *src, size_t size)

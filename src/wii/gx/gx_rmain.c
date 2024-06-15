@@ -38,7 +38,7 @@ mplane_t	frustum[4];
 
 int			c_brush_polys, c_alias_polys;
 
-qboolean	envmap;				// TRUE during envmap command capture 
+qboolean	envmap;				// true during envmap command capture 
 
 int			currenttexture0 = -1;		// to avoid unnecessary texture sets
 int			currenttexture1 = -1;		// to avoid unnecessary texture sets
@@ -127,7 +127,7 @@ float viewport_size[4];
 =================
 R_CullBox
 
-Returns TRUE if the box is completely outside the frustom
+Returns true if the box is completely outside the frustom
 =================
 */
 qboolean R_CullBox (vec3_t mins, vec3_t maxs)
@@ -137,8 +137,8 @@ qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 	// ELUTODO: check for failure cases (rendering to an aspect different of that of the quake-calculated frustum, etc
 	for (i=0 ; i<4 ; i++)
 		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
-			return TRUE;
-	return FALSE;
+			return true;
+	return false;
 }
 
 guVector axis2 = {0,0,1};
@@ -263,10 +263,12 @@ void R_DrawSpriteModel (entity_t *e)
 	GL_DisableMultitexture();
 
     GL_Bind0(frame->gl_texturenum);
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	
 	//Fog_DisableGFog ();
 
-	QGX_Alpha(TRUE);
+	QGX_Alpha(true);
+	QGX_Blend(true);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
 	VectorMA (e->origin, frame->down, up, point);
@@ -294,7 +296,8 @@ void R_DrawSpriteModel (entity_t *e)
 	GX_TexCoord2f32(1, 1);
 
 	GX_End();
-	QGX_Alpha(FALSE);
+	QGX_Alpha(false);
+	QGX_Blend(false);
 	
 	//Fog_EnableGFog ();
 }
@@ -520,13 +523,15 @@ void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
 
 	// They're too far away from us to care about blending their frames.
 	// cypress -- added an additional check not to lerp if there's only 1 frame
-	if (distance_from_client >= 40000 || paliashdr->numframes <= 1) { // 200 * 200
+	/*
+	if (distance_from_client >= 120000 || paliashdr->numframes <= 1) { // 200 * 200
 		// Fix them from jumping from last lerp
 		lerpdata->pose1 = lerpdata->pose2 = paliashdr->frames[frame].firstpose;
 
 		e->lerptime = 0.1;
 		lerpdata->blend = 1;
 	} else {
+		*/
 		posenum = paliashdr->frames[frame].firstpose;
 		numposes = paliashdr->frames[frame].numposes;
 
@@ -578,7 +583,7 @@ void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
 			lerpdata->pose1 = posenum;
 			lerpdata->pose2 = posenum;
 		}
-	}
+	//}
 }
 
 /*
@@ -721,25 +726,6 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	if (gl_affinemodels.value)
 		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 */
-	switch(e->skinnum)
-	{
-		case 0:
-			GL_Bind0(zombie_skins[0]);
-			break;
-		case 1:
-			GL_Bind0(zombie_skins[1]);
-			break;
-		case 2:
-			GL_Bind0(zombie_skins[2]);
-			break;
-		case 3:
-			GL_Bind0(zombie_skins[3]);
-			break;
-		default: //out of bounds? assuming 0
-			Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
-			GL_Bind0(zombie_skins[0]);
-			break;
-	}
 
 	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
 	R_SetupEntityTransform (e, &lerpdata);
@@ -941,19 +927,24 @@ void R_DrawAliasModel (entity_t *e)
 		{
 			case 0:
 				GL_Bind0(zombie_skins[0]);
+				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 1:
 				GL_Bind0(zombie_skins[1]);
+				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 2:
 				GL_Bind0(zombie_skins[2]);
+				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 3:
 				GL_Bind0(zombie_skins[3]);
+				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			default: //out of bounds? assuming 0
 				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
 				GL_Bind0(zombie_skins[0]);
+				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 		}
 	}
@@ -970,6 +961,7 @@ void R_DrawAliasModel (entity_t *e)
 		i = currententity - cl_entities;
 		if (i >= 1 && i<=cl.maxclients)
 		    GL_Bind0(playertextures[i - 1]);
+			GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	}
 
 	/* ELUTODO if (gl_smoothmodels.value)
@@ -1251,10 +1243,11 @@ void R_PolyBlend (void)
 	if (!v_blend[3] && v_gamma.value == 1.0f)
 		return;
 
-	QGX_Alpha(FALSE);
-	QGX_Blend(TRUE);
-	QGX_ZMode(FALSE);
+	QGX_Alpha(false);
+	QGX_Blend(true);
+	QGX_ZMode(false);
 	GL_Bind0(white_texturenum); // ELUTODO: do not use a texture
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 
 	c_guMtxIdentity(view);
@@ -1312,8 +1305,8 @@ void R_PolyBlend (void)
 		GX_End();
 	}
 
-	QGX_Blend(FALSE);
-	QGX_Alpha(TRUE);
+	QGX_Blend(false);
+	QGX_Alpha(true);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 }
 #else
@@ -1333,9 +1326,9 @@ void R_PolyBlend (void)
 
 	GL_DisableMultitexture();
 
-	QGX_Alpha(FALSE);
-	QGX_Blend(TRUE);
-	QGX_ZMode(FALSE);
+	QGX_Alpha(false);
+	QGX_Blend(true);
+	QGX_ZMode(false);
 	/*
 	GX_SetNumChans(0);
 	GX_SetNumTexGens(0);
@@ -1374,11 +1367,11 @@ void R_PolyBlend (void)
 	GX_SetNumChans(1);
 	GX_SetNumTexGens(1);
 	*/
-	QGX_Blend(FALSE);
+	QGX_Blend(false);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
  	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
-	QGX_Alpha(TRUE);
+	QGX_Alpha(true);
 }
 #endif
 
@@ -1448,7 +1441,7 @@ void R_SetupFrame (void)
 	V_SetContentsColor (r_viewleaf->contents);
 	V_CalcBlend ();
 
-	r_cache_thrash = FALSE;
+	r_cache_thrash = false;
 
 	c_brush_polys = 0;
 	c_alias_polys = 0;
@@ -1548,9 +1541,9 @@ void R_SetupGL (void)
 	if (!gl_cull.value)
 		GX_SetCullMode(GX_CULL_NONE);
 
-	QGX_Blend(FALSE);
-	QGX_Alpha(FALSE);
-	QGX_ZMode(TRUE);
+	QGX_Blend(false);
+	QGX_Alpha(false);
+	QGX_ZMode(true);
 }
 
 /*
@@ -1691,7 +1684,7 @@ void R_RenderView (void)
 		c_alias_polys = 0;
 	}
 
-	mirror = FALSE;
+	mirror = false;
 
 /* ELUTODO
 	if (gl_finish.value)

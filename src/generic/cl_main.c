@@ -26,20 +26,20 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 cvar_t	waypoint_mode = {"waypoint_mode", "0", false};// waypoint mode active
 cvar_t	autosave_waypoint = {"autosave_waypoint", "0", false};// waypoint mode active
-cvar_t	cl_name = {"_cl_name", "player", TRUE};
-cvar_t	cl_color = {"_cl_color", "0", TRUE};
+cvar_t	cl_name = {"_cl_name", "player", true};
+cvar_t	cl_color = {"_cl_color", "0", true};
 
 cvar_t	cl_shownet = {"cl_shownet","0"};	// can be 0, 1, or 2
 cvar_t	cl_nolerp = {"cl_nolerp","0"};
 
-cvar_t	lookspring = {"lookspring","0", TRUE};
-cvar_t	lookstrafe = {"lookstrafe","0", TRUE};
-cvar_t	sensitivity = {"sensitivity","3", TRUE};
+cvar_t	lookspring = {"lookspring","0", true};
+cvar_t	lookstrafe = {"lookstrafe","0", true};
+cvar_t	sensitivity = {"sensitivity","3", true};
 
-cvar_t	m_pitch = {"m_pitch","0.022", TRUE};
-cvar_t	m_yaw = {"m_yaw","0.022", TRUE};
-cvar_t	m_forward = {"m_forward","1", TRUE};
-cvar_t	m_side = {"m_side","0.8", TRUE};
+cvar_t	m_pitch = {"m_pitch","0.022", true};
+cvar_t	m_yaw = {"m_yaw","0.022", true};
+cvar_t	m_forward = {"m_forward","1", true};
+cvar_t	m_side = {"m_side","0.8", true};
 
 
 client_static_t	cls;
@@ -104,7 +104,7 @@ This is also called on Host_Error, so it shouldn't cause any errors
 void CL_Disconnect (void)
 {
 // stop sounds (especially looping!)
-	S_StopAllSounds (TRUE);
+	S_StopAllSounds (true);
 	
 // bring the console down and fade the colors back to normal
 //	SCR_BringDownConsole ();
@@ -126,10 +126,10 @@ void CL_Disconnect (void)
 
 		cls.state = ca_disconnected;
 		if (sv.active)
-			Host_ShutdownServer(FALSE);
+			Host_ShutdownServer(false);
 	}
 
-	cls.demoplayback = cls.timedemo = FALSE;
+	cls.demoplayback = cls.timedemo = false;
 	cls.signon = 0;
 }
 
@@ -137,7 +137,7 @@ void CL_Disconnect_f (void)
 {
 	CL_Disconnect ();
 	if (sv.active)
-		Host_ShutdownServer (FALSE);
+		Host_ShutdownServer (false);
 }
 
 
@@ -870,7 +870,7 @@ void CL_RelinkEntities (void)
         }
 		// Tomaz - QC Glow End
 
-		ent->forcelink = FALSE;
+		ent->forcelink = false;
 
 		if (i == cl.viewentity && !chase_active.value)
 			continue;

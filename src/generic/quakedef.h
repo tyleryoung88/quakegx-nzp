@@ -323,7 +323,7 @@ void R_DrawSkyBox (void);
 void R_ClearSkyBox (void);
 void EmitBothSkyLayers (msurface_t *fa);
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
+int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap, qboolean keep);
 byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight);
 int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
 

@@ -352,7 +352,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 		i = s->lightmaptexturenum;
 		if (lightmap_modified[i])
 		{
-			lightmap_modified[i] = FALSE;
+			lightmap_modified[i] = false;
 			theRect = &lightmap_rectchange[i];
 			GL_UpdateLightmapTextureRegion (lightmap_textures + s->lightmaptexturenum, BLOCK_WIDTH, theRect->h, 0, theRect->t, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
 			theRect->l = BLOCK_WIDTH;
@@ -403,7 +403,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 	i = s->lightmaptexturenum;
 	if (lightmap_modified[i])
 	{
-		lightmap_modified[i] = FALSE;
+		lightmap_modified[i] = false;
 		theRect = &lightmap_rectchange[i];
 		GL_UpdateLightmapTextureRegion (lightmap_textures + s->lightmaptexturenum, BLOCK_WIDTH, theRect->h, 0, theRect->t, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
 		theRect->l = BLOCK_WIDTH;
@@ -518,9 +518,9 @@ void R_BlendLightmaps ()
 	if (r_fullbright.value)
 		return;
 
-	//QGX_ZMode(FALSE);
+	//QGX_ZMode(false);
 	
-	QGX_BlendTurb(TRUE);
+	QGX_BlendTurb(true);
 
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
 	{
@@ -528,6 +528,7 @@ void R_BlendLightmaps ()
 		if (!p)
 			continue;
 		GL_Bind0(lightmap_textures+i);
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 		if (lightmap_modified[i])
 		{
 			lightmap_modified[i] = false;
@@ -571,9 +572,9 @@ void R_BlendLightmaps ()
 		}
 	}
 
-	QGX_Blend(FALSE);
+	QGX_Blend(false);
 	
-	//QGX_ZMode(TRUE);
+	//QGX_ZMode(true);
 }
 
 /*
@@ -609,7 +610,7 @@ void R_RenderDynamicLightmaps (msurface_t *fa)
 dynamic:
 		if (r_dynamic.value)
 		{
-			lightmap_modified[fa->lightmaptexturenum] = TRUE;
+			lightmap_modified[fa->lightmaptexturenum] = true;
 			theRect = &lightmap_rectchange[fa->lightmaptexturenum];
 			if (fa->light_t < theRect->t) {
 				if (theRect->h)
@@ -659,10 +660,11 @@ void R_RenderBrushPoly (msurface_t *fa)
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
 	GL_Bind0 (t->gl_texturenum);
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	
 	if (!strncmp(fa->texinfo->texture->name,"{",1)) {
-		QGX_BlendTurb(TRUE);
-		QGX_Alpha(TRUE);
+		QGX_BlendTurb(true);
+		QGX_Alpha(true);
 		GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	}
 	
@@ -678,8 +680,8 @@ void R_RenderBrushPoly (msurface_t *fa)
 		DrawGXPoly (fa->polys);
 	
 	if (!strncmp(fa->texinfo->texture->name,"{",1)) {
-		QGX_Alpha(FALSE);
-		QGX_BlendTurb(FALSE);
+		QGX_Alpha(false);
+		QGX_BlendTurb(false);
 	}
 
 	// add the poly to the proper lightmap chain
@@ -734,7 +736,7 @@ void R_MirrorChain (msurface_t *s)
 {
 	if (mirror)
 		return;
-	mirror = TRUE;
+	mirror = true;
 	mirror_plane = s->plane;
 }
 
@@ -760,7 +762,7 @@ void R_DrawWaterSurfaces (void)
 /* ELUTODO - check when implementing mirrors
     glLoadMatrixf (r_world_matrix);*/
 
-	QGX_Blend (TRUE);
+	QGX_Blend (true);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 /*
 	for ( s = waterchain ; s ; s=s->texturechain) {
@@ -784,6 +786,7 @@ void R_DrawWaterSurfaces (void)
 		// set modulate mode explicitly
 			
 		GL_Bind0 (t->gl_texturenum);
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 
 		for ( ; s ; s=s->texturechain)
 			EmitWaterPolys (s);
@@ -792,7 +795,7 @@ void R_DrawWaterSurfaces (void)
 	}
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
-	QGX_Blend (FALSE);
+	QGX_Blend (false);
 }
 
 /*
@@ -867,7 +870,7 @@ void R_DrawBrushModel (entity_t *e)
 
 	if (e->angles[0] || e->angles[1] || e->angles[2])
 	{
-		rotated = TRUE;
+		rotated = true;
 		for (i=0 ; i<3 ; i++)
 		{
 			mins[i] = e->origin[i] - clmodel->radius;
@@ -876,7 +879,7 @@ void R_DrawBrushModel (entity_t *e)
 	}
 	else
 	{
-		rotated = FALSE;
+		rotated = false;
 		VectorAdd (e->origin, clmodel->mins, mins);
 		VectorAdd (e->origin, clmodel->maxs, maxs);
 	}
@@ -1476,7 +1479,7 @@ void GL_BuildLightmaps (void)
 		
 		if (!allocated[i][0])
 			break;		// no more used
-		lightmap_modified[i] = FALSE;
+		lightmap_modified[i] = false;
 		lightmap_rectchange[i].l = BLOCK_WIDTH;
 		lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		lightmap_rectchange[i].w = 0;

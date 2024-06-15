@@ -340,8 +340,6 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
 
 	DCFlushRange(destination->data, scaled_width * scaled_height * sizeof(unsigned));
-	
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 }
 
 /*
@@ -1022,7 +1020,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	return image;
 }
 
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap)
+int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap, qboolean keep)
 {
 	int	f = 0;
 	int texnum;
@@ -1047,26 +1045,27 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	
 	//Try PCX
+	/*
 	sprintf (name, "%s.pcx", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0) {
 		//Con_Printf("Trying to load: %s", name);
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 1);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, keep, 1);
 		
 		free(data);
 		COM_CloseFile (f);
 		return texnum;
 	}
-	
+	*/
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);	
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
-		//Con_Printf("%s : %i\n", name, texnum);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
+		Con_Printf("%s : %i\n", name, texnum);
 		free(data);
 		COM_CloseFile (f);
 		return texnum;
@@ -1077,7 +1076,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1089,7 +1088,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1100,7 +1099,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
 		COM_CloseFile (f);

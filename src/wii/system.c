@@ -124,7 +124,7 @@ void Sys_Quit (void)
 		Host_Shutdown();
 	}
 
-	VIDEO_SetBlack(TRUE);
+	VIDEO_SetBlack(true);
 	
 	Sys_Finish_Logfile();
 
@@ -142,7 +142,7 @@ void Sys_Reset (void)
 		Host_Shutdown();
 	}
 
-	VIDEO_SetBlack(TRUE);
+	VIDEO_SetBlack(true);
 	
 	Sys_Finish_Logfile();
 
@@ -161,7 +161,7 @@ void Sys_Shutdown (void)
 		Host_Shutdown();
 	}
 
-	VIDEO_SetBlack(TRUE);
+	VIDEO_SetBlack(true);
 	
 	Sys_Finish_Logfile();
 
@@ -173,14 +173,14 @@ void Sys_Shutdown (void)
 double Sys_FloatTime (void)
 {
 	static u64	base;
-	static qboolean	initialized = FALSE;
+	static qboolean	initialized = false;
 	u64 ms;
 
 	ms = ticks_to_millisecs(gettime());
 	if (!initialized)
 	{
 		base = ms;
-		initialized = TRUE;
+		initialized = true;
 	}
 	return ((double)(ms - base)) / 1000.0;
 }

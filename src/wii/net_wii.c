@@ -27,7 +27,7 @@ net_driver_t net_drivers[MAX_NET_DRIVERS] =
 {
 	{
 	"Loopback",
-	FALSE,
+	false,
 	Loop_Init,
 	Loop_Listen,
 	Loop_SearchForHosts,
@@ -44,7 +44,7 @@ net_driver_t net_drivers[MAX_NET_DRIVERS] =
 	,
 	{
 	"Datagram",
-	FALSE,
+	false,
 	Datagram_Init,
 	Datagram_Listen,
 	Datagram_SearchForHosts,
@@ -68,7 +68,7 @@ net_landriver_t	net_landrivers[MAX_NET_DRIVERS] =
 {
 	{
 	"UDP",
-	FALSE,
+	false,
 	0,
 	UDP_Init,
 	UDP_Shutdown,

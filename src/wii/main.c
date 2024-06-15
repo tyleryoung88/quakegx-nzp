@@ -105,7 +105,7 @@ static void init()
 			// Set the frame buffer.
 	VIDEO_SetNextFramebuffer(framebuffer[fb]);
 
-	VIDEO_SetBlack(FALSE);
+	VIDEO_SetBlack(false);
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
 	if (rmode->viTVMode & VI_NON_INTERLACE)
@@ -397,7 +397,7 @@ static void* main_thread_function(void* dummy)
 		_CPU_ISR_Restore(level);
 	}
 
-	VIDEO_SetBlack(TRUE);
+	VIDEO_SetBlack(true);
 
 	// Initialise the Host module.
 	quakeparms_t parms;
@@ -426,7 +426,7 @@ static void* main_thread_function(void* dummy)
 	SYS_SetResetCallback(reset_system);
 	SYS_SetPowerCallback(shutdown_system);
 
-	VIDEO_SetBlack(FALSE);
+	VIDEO_SetBlack(false);
 
 	// Run the main loop.
 	double current_time, last_time, seconds;
@@ -450,7 +450,7 @@ static void* main_thread_function(void* dummy)
 		
 		if (rumble_on&&(current_time > time_wpad_off)) 
 		{
-			WPAD_Rumble(0, FALSE);
+			WPAD_Rumble(0, false);
 			rumble_on = 0;
 		}
 
@@ -464,7 +464,7 @@ static void* main_thread_function(void* dummy)
 }
 
 
-qboolean isDedicated = FALSE;
+qboolean isDedicated = false;
 
 int main(int argc, char* argv[])
 {

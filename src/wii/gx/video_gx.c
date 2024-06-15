@@ -241,8 +241,8 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 	GX_SetDstAlpha(GX_ENABLE, 0);
 
 	// ELUTODO: really necessary?
-	//GX_InvVtxCache();
-	//GX_InvalidateTexAll();
+	GX_InvVtxCache();
+	GX_InvalidateTexAll();
 	Sbar_Changed(); // force status bar redraw every frame
 }
 

@@ -171,8 +171,8 @@ int Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 	if (data->cursize > NET_MAXMESSAGE)
 		Sys_Error("Datagram_SendMessage: message too big %u\n", data->cursize);
 
-	if (sock->canSend == FALSE)
-		Sys_Error("SendMessage: called with canSend == FALSE\n");
+	if (sock->canSend == false)
+		Sys_Error("SendMessage: called with canSend == false\n");
 #endif
 
 	memcpy(sock->sendMessage, data->data, data->cursize);
@@ -194,7 +194,7 @@ int Datagram_SendMessage (qsocket_t *sock, sizebuf_t *data)
 	packetBuffer.sequence = BigLong(sock->sendSequence++);
 	memcpy (packetBuffer.data, sock->sendMessage, dataLen);
 
-	sock->canSend = FALSE;
+	sock->canSend = false;
 
 	if (sfunc.Write (sock->socket, (byte *)&packetBuffer, packetLen, &sock->addr) == -1)
 		return -1;
@@ -227,7 +227,7 @@ int SendMessageNext (qsocket_t *sock)
 	packetBuffer.sequence = BigLong(sock->sendSequence++);
 	memcpy (packetBuffer.data, sock->sendMessage, dataLen);
 
-	sock->sendNext = FALSE;
+	sock->sendNext = false;
 
 	if (sfunc.Write (sock->socket, (byte *)&packetBuffer, packetLen, &sock->addr) == -1)
 		return -1;
@@ -260,7 +260,7 @@ int ReSendMessage (qsocket_t *sock)
 	packetBuffer.sequence = BigLong(sock->sendSequence - 1);
 	memcpy (packetBuffer.data, sock->sendMessage, dataLen);
 
-	sock->sendNext = FALSE;
+	sock->sendNext = false;
 
 	if (sfunc.Write (sock->socket, (byte *)&packetBuffer, packetLen, &sock->addr) == -1)
 		return -1;
@@ -282,7 +282,7 @@ qboolean Datagram_CanSendMessage (qsocket_t *sock)
 
 qboolean Datagram_CanSendUnreliableMessage (qsocket_t *sock)
 {
-	return TRUE;
+	return true;
 }
 
 
@@ -414,12 +414,12 @@ int	Datagram_GetMessage (qsocket_t *sock)
 			if (sock->sendMessageLength > 0)
 			{
 				memcpy(sock->sendMessage, sock->sendMessage+MAX_DATAGRAM, sock->sendMessageLength);
-				sock->sendNext = TRUE;
+				sock->sendNext = true;
 			}
 			else
 			{
 				sock->sendMessageLength = 0;
-				sock->canSend = TRUE;
+				sock->canSend = true;
 			}
 			continue;
 		}
@@ -511,7 +511,7 @@ void NET_Stats_f (void)
 }
 
 
-static qboolean testInProgress = FALSE;
+static qboolean testInProgress = false;
 static int		testPollCount;
 static int		testDriver;
 static int		testSocket;
@@ -572,7 +572,7 @@ static void Test_Poll(void)
 	else
 	{
 		dfunc.CloseSocket(testSocket);
-		testInProgress = FALSE;
+		testInProgress = false;
 	}
 }
 
@@ -621,7 +621,7 @@ JustDoIt:
 	if (testSocket == -1)
 		return;
 
-	testInProgress = TRUE;
+	testInProgress = true;
 	testPollCount = 20;
 	testDriver = net_landriverlevel;
 
@@ -640,7 +640,7 @@ JustDoIt:
 }
 
 
-static qboolean test2InProgress = FALSE;
+static qboolean test2InProgress = false;
 static int		test2Driver;
 static int		test2Socket;
 
@@ -701,7 +701,7 @@ Error:
 	Con_Printf("Unexpected repsonse to Rule Info request\n");
 Done:
 	dfunc.CloseSocket(test2Socket);
-	test2InProgress = FALSE;
+	test2InProgress = false;
 	return;
 }
 
@@ -748,7 +748,7 @@ JustDoIt:
 	if (test2Socket == -1)
 		return;
 
-	test2InProgress = TRUE;
+	test2InProgress = true;
 	test2Driver = net_landriverlevel;
 
 	SZ_Clear(&net_message);
@@ -779,7 +779,7 @@ int Datagram_Init (void)
 		csock = net_landrivers[i].Init ();
 		if (csock == -1)
 			continue;
-		net_landrivers[i].initialized = TRUE;
+		net_landrivers[i].initialized = true;
 		net_landrivers[i].controlSock = csock;
 		}
 
@@ -805,7 +805,7 @@ void Datagram_Shutdown (void)
 		if (net_landrivers[i].initialized)
 		{
 			net_landrivers[i].Shutdown ();
-			net_landrivers[i].initialized = FALSE;
+			net_landrivers[i].initialized = false;
 		}
 	}
 }
@@ -1362,7 +1362,7 @@ static qsocket_t *_Datagram_Connect (char *host)
 		goto ErrorReturn;
 	}
 
-	m_return_onerror = FALSE;
+	m_return_onerror = false;
 	return sock;
 
 ErrorReturn:
@@ -1373,7 +1373,7 @@ ErrorReturn2:
 	{
 		key_dest = key_menu;
 		m_state = m_return_state;
-		m_return_onerror = FALSE;
+		m_return_onerror = false;
 	}
 	return NULL;
 }

@@ -148,7 +148,7 @@ void PF_setorigin (void)
 	e = G_EDICT(OFS_PARM0);
 	org = G_VECTOR(OFS_PARM1);
 	VectorCopy (org, e->v.origin);
-	SV_LinkEdict (e, FALSE);
+	SV_LinkEdict (e, false);
 }
 
 
@@ -166,7 +166,7 @@ void SetMinMaxSize (edict_t *e, float *min, float *max, qboolean rotate)
 		if (min[i] > max[i])
 			PR_RunError ("backwards mins/maxs");
 
-	rotate = FALSE;		// FIXME: implement rotation properly again
+	rotate = false;		// FIXME: implement rotation properly again
 
 	if (!rotate)
 	{
@@ -228,7 +228,7 @@ void SetMinMaxSize (edict_t *e, float *min, float *max, qboolean rotate)
 	VectorCopy (rmax, e->v.maxs);
 	VectorSubtract (max, min, e->v.size);
 	
-	SV_LinkEdict (e, FALSE);
+	SV_LinkEdict (e, false);
 }
 
 /*
@@ -248,7 +248,7 @@ void PF_setsize (void)
 	e = G_EDICT(OFS_PARM0);
 	min = G_VECTOR(OFS_PARM1);
 	max = G_VECTOR(OFS_PARM2);
-	SetMinMaxSize (e, min, max, FALSE);
+	SetMinMaxSize (e, min, max, false);
 }
 
 
@@ -281,12 +281,12 @@ void PF_setmodel (void)
 	e->v.model = m - pr_strings;
 	e->v.modelindex = i; //SV_ModelIndex (m);
 
-	mod = sv.models[ (int)e->v.modelindex];  // Mod_ForName (m, TRUE);
+	mod = sv.models[ (int)e->v.modelindex];  // Mod_ForName (m, true);
 	
 	if (mod)
-		SetMinMaxSize (e, mod->mins, mod->maxs, TRUE);
+		SetMinMaxSize (e, mod->mins, mod->maxs, true);
 	else
-		SetMinMaxSize (e, vec3_origin, vec3_origin, TRUE);
+		SetMinMaxSize (e, vec3_origin, vec3_origin, true);
 }
 
 /*
@@ -586,7 +586,7 @@ void PF_ambientsound (void)
 			
 	if (!*check)
 	{
-		Con_Printf ("no precache: %s\n", samp);
+		//Con_Printf ("no precache: %s\n", samp);
 		return;
 	}
 
@@ -899,7 +899,7 @@ void PF_tracebox (void)
 =================
 PF_checkpos
 
-Returns TRUE if the given entity can move to the given position from it's
+Returns true if the given entity can move to the given position from it's
 current position by walking or rolling.
 FIXME: make work...
 scalar checkpos (entity, vector)
@@ -1719,7 +1719,7 @@ void PF_precache_model (void)
 		if (!sv.model_precache[i])
 		{
 			sv.model_precache[i] = s;
-			sv.models[i] = Mod_ForName (s, TRUE);
+			sv.models[i] = Mod_ForName (s, true);
 			return;
 		}
 		if (!strcmp(sv.model_precache[i], s))
@@ -1736,12 +1736,12 @@ void PF_coredump (void)
 
 void PF_traceon (void)
 {
-	pr_trace = TRUE;
+	pr_trace = true;
 }
 
 void PF_traceoff (void)
 {
-	pr_trace = FALSE;
+	pr_trace = false;
 }
 
 void PF_eprint (void)
@@ -1784,7 +1784,7 @@ void PF_walkmove (void)
 	oldf = pr_xfunction;
 	oldself = pr_global_struct->self;
 	
-	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, TRUE);
+	G_FLOAT(OFS_RETURN) = SV_movestep(ent, move, true);
 	
 	
 // restore program state
@@ -1810,14 +1810,14 @@ void PF_droptofloor (void)
 	VectorCopy (ent->v.origin, end);
 	end[2] -= 256;
 	
-	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, FALSE, ent);
+	trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, false, ent);
 
 	if (trace.fraction == 1 || trace.allsolid)
 		G_FLOAT(OFS_RETURN) = 0;
 	else
 	{
 		VectorCopy (trace.endpos, ent->v.origin);
-		SV_LinkEdict (ent, FALSE);
+		SV_LinkEdict (ent, false);
 		ent->v.flags = (int)ent->v.flags | FL_ONGROUND;
 		ent->v.groundentity = EDICT_TO_PROG(trace.ent);
 		G_FLOAT(OFS_RETURN) = 1;
@@ -1961,7 +1961,7 @@ void PF_aim (void)
 // try sending a trace straight
 	VectorCopy (pr_global_struct->v_forward, dir);
 	VectorMA (start, 2048, dir, end);
-	tr = SV_Move (start, vec3_origin, vec3_origin, end, FALSE, ent);
+	tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
 	if (tr.ent && tr.ent->v.takedamage == DAMAGE_AIM
 	&& (!teamplay.value || ent->v.team <=0 || ent->v.team != tr.ent->v.team) )
 	{
@@ -1992,7 +1992,7 @@ void PF_aim (void)
 		dist = DotProduct (dir, pr_global_struct->v_forward);
 		if (dist < bestdist)
 			continue;	// to far to turn
-		tr = SV_Move (start, vec3_origin, vec3_origin, end, FALSE, ent);
+		tr = SV_Move (start, vec3_origin, vec3_origin, end, false, ent);
 		if (tr.ent == check)
 		{	// can shoot at this one
 			bestdist = dist;
@@ -2331,7 +2331,7 @@ void PF_changelevel (void)
 
 	if (svs.changelevel_issued)
 		return;
-	svs.changelevel_issued = TRUE;
+	svs.changelevel_issued = true;
 
 	s1 = G_STRING(OFS_PARM0);
 	s2 = G_STRING(OFS_PARM1);
@@ -2346,7 +2346,7 @@ void PF_changelevel (void)
 // make sure we don't issue two changelevels
 	if (svs.changelevel_issued)
 		return;
-	svs.changelevel_issued = TRUE;
+	svs.changelevel_issued = true;
 	
 	s = G_STRING(OFS_PARM0);
 	Cbuf_AddText (va("changelevel %s\n",s));
@@ -2408,7 +2408,7 @@ void PF_WaterMove (void)
 					self->v.dmg = self->v.dmg + 2;
 					if (self->v.dmg > 15)
 						self->v.dmg = 10;
-//					T_Damage (self, world, world, self.dmg, 0, FALSE);
+//					T_Damage (self, world, world, self.dmg, 0, false);
 					damage = self->v.dmg;
 					self->v.pain_finished = sv.time + 1.0f;
 				}
@@ -2448,7 +2448,7 @@ void PF_WaterMove (void)
 					self->v.dmgtime = sv.time + 0.2f;
 				else
 					self->v.dmgtime = sv.time + 1.0f;
-//				T_Damage (self, world, world, 10*self.waterlevel, 0, TRUE);
+//				T_Damage (self, world, world, 10*self.waterlevel, 0, true);
 				damage = (float)(10*waterlevel);
 			}
 	}
@@ -2458,7 +2458,7 @@ void PF_WaterMove (void)
 			if (self->v.dmgtime < sv.time && self->v.radsuit_finished < sv.time)
 			{
 				self->v.dmgtime = sv.time + 1.0f;
-//				T_Damage (self, world, world, 4*self.waterlevel, 0, TRUE);
+//				T_Damage (self, world, world, 4*self.waterlevel, 0, true);
 				damage = (float)(4*waterlevel);
 			}
 	}
@@ -3626,7 +3626,7 @@ void PF_rumble (void)
 	rumble_time = G_FLOAT(OFS_PARM0) / 1000.0;
 	
 	//it switches rumble on for rumble_time milliseconds  
-	WPAD_Rumble(0, TRUE);
+	WPAD_Rumble(0, true);
 	rumble_on=1;
 	time_wpad_off = Sys_FloatTime() + rumble_time;
 	

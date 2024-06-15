@@ -25,7 +25,7 @@ sfx_t			*cl_sfx_step[4];
 
 /*
 
-The view is allowed to move slightly from it's TRUE position for bobbing,
+The view is allowed to move slightly from it's true position for bobbing,
 but if it exceeds 8 pixels linear distance (spherical, not box), the list of
 entities sent from the server may not include everything in the pvs, especially
 when crossing a water boudnary.
@@ -35,40 +35,40 @@ when crossing a water boudnary.
 cvar_t		lcd_x = {"lcd_x","0"};
 cvar_t		lcd_yaw = {"lcd_yaw","0"};
 
-cvar_t	scr_ofsx = {"scr_ofsx","0", FALSE};
-cvar_t	scr_ofsy = {"scr_ofsy","0", FALSE};
-cvar_t	scr_ofsz = {"scr_ofsz","0", FALSE};
+cvar_t	scr_ofsx = {"scr_ofsx","0", false};
+cvar_t	scr_ofsy = {"scr_ofsy","0", false};
+cvar_t	scr_ofsz = {"scr_ofsz","0", false};
 
 cvar_t	cl_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	cl_rollangle = {"cl_rollangle", "2.0f"};
 
-cvar_t	cl_bob = {"cl_bob","0.02", FALSE};
-cvar_t	cl_bobcycle = {"cl_bobcycle","0.06", FALSE};
-cvar_t	cl_bobup = {"cl_bobup","0.02", FALSE};
+cvar_t	cl_bob = {"cl_bob","0.02", false};
+cvar_t	cl_bobcycle = {"cl_bobcycle","0.06", false};
+cvar_t	cl_bobup = {"cl_bobup","0.02", false};
 
 cvar_t	cl_sidebobbing = {"cl_sidebobbing","1"};
 cvar_t	cl_bobside = {"cl_bobside","0.02"};
 cvar_t	cl_bobsidecycle = {"cl_bobsidecycle","0.06"};
 cvar_t	cl_bobsideup = {"cl_bobsideup","0.02"};
 
-cvar_t	v_kicktime = {"v_kicktime", "0.5", FALSE};
-cvar_t	v_kickroll = {"v_kickroll", "0.6", FALSE};
-cvar_t	v_kickpitch = {"v_kickpitch", "0.6", FALSE};
+cvar_t	v_kicktime = {"v_kicktime", "0.5", false};
+cvar_t	v_kickroll = {"v_kickroll", "0.6", false};
+cvar_t	v_kickpitch = {"v_kickpitch", "0.6", false};
 
-cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", TRUE};
+cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", true};
 
-cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", FALSE};
-cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", FALSE};
-cvar_t	v_ipitch_cycle = {"v_ipitch_cycle", "1", FALSE};
-cvar_t	v_iyaw_level = {"v_iyaw_level", "0.3", FALSE};
-cvar_t	v_iroll_level = {"v_iroll_level", "0.1f", FALSE};
-cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", FALSE};
+cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", false};
+cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", false};
+cvar_t	v_ipitch_cycle = {"v_ipitch_cycle", "1", false};
+cvar_t	v_iyaw_level = {"v_iyaw_level", "0.3", false};
+cvar_t	v_iroll_level = {"v_iroll_level", "0.1f", false};
+cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", false};
 
-cvar_t	v_idlescale = {"v_idlescale", "0", FALSE};
+cvar_t	v_idlescale = {"v_idlescale", "0", false};
 
-cvar_t	crosshair = {"crosshair", "1", TRUE};
-cvar_t	cl_crossx = {"cl_crossx", "0", FALSE};
-cvar_t	cl_crossy = {"cl_crossy", "0", FALSE};
+cvar_t	crosshair = {"crosshair", "1", true};
+cvar_t	cl_crossx = {"cl_crossx", "0", false};
+cvar_t	cl_crossy = {"cl_crossy", "0", false};
 
 float	v_dmg_time, v_dmg_roll, v_dmg_pitch;
 
@@ -235,7 +235,7 @@ float V_CalcVBob(float speed, float which)
 //=============================================================================
 
 
-cvar_t	v_centermove = {"v_centermove", "0.15", FALSE};
+cvar_t	v_centermove = {"v_centermove", "0.15", false};
 cvar_t	v_centerspeed = {"v_centerspeed","500"};
 
 
@@ -250,7 +250,7 @@ void V_StartPitchDrift (void)
 	if (cl.nodrift || !cl.pitchvel)
 	{
 		cl.pitchvel = v_centerspeed.value;
-		cl.nodrift = FALSE;
+		cl.nodrift = false;
 		cl.driftmove = 0;
 	}
 }
@@ -258,7 +258,7 @@ void V_StartPitchDrift (void)
 void V_StopPitchDrift (void)
 {
 	cl.laststop = cl.time;
-	cl.nodrift = TRUE;
+	cl.nodrift = true;
 	cl.pitchvel = 0;
 }
 
@@ -352,7 +352,7 @@ cshift_t	cshift_water = { {130,80,50}, 128 };
 cshift_t	cshift_slime = { {0,25,5}, 150 };
 cshift_t	cshift_lava = { {255,80,0}, 150 };
 
-cvar_t		v_gamma = {"gamma", "1", TRUE};
+cvar_t		v_gamma = {"gamma", "1", true};
 
 byte		gammatable[256];	// palette is sent through this
 
@@ -388,13 +388,13 @@ qboolean V_CheckGamma (void)
 	static float oldgammavalue;
 	
 	if (v_gamma.value == oldgammavalue)
-		return FALSE;
+		return false;
 	oldgammavalue = v_gamma.value;
 	
 	BuildGammaTable (v_gamma.value);
 	vid.recalc_refdef = 1;				// force a surface cache flush
 	
-	return TRUE;
+	return true;
 }
 
 

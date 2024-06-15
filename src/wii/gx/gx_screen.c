@@ -81,7 +81,7 @@ float		scr_con_current;
 float		scr_conlines;		// lines of console to display
 
 float		oldscreensize, oldfov;
-cvar_t		scr_viewsize = {"viewsize","100", TRUE};
+cvar_t		scr_viewsize = {"viewsize","100", true};
 cvar_t		scr_fov = {"fov","90"};	// 10 - 170
 cvar_t 		scr_fov_viewmodel = {"r_viewmodel_fov","70"};
 cvar_t		scr_conspeed = {"scr_conspeed","300"};
@@ -91,7 +91,7 @@ cvar_t		scr_showturtle = {"showturtle","0"};
 cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
 cvar_t		scr_loadscreen = {"scr_loadscreen","1"};
-cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", TRUE };
+cvar_t		gl_triplebuffer = {"gl_triplebuffer", "1", true };
 cvar_t 		cl_crosshair_debug = {"cl_crosshair_debug", "0", true};
 
 extern	cvar_t	crosshair;
@@ -717,7 +717,7 @@ void SCR_Init (void)
 	
 	hitmark = Draw_CachePic("gfx/hud/hit_marker");
 
-	scr_initialized = TRUE;
+	scr_initialized = true;
 }
 
 
@@ -965,7 +965,7 @@ char *ReturnLoadingtex (void)
             return  "That was epic... EPIC FOR THE WIIIN!"; //why
             break;
         case 23:
-            return  "Mikeage and Citra are awesome 3DS emulators!";
+            return  "Dolphin is an awesome Wii emulator!";
             break;
         case 24:
             return  "You dead yet?";
@@ -998,7 +998,7 @@ char *ReturnLoadingtex (void)
             return  "10/10/10 was a good day.";
             break;
         case 34:
-            return  "Also check out \"Halo Revamped\" for 3DS!";
+            return  "Also check out \"Quake\" for Wii!";
             break;
         case 35:
             return 	"CypressImplex, or \"Ivy\", is from the USA.";
@@ -1034,7 +1034,7 @@ char *ReturnLoadingtex (void)
 			return 	"\"Get rid of the 21% tip, it's an MLP reference.\"";
 			break;
 		case 46:
-			return 	"You're playing on a 3DS!";
+			return 	"You're playing on a Wii!";
 			break;
 		case 47:
 			return 	"Don't leak the beta!";
@@ -1118,7 +1118,7 @@ char *ReturnLoadingtex (void)
 			return  "Play some Custom Maps!";
 			break;
 		case 74:
-			return  "Real OGs play on \"Old\" 3DS models!";
+			return  "Real OGs play on WiiU :P";
 			break;
 		case 75:
 			return  "Adding this tip improved framerate by 39%!";
@@ -1271,7 +1271,7 @@ void SCR_DrawConsole (void)
 	if (scr_con_current)
 	{
 		scr_copyeverything = 1;
-		Con_DrawConsole (scr_con_current, TRUE);
+		Con_DrawConsole (scr_con_current, true);
 		clearconsole = 0;
 	}
 	else
@@ -1367,7 +1367,7 @@ SCR_BeginLoadingPlaque
 */
 void SCR_BeginLoadingPlaque (void)
 {
-	S_StopAllSounds (TRUE);
+	S_StopAllSounds (true);
 
 	if (cls.state != ca_connected)
 		return;
@@ -1379,13 +1379,13 @@ void SCR_BeginLoadingPlaque (void)
 	scr_centertime_off = 0;
 	scr_con_current = 0;
 
-	scr_drawloading = TRUE;
+	scr_drawloading = true;
 	scr_fullupdate = 0;
 	Sbar_Changed ();
 	SCR_UpdateScreen ();
-	scr_drawloading = FALSE;
+	scr_drawloading = false;
 
-	scr_disabled_for_loading = TRUE;
+	scr_disabled_for_loading = true;
 	scr_disabled_time = realtime;
 	scr_fullupdate = 0;
 }
@@ -1398,7 +1398,7 @@ SCR_EndLoadingPlaque
 */
 void SCR_EndLoadingPlaque (void)
 {
-	scr_disabled_for_loading = FALSE;
+	scr_disabled_for_loading = false;
 	scr_fullupdate = 0;
 	Con_ClearNotify ();
 }
@@ -1451,18 +1451,18 @@ keypress.
 int SCR_ModalMessage (char *text)
 {
 	if (cls.state == ca_dedicated)
-		return TRUE;
+		return true;
 
 	scr_notifystring = text;
  
 // draw a fresh screen and make sure the text stays there
 	scr_fullupdate = 0;
-	scr_drawdialog = TRUE;
+	scr_drawdialog = true;
 	// ELUTODO: other cases where we need more updates do keep the screen current
 	SCR_UpdateScreen ();
 	SCR_UpdateScreen ();
 	SCR_UpdateScreen ();
-	scr_drawdialog = FALSE;
+	scr_drawdialog = false;
 	
 	S_ClearBuffer ();		// so dma doesn't loop current sound
 
@@ -1672,7 +1672,7 @@ void SCR_UpdateScreen (void)
 	{
 		if (realtime - scr_disabled_time > 60)
 		{
-			scr_disabled_for_loading = FALSE;
+			scr_disabled_for_loading = false;
 			Con_Printf ("load failed.\n");
 		}
 		else
@@ -1728,13 +1728,13 @@ void SCR_UpdateScreen (void)
 	if (oldfov != scr_fov.value)
 	{
 		oldfov = scr_fov.value;
-		vid.recalc_refdef = TRUE;
+		vid.recalc_refdef = true;
 	}
 
 	if (oldscreensize != scr_viewsize.value)
 	{
 		oldscreensize = scr_viewsize.value;
-		vid.recalc_refdef = TRUE;
+		vid.recalc_refdef = true;
 	}
 
 	if (vid.recalc_refdef)

@@ -427,14 +427,14 @@ STBIDEF int      stbi_info_from_file  (FILE *f,                  int *x, int *y,
 // for image formats that explicitly notate that they have premultiplied alpha,
 // we just return the colors as stored in the file. set this flag to force
 // unpremultiplication. results are undefined if the unpremultiply overflow.
-STBIDEF void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply);
+STBIDEF void stbi_set_unpremultiply_on_load(int flag_TRUE_if_should_unpremultiply);
 
 // indicate whether we should process iphone images back to canonical format,
 // or just pass them through "as-is"
-STBIDEF void stbi_convert_iphone_png_to_rgb(int flag_true_if_should_convert);
+STBIDEF void stbi_convert_iphone_png_to_rgb(int flag_TRUE_if_should_convert);
 
 // flip the image vertically, so the first pixel in the output array is the bottom left
-STBIDEF void stbi_set_flip_vertically_on_load(int flag_true_if_should_flip);
+STBIDEF void stbi_set_flip_vertically_on_load(int flag_TRUE_if_should_flip);
 
 // ZLIB client - used by PNG, available for other purposes
 
@@ -947,9 +947,9 @@ static stbi_uc *stbi__hdr_to_ldr(float   *data, int x, int y, int comp);
 
 static int stbi__vertically_flip_on_load = 0;
 
-STBIDEF void stbi_set_flip_vertically_on_load(int flag_true_if_should_flip)
+STBIDEF void stbi_set_flip_vertically_on_load(int flag_TRUE_if_should_flip)
 {
-    stbi__vertically_flip_on_load = flag_true_if_should_flip;
+    stbi__vertically_flip_on_load = flag_TRUE_if_should_flip;
 }
 
 static void *stbi__load_main(stbi__context *s, int *x, int *y, int *comp, int req_comp, stbi__result_info *ri, int bpc)
@@ -4623,14 +4623,14 @@ static int stbi__expand_png_palette(stbi__png *a, stbi_uc *palette, int len, int
 static int stbi__unpremultiply_on_load = 0;
 static int stbi__de_iphone_flag = 0;
 
-STBIDEF void stbi_set_unpremultiply_on_load(int flag_true_if_should_unpremultiply)
+STBIDEF void stbi_set_unpremultiply_on_load(int flag_TRUE_if_should_unpremultiply)
 {
-   stbi__unpremultiply_on_load = flag_true_if_should_unpremultiply;
+   stbi__unpremultiply_on_load = flag_TRUE_if_should_unpremultiply;
 }
 
-STBIDEF void stbi_convert_iphone_png_to_rgb(int flag_true_if_should_convert)
+STBIDEF void stbi_convert_iphone_png_to_rgb(int flag_TRUE_if_should_convert)
 {
-   stbi__de_iphone_flag = flag_true_if_should_convert;
+   stbi__de_iphone_flag = flag_TRUE_if_should_convert;
 }
 
 static void stbi__de_iphone(stbi__png *z)
@@ -5226,7 +5226,7 @@ static void *stbi__bmp_load(stbi__context *s, int *x, int *y, int *comp, int req
 }
 #endif
 
-// Targa Truevision - TGA
+// Targa TRUEvision - TGA
 // by Jonathan Dummer
 #ifndef STBI_NO_TGA
 // returns STBI_rgb or whatever, 0 on error

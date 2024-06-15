@@ -329,7 +329,7 @@ M_ToggleMenu_f
 */
 void M_ToggleMenu_f (void)
 {
-	m_entersound = TRUE;
+	m_entersound = true;
 
 	if (key_dest == key_menu)
 	{
@@ -792,7 +792,7 @@ void M_Menu_SinglePlayer_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_singleplayer;
-	m_entersound = TRUE;
+	m_entersound = true;
 }
 
 
@@ -1347,7 +1347,7 @@ void M_Menu_MultiPlayer_f (void)
 {
 	key_dest = key_menu;
 	//m_state = m_multiplayer;
-	m_entersound = TRUE;
+	m_entersound = true;
 }
 
 
@@ -1398,7 +1398,7 @@ void M_MultiPlayer_Key (int key)
 	case K_JOY0:
 	case K_JOY9:
 	case K_JOY20:
-		m_entersound = TRUE;
+		m_entersound = true;
 		switch (m_multiplayer_cursor)
 		{
 		case 0:
@@ -1437,7 +1437,7 @@ void M_Menu_Setup_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_setup;
-	m_entersound = TRUE;
+	m_entersound = true;
 	strcpy(setup_myname, cl_name.string);
 	strcpy(setup_hostname, hostname.string);
 	setup_top = setup_oldtop = ((int)cl_color.value) >> 4;
@@ -1547,7 +1547,7 @@ forward:
 			Cvar_Set("hostname", setup_hostname);
 		if (setup_top != setup_oldtop || setup_bottom != setup_oldbottom)
 			Cbuf_AddText( va ("color %i %i\n", setup_top, setup_bottom) );
-		m_entersound = TRUE;
+		m_entersound = true;
 		M_Menu_MultiPlayer_f ();
 		break;
 
@@ -1633,7 +1633,7 @@ void M_Menu_Net_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_net;
-	m_entersound = TRUE;
+	m_entersound = true;
 	m_net_items = 4;
 
 	if (m_net_cursor >= m_net_items)
@@ -1725,7 +1725,7 @@ again:
 	case K_JOY0:
 	case K_JOY9:
 	case K_JOY20:
-		m_entersound = TRUE;
+		m_entersound = true;
 
 		switch (m_net_cursor)
 		{
@@ -1772,7 +1772,7 @@ void M_Menu_Options_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_options;
-	m_entersound = TRUE;
+	m_entersound = true;
 }
 
 void M_AdjustSliders (int dir)
@@ -1932,7 +1932,7 @@ void M_Options_Key (int k)
 	case K_JOY0:
 	case K_JOY9:
 	case K_JOY20:
-		m_entersound = TRUE;
+		m_entersound = true;
 		switch (options_cursor)
 		{
 		case 0:
@@ -2012,7 +2012,7 @@ void M_Menu_Keys_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_keys;
-	m_entersound = TRUE;
+	m_entersound = true;
 }
 
 
@@ -2122,7 +2122,7 @@ void M_Keys_Key (int k)
 		S_LocalSound ("misc/menu1.wav");
 		if ((k == K_ESCAPE) || (k == K_JOY1) || (k == K_JOY10)|| (k == K_JOY21))
 		{
-			bind_grab = FALSE;
+			bind_grab = false;
 		}
 		else if (k != '`')
 		{
@@ -2130,7 +2130,7 @@ void M_Keys_Key (int k)
 			Cbuf_InsertText (cmd);
 		}
 
-		bind_grab = FALSE;
+		bind_grab = false;
 		return;
 	}
 
@@ -2167,7 +2167,7 @@ void M_Keys_Key (int k)
 		//S_LocalSound ("misc/menu2.wav");
 		if (keys[1] != -1)
 			M_UnbindCommand (bindnames[keys_cursor][0]);
-		bind_grab = TRUE;
+		bind_grab = true;
 		break;
 
 	case K_BACKSPACE:		// delete bindings
@@ -2189,7 +2189,7 @@ void M_Menu_Options2_f (void)
 {
 	key_dest = key_menu;
 	//m_state = m_options2;
-	m_entersound = TRUE;
+	m_entersound = true;
 }
 
 // ELUTODO: aspect ratio
@@ -2288,7 +2288,7 @@ void M_Options2_Key (int k)
 	case K_JOY0:
 	case K_JOY9:
 	case K_JOY20:
-		m_entersound = TRUE;
+		m_entersound = true;
 		switch (options2_cursor)
 		{
 			default:
@@ -2332,7 +2332,7 @@ void M_Menu_Help_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_help;
-	m_entersound = TRUE;
+	m_entersound = true;
 	help_page = 0;
 }
 
@@ -2357,14 +2357,14 @@ void M_Help_Key (int key)
 
 	case K_UPARROW:
 	case K_RIGHTARROW:
-		m_entersound = TRUE;
+		m_entersound = true;
 		if (++help_page >= NUM_HELP_PAGES)
 			help_page = 0;
 		break;
 
 	case K_DOWNARROW:
 	case K_LEFTARROW:
-		m_entersound = TRUE;
+		m_entersound = true;
 		if (--help_page < 0)
 			help_page = NUM_HELP_PAGES-1;
 		break;
@@ -2387,7 +2387,7 @@ void M_Menu_Quit_f (void)
 	key_dest = key_menu;
 	m_quit_prevstate = m_state;
 	m_state = m_quit;
-	m_entersound = TRUE;
+	m_entersound = true;
 }
 
 
@@ -2404,7 +2404,7 @@ void M_Quit_Key (int key)
 		if (wasInMenus)
 		{
 			m_state = m_quit_prevstate;
-			m_entersound = TRUE;
+			m_entersound = true;
 		}
 		else
 		{
@@ -2438,7 +2438,7 @@ void M_Quit_Draw (void)
 	if (wasInMenus)
 	{
 		m_state = m_quit_prevstate;
-		m_recursiveDraw = TRUE;
+		m_recursiveDraw = true;
 		M_Draw ();
 		m_state = m_quit;
 	}
@@ -2468,7 +2468,7 @@ void M_Menu_LanConfig_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_lanconfig;
-	m_entersound = TRUE;
+	m_entersound = true;
 	if (lanConfig_cursor == -1)
 	{
 		if (JoiningGame && TCPIPConfig)
@@ -2481,7 +2481,7 @@ void M_Menu_LanConfig_f (void)
 	lanConfig_port = DEFAULTnet_hostport;
 	sprintf(lanConfig_portname, "%u", lanConfig_port);
 
-	m_return_onerror = FALSE;
+	m_return_onerror = false;
 	m_return_reason[0] = 0;
 }
 
@@ -2573,7 +2573,7 @@ void M_LanConfig_Key (int key)
 		if (lanConfig_cursor == 0)
 			break;
 
-		m_entersound = TRUE;
+		m_entersound = true;
 
 		M_ConfigureNetSubsystem ();
 
@@ -2591,7 +2591,7 @@ void M_LanConfig_Key (int key)
 		if (lanConfig_cursor == 2)
 		{
 			m_return_state = m_state;
-			m_return_onerror = TRUE;
+			m_return_onerror = true;
 			key_dest = key_game;
 			m_state = m_none;
 			Cbuf_AddText ( va ("connect \"%s\"\n", lanConfig_joinname) );
@@ -2807,14 +2807,14 @@ episode_t	rogueepisodes[] =
 int	startepisode;
 int	startlevel;
 int maxplayers;
-qboolean m_serverInfoMessage = FALSE;
+qboolean m_serverInfoMessage = false;
 double m_serverInfoMessageTime;
 
 void M_Menu_GameOptions_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_gameoptions;
-	m_entersound = TRUE;
+	m_entersound = true;
 	if (maxplayers == 0)
 		maxplayers = svs.maxclients;
 	if (maxplayers < 2)
@@ -2945,7 +2945,7 @@ void M_GameOptions_Draw (void)
 		}
 		else
 		{
-			m_serverInfoMessage = FALSE;
+			m_serverInfoMessage = false;
 		}
 	}
 }
@@ -2962,7 +2962,7 @@ void M_NetStart_Change (int dir)
 		if (maxplayers > svs.maxclientslimit)
 		{
 			maxplayers = svs.maxclientslimit;
-			m_serverInfoMessage = TRUE;
+			m_serverInfoMessage = true;
 			m_serverInfoMessageTime = realtime;
 		}
 		if (maxplayers < 2)
@@ -3123,17 +3123,17 @@ void M_GameOptions_Key (int key)
 //=============================================================================
 /* SEARCH MENU */
 
-qboolean	searchComplete = FALSE;
+qboolean	searchComplete = false;
 double		searchCompleteTime;
 
 void M_Menu_Search_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_search;
-	m_entersound = FALSE;
-	slistSilent = TRUE;
-	slistLocal = FALSE;
-	searchComplete = FALSE;
+	m_entersound = false;
+	slistSilent = true;
+	slistLocal = false;
+	searchComplete = false;
 	NET_Slist_f();
 
 }
@@ -3158,7 +3158,7 @@ void M_Search_Draw (void)
 
 	if (! searchComplete)
 	{
-		searchComplete = TRUE;
+		searchComplete = true;
 		searchCompleteTime = realtime;
 	}
 
@@ -3190,11 +3190,11 @@ void M_Menu_ServerList_f (void)
 {
 	key_dest = key_menu;
 	m_state = m_slist;
-	m_entersound = TRUE;
+	m_entersound = true;
 	slist_cursor = 0;
-	m_return_onerror = FALSE;
+	m_return_onerror = false;
 	m_return_reason[0] = 0;
-	slist_sorted = FALSE;
+	slist_sorted = false;
 }
 
 
@@ -3219,7 +3219,7 @@ void M_ServerList_Draw (void)
 						memcpy(&hostcache[i], &temp, sizeof(hostcache_t));
 					}
 		}
-		slist_sorted = TRUE;
+		slist_sorted = true;
 	}
 
 	p = Draw_CachePic ("gfx/p_multi.lmp");
@@ -3276,8 +3276,8 @@ void M_ServerList_Key (int k)
 	case K_JOY20:
 		//S_LocalSound ("misc/menu2.wav");
 		m_return_state = m_state;
-		m_return_onerror = TRUE;
-		slist_sorted = FALSE;
+		m_return_onerror = true;
+		slist_sorted = false;
 		key_dest = key_game;
 		m_state = m_none;
 		Cbuf_AddText ( va ("connect \"%s\"\n", hostcache[slist_cursor].cname) );
@@ -3373,7 +3373,7 @@ void M_Draw (void)
 	}
 	else
 	{
-		m_recursiveDraw = FALSE;
+		m_recursiveDraw = false;
 	}
 
 	switch (m_state)

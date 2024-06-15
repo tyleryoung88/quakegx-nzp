@@ -216,20 +216,20 @@ void CL_ParseTEnt (void)
 		break;
 
 	case TE_LIGHTNING1:				// lightning bolts
-		CL_ParseBeam (Mod_ForName("models/misc/bolt.mdl", TRUE));
+		CL_ParseBeam (Mod_ForName("models/misc/bolt.mdl", true));
 		break;
 	
 	case TE_LIGHTNING2:				// lightning bolts
-		CL_ParseBeam (Mod_ForName("models/misc/bolt2.mdl", TRUE));
+		CL_ParseBeam (Mod_ForName("models/misc/bolt2.mdl", true));
 		break;
 	
 	case TE_LIGHTNING3:				// lightning bolts
-		CL_ParseBeam (Mod_ForName("progs/bolt3.mdl", TRUE));
+		CL_ParseBeam (Mod_ForName("progs/bolt3.mdl", true));
 		break;
 	
 // PGM 01/21/97 
 	case TE_BEAM:				// grappling hook beam
-		CL_ParseBeam (Mod_ForName("progs/beam.mdl", TRUE));
+		CL_ParseBeam (Mod_ForName("progs/beam.mdl", true));
 		break;
 // PGM 01/21/97
 
