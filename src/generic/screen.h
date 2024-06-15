@@ -29,6 +29,8 @@ void SCR_SizeDown (void);
 void SCR_BringDownConsole (void);
 void SCR_CenterPrint (char *str);
 void SCR_UsePrint (int type, int cost, int weapon);
+qpic_t *GetButtonIcon (char *buttonname);
+char *GetGrenadeButtonL();
 void SCR_BeginLoadingPlaque (void);
 void SCR_EndLoadingPlaque (void);
 
@@ -57,3 +59,5 @@ extern	int			scr_copyeverything;
 extern qboolean		block_drawing;
 
 void SCR_UpdateWholeScreen (void);
+
+extern cvar_t 	scr_fov;

@@ -36,8 +36,18 @@ m*_t structures are in-memory
 #define	EF_BRIGHTFIELD			1
 #define	EF_MUZZLEFLASH 			2
 #define	EF_BRIGHTLIGHT 			4
-#define	EF_DIMLIGHT 			8
-
+#define	EF_REDLIGHT 			8
+#define	EF_ORANGELIGHT			16
+#define	EF_GREENLIGHT			32
+#define	EF_PINKLIGHT			64				// formerly EF_LIGHT
+#define	EF_NODRAW				128
+#define EF_LIMELIGHT			256				// formerly EF_BRIGHTFIELD
+#define EF_FULLBRIGHT			512
+#define EF_CYANLIGHT			1024			// formerly EF_DARKLIGHT
+#define EF_YELLOWLIGHT			2048			// formerly EF_DARKFIELD
+#define EF_PURPLELIGHT    		4096
+#define EF_RAYRED	 			8196			// red trail for porter x2
+#define EF_RAYGREEN  			16384			// green trail for ray gun
 
 /*
 ==============================================================================
@@ -146,7 +156,8 @@ typedef struct msurface_s
 	
 // lighting info
 	int			dlightframe;
-	int			dlightbits;
+	unsigned int		dlightbits[(MAX_DLIGHTS + 31) >> 5];
+		// int is 32 bits, need an array for MAX_DLIGHTS > 32
 
 	int			lightmaptexturenum;
 	byte		styles[MAXLIGHTMAPS];
@@ -317,7 +328,7 @@ typedef struct {
 	maliasframedesc_t	frames[1];	// variable sized
 } aliashdr_t;
 
-#define MAXALIASVERTS	2000	// TODO: tune this
+#define MAXALIASVERTS	2048	// TODO: tune this
 #define	MAXALIASFRAMES	256
 #define	MAXALIASTRIS	2048
 extern	aliashdr_t	*pheader;
@@ -346,11 +357,29 @@ typedef enum {mod_brush, mod_sprite, mod_alias} modtype_t;
 #define MOD_NOLERP	256
 //johnfits
 
+// some models are special
+typedef enum
+{
+	MOD_NORMAL,
+	MOD_PLAYER,
+	MOD_EYES,
+	MOD_FLAME,
+	MOD_THUNDERBOLT,
+	MOD_WEAPON,
+	MOD_LAVABALL,
+	MOD_SPIKE,
+	MOD_SHAMBLER,
+	MOD_SPR,
+	MOD_SPR32,
+//	MOD_GKEY,
+//	MOD_SKEY,
+} modhint_t;
 typedef struct model_s
 {
 	char		name[MAX_QPATH];
 	qboolean	needload;		// bmodels and sprites don't cache normally
 
+	modhint_t			modhint;
 	modtype_t	type;
 	int			numframes;
 	synctype_t	synctype;

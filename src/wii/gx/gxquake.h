@@ -134,6 +134,8 @@ typedef struct particle_s
 	float		ramp;
 	float		die;
 	ptype_t		type;
+	byte				texindex;
+	byte				bounces;
 } particle_t;
 
 
@@ -291,7 +293,7 @@ void EmitWaterPolys (msurface_t *fa);
 void R_DrawSkyChain (msurface_t *s);
 qboolean R_CullBox (vec3_t mins, vec3_t maxs);
 void R_MarkLights (dlight_t *light, int bit, mnode_t *node);
-void R_RotateForEntity (entity_t *e);
+void R_RotateForEntity (entity_t *e, unsigned char scale);
 void R_StoreEfrags (efrag_t **ppefrag);
 void GL_Set2D (void);
 

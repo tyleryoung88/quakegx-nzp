@@ -182,8 +182,8 @@ void HUD_NewMap (void)
 	point_change_interval = 0;
 	point_change_interval_neg = 0;
 
-	//round_center_x = (vid.width - sb_round[0]->width) /2;
-	//round_center_y = (vid.height - sb_round[0]->height) /2;
+	round_center_x = (vid.width - sb_round[0]->width) /2;
+	round_center_y = (vid.height - sb_round[0]->height) /2;
 }
 
 
@@ -1194,7 +1194,7 @@ HUD_ProgressBar
 */
 void HUD_ProgressBar (void)
 {
-/*
+
 	float progressbar;
 
 	if (cl.progress_bar)
@@ -1208,7 +1208,7 @@ void HUD_ProgressBar (void)
 
 		Draw_String ((vid.width - (88))/2, vid.height*0.75 + 10, "Reviving...");
 	}
-*/
+
 }
 
 /*
@@ -1247,6 +1247,7 @@ void HUD_Achievement (void)
 		achievement_unlocked = 0;
 	}
 */
+	return;
 }
 
 void HUD_Parse_Achievement (int ach)
@@ -1413,7 +1414,7 @@ HUD_BettyPrompt
 */
 void HUD_BettyPrompt (void)
 {
-/*
+
 	char str[32];
 	char str2[32];
 
@@ -1427,7 +1428,7 @@ void HUD_BettyPrompt (void)
 	Draw_String(x, 60, str);
 	Draw_String(x2, 72, str2);
 	Draw_Pic (x + 20*8 - 4, 56, GetButtonIcon("+grenade"));
-*/
+
 }
 
 /*

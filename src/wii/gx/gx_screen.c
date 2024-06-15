@@ -1163,13 +1163,15 @@ void SCR_DrawLoadScreen (void)
 			awoo = Draw_CachePic("gfx/menu/awoo");
 
 			if (lscreen != NULL)
-				load_screen_exists = true;
+				load_screen_exists = true;	
 
 			loadscreeninit = true;
 		}
 
 		if (load_screen_exists == true)
 			Draw_StretchPic(0, 0, lscreen, vid.width, vid.height);
+		else
+			Draw_FillByColor(0, 0, 320, 240, 0, 0, 0, 255);
 
 		Draw_FillByColor(0, 0, 320, 24, 0, 0, 0, 175);
 		Draw_FillByColor(0, 216, 320, 24, 0, 0, 0, 175);

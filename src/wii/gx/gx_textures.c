@@ -1077,7 +1077,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1089,7 +1089,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1100,7 +1100,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1150,7 +1150,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 		Con_Printf("Trying to load: %s", name);
 		data = LoadPCX (name, matchwidth, matchheight);
 		
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1163,7 +1163,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);	
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1175,7 +1175,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1187,7 +1187,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);
@@ -1198,7 +1198,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		data = loadimagepixels (name, complain, matchwidth, matchheight);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		COM_CloseFile (f);

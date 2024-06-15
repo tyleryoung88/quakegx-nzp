@@ -42,7 +42,7 @@ solid_edge items only clip against bsp models.
 cvar_t	sv_friction = {"sv_friction","4",FALSE,TRUE};
 cvar_t	sv_stopspeed = {"sv_stopspeed","100"};
 cvar_t	sv_gravity = {"sv_gravity","800",FALSE,TRUE};
-cvar_t	sv_maxvelocity = {"sv_maxvelocity","2000"}; //sB was 2000 but just matching with other engines...?
+cvar_t	sv_maxvelocity = {"sv_maxvelocity","100000"}; //sB was 2000 but just matching with other engines...?
 cvar_t	sv_nostep = {"sv_nostep","0"};
 
 #ifdef QUAKE2

@@ -1173,10 +1173,8 @@ void Draw_Crosshair (void)
 	
 	
    	if (Hitmark_Time > sv.time) { 
-		if (cl.stats[STAT_ZOOM] != 2) {
-        Draw_AlphaPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 8/* - hitmark->width*/,
+		Draw_AlphaPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 8/* - hitmark->width*/,
 				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 8/* - hitmark->height*/, hitmark, 185);
-		}
 	}
 	
 				 

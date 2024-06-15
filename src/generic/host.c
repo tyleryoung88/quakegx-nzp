@@ -393,10 +393,10 @@ void SV_DropClient (qboolean crash)
 		MSG_WriteString (&client->message, "");
 		MSG_WriteByte (&client->message, svc_updatepoints);
 		MSG_WriteByte (&client->message, host_client - svs.clients);
-		MSG_WriteShort (&client->message, 0);
+		MSG_WriteLong (&client->message, 0);
 		MSG_WriteByte (&client->message, svc_updatekills);
 		MSG_WriteByte (&client->message, host_client - svs.clients);
-		MSG_WriteByte (&client->message, 0);
+		MSG_WriteShort (&client->message, 0);
 	}
 }
 

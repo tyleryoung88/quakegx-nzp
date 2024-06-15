@@ -122,11 +122,11 @@ typedef struct {
 } daliasskininterval_t;
 
 typedef struct {
-	aliasframetype_t type;
+	int type;
 } daliasframetype_t;
 
 typedef struct {
-	aliasskintype_t	type;
+	int	type;
 } daliasskintype_t;
 
 #define IDPOLYHEADER	(('O'<<24)+('P'<<16)+('D'<<8)+'I')

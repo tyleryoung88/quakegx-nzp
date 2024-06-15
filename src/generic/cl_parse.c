@@ -50,7 +50,7 @@ char *svc_strings[] =
 	"svc_updatepoints",	// [byte] [short]
 	"svc_clientdata",		// <shortbits + data>
 	"svc_stopsound",		// <see code>
-	"",	// [byte] [byte]
+	"svc_setcolor",	// [byte] [byte]
 	"svc_particle",		// [vec3] <variable>
 	"svc_damage",			// [byte] impact [byte] blood [vec3] from
 
@@ -79,7 +79,11 @@ char *svc_strings[] =
     "svc_achievement", //43
 	"svc_songegg", //44 			[string] track name
 	"svc_maxammo", //45
-	"svc_pulse" //46
+	"svc_pulse", //46
+	"svc_bettyprompt",
+	"svc_playername",
+	"svc_doubletap",
+	"svc_screenflash" // 50
 };
 
 //=============================================================================
@@ -265,6 +269,9 @@ void CL_ParseServerInfo (void)
 //
 
 // precache models
+	for (i=0 ; i<NUM_MODELINDEX ; i++)
+		cl_modelindex[i] = -1;
+// precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
 	for (nummodels=1 ; ; nummodels++)
 	{
@@ -278,6 +285,12 @@ void CL_ParseServerInfo (void)
 		}
 		strcpy (model_precache[nummodels], str);
 		Mod_TouchModel (str);
+		if (!strcmp(model_precache[nummodels], "models/player.mdl"))
+			cl_modelindex[mi_player] = nummodels;
+		else if (!strcmp(model_precache[nummodels], "progs/flame.mdl"))
+			cl_modelindex[mi_flame1] = nummodels;
+		else if (!strcmp(model_precache[nummodels], "progs/flame2.mdl"))
+			cl_modelindex[mi_flame2] = nummodels;
 	}
 
 // precache sounds
@@ -310,7 +323,7 @@ void CL_ParseServerInfo (void)
 		{
 			Con_Printf("Model %s not found\n", model_precache[i]);
 			loading_cur_step++;
-			return;
+			//return;
 		}
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
@@ -416,7 +429,7 @@ void CL_ParseUpdate (int bits)
 	
 	if (bits & U_MODEL)
 	{
-		modnum = MSG_ReadByte ();
+		modnum = MSG_ReadShort ();
 		if (modnum >= MAX_MODELS)
 			Host_Error ("CL_ParseModel: bad modnum");
 	}
@@ -481,7 +494,7 @@ void CL_ParseUpdate (int bits)
 #endif
 
 	if (bits & U_EFFECTS)
-		ent->effects = MSG_ReadByte();
+		ent->effects = MSG_ReadShort();
 	else
 		ent->effects = ent->baseline.effects;
 
@@ -545,12 +558,12 @@ void CL_ParseUpdate (int bits)
     else
 	    ent->rendercolor[2] = 0;
 // Tomaz - QC Alpha Scale Glow End
-
+*/
 	if (bits & U_SCALE)
 		ent->scale = MSG_ReadByte();
 	else
 		ent->scale = ENTSCALE_DEFAULT;
-*/
+
 	if ( bits & U_NOLERP )
 		ent->forcelink = TRUE;
 
@@ -573,7 +586,7 @@ void CL_ParseBaseline (entity_t *ent)
 {
 	int			i;
 	
-	ent->baseline.modelindex = MSG_ReadByte (); //should be ReadShort??
+	ent->baseline.modelindex = MSG_ReadShort (); //should be ReadShort??
 	ent->baseline.frame = MSG_ReadByte ();
 	ent->baseline.colormap = MSG_ReadByte();
 	ent->baseline.skin = MSG_ReadByte();
@@ -1055,12 +1068,8 @@ void CL_ParseLimbUpdate (void)
 
 
 #define SHOWNET(x) if(cl_shownet.value==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
+void Sky_LoadSkyBox(char* name);
 
-/*
-=====================
-CL_ParseServerMessage
-=====================
-*/
 extern double bettyprompt_time;
 extern qboolean doubletap_has_damage_buff;
 extern int screenflash_color;
@@ -1068,11 +1077,16 @@ extern double screenflash_duration;
 extern int screenflash_type;
 extern double screenflash_worktime;
 extern double screenflash_starttime;
+/*
+=====================
+CL_ParseServerMessage
+=====================
+*/
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
-	int			i, total, j, lastcmd;
-	
+	int			i;
+
 //
 // if recording demos, copy the message out
 //
@@ -1080,13 +1094,13 @@ void CL_ParseServerMessage (void)
 		Con_Printf ("%i ",net_message.cursize);
 	else if (cl_shownet.value == 2)
 		Con_Printf ("------------------\n");
-	
-	cl.onground = FALSE;	// unless the server says otherwise	
+
+	cl.onground = false;	// unless the server says otherwise
 //
 // parse the message
 //
 	MSG_BeginReading ();
-	
+
 	while (1)
 	{
 		if (msg_badread)
@@ -1101,49 +1115,48 @@ void CL_ParseServerMessage (void)
 		}
 
 	// if the high bit of the command byte is set, it is a fast update
-		if (cmd & 128)
+		if (cmd & 128)//checking if it's an entity update, if it is the 7th bit will be on, this is checking for that
 		{
 			SHOWNET("fast update");
-			CL_ParseUpdate (cmd&127);
+			CL_ParseUpdate (cmd&127);//here we strip the cmd from the value of the 7th (128) bit, to only give the rest of the commands
 			continue;
 		}
 
 		SHOWNET(svc_strings[cmd]);
-	
+
 	// other commands
 		switch (cmd)
 		{
 		default:
-			Host_Error ("CL_ParseServerMessage: Illegible server message: cmd = %d\n", cmd);
+			Host_Error ("CL_ParseServerMessage: Illegible server message (%i)\n", cmd);
 			break;
-			
+
 		case svc_nop:
-//			Con_Printf ("svc_nop\n");
 			break;
-			
+
 		case svc_time:
 			cl.mtime[1] = cl.mtime[0];
-			cl.mtime[0] = MSG_ReadFloat ();			
+			cl.mtime[0] = MSG_ReadFloat ();
 			break;
-			
+
 		case svc_clientdata:
 			i = MSG_ReadShort ();
 			CL_ParseClientdata (i);
 			break;
-		
+
 		case svc_version:
 			i = MSG_ReadLong ();
 			if (i != PROTOCOL_VERSION)
 				Host_Error ("CL_ParseServerMessage: Server is protocol %i instead of %i\n", i, PROTOCOL_VERSION);
 			break;
-			
+
 		case svc_disconnect:
 			Host_EndGame ("Server disconnected\n");
 
 		case svc_print:
 			Con_Printf ("%s", MSG_ReadString ());
 			break;
-			
+
 		case svc_centerprint:
 			SCR_CenterPrint (MSG_ReadString ());
 			break;
@@ -1151,7 +1164,6 @@ void CL_ParseServerMessage (void)
 		case svc_useprint:
 			SCR_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
 			break;
-
 		case svc_maxammo:
 			domaxammo = true;
 			break;
@@ -1180,77 +1192,63 @@ void CL_ParseServerMessage (void)
 			nameprint_time = sv.time + 11;
 			strcpy(player_name, MSG_ReadString());
 			break;
-			
+
 		case svc_stufftext:
 			Cbuf_AddText (MSG_ReadString ());
 			break;
-			
-		case svc_damage:
-			V_ParseDamage ();
-			break;
-			
 		case svc_serverinfo:
 			CL_ParseServerInfo ();
 			vid.recalc_refdef = true;	// leave intermission full screen
 			break;
-			
+
 		case svc_setangle:
 			for (i=0 ; i<3 ; i++)
 				cl.viewangles[i] = MSG_ReadAngle ();
 			break;
-			
+
 		case svc_setview:
 			cl.viewentity = MSG_ReadShort ();
 			break;
-					
+
 		case svc_lightstyle:
 			i = MSG_ReadByte ();
 			if (i >= MAX_LIGHTSTYLES)
 				Sys_Error ("svc_lightstyle > MAX_LIGHTSTYLES");
-			strlcpy (cl_lightstyle[i].map, MSG_ReadString(), MAX_STYLESTRING);
+			Q_strcpy (cl_lightstyle[i].map,  MSG_ReadString());
 			cl_lightstyle[i].length = Q_strlen(cl_lightstyle[i].map);
-			//johnfitz -- save extra info
-			if (cl_lightstyle[i].length)
-			{
-				total = 0;
-				cl_lightstyle[i].peak = 'a';
-				for (j=0; j<cl_lightstyle[i].length; j++)
-				{
-					total += cl_lightstyle[i].map[j] - 'a';
-					cl_lightstyle[i].peak = max(cl_lightstyle[i].peak, cl_lightstyle[i].map[j]);
-				}
-				cl_lightstyle[i].average = total / cl_lightstyle[i].length + 'a';
-			}
-			else
-				cl_lightstyle[i].average = cl_lightstyle[i].peak = 'm';
-			//johnfitz
 			break;
-			
+
 		case svc_sound:
 			CL_ParseStartSoundPacket();
 			break;
-			
+
 		case svc_stopsound:
 			i = MSG_ReadShort();
 			S_StopSound(i>>3, i&7);
 			break;
-		
+
 		case svc_updatename:
-			Sbar_Changed ();
 			i = MSG_ReadByte ();
 			if (i >= cl.maxclients)
 				Host_Error ("CL_ParseServerMessage: svc_updatename > MAX_SCOREBOARD");
 			strcpy (cl.scores[i].name, MSG_ReadString ());
 			break;
 
-		case svc_updatecolors:
-			Sbar_Changed ();
+		case svc_updatepoints:
 			i = MSG_ReadByte ();
 			if (i >= cl.maxclients)
-				Host_Error ("CL_ParseServerMessage: svc_updatecolors > MAX_SCOREBOARD");
-			MSG_ReadByte ();
+				Host_Error ("CL_ParseServerMessage: svc_updatepoints > MAX_SCOREBOARD");
+			cl.scores[i].points = MSG_ReadLong ();
 			break;
-			
+
+		case svc_updatekills:
+			i = MSG_ReadByte ();
+			if (i >= cl.maxclients)
+				Host_Error ("CL_ParseServerMessage: svc_updatepoints > MAX_SCOREBOARD");
+			cl.scores[i].kills = MSG_ReadShort ();
+			break;
+
+
 		case svc_particle:
 			R_ParseParticleEffect ();
 			break;
@@ -1262,7 +1260,7 @@ void CL_ParseServerMessage (void)
 			break;
 		case svc_spawnstatic:
 			CL_ParseStatic ();
-			break;			
+			break;
 		case svc_temp_entity:
 			CL_ParseTEnt ();
 			break;
@@ -1274,25 +1272,20 @@ void CL_ParseServerMessage (void)
 				if (cl.paused)
 				{
 					CDAudio_Pause ();
-#ifdef _WIN32
-					VID_HandlePause (true);
-#endif
 				}
 				else
 				{
 					CDAudio_Resume ();
-#ifdef _WIN32
-					VID_HandlePause (false);
-#endif
 				}
 			}
 			break;
-			
+
 		case svc_signonnum:
 			i = MSG_ReadByte ();
 			if (i <= cls.signon)
 				Host_Error ("Received signon %i when at %i", i, cls.signon);
 			cls.signon = i;
+			Con_DPrintf("Signon: %i \n",i);
 			CL_SignonReply ();
 			break;
 
@@ -1300,9 +1293,9 @@ void CL_ParseServerMessage (void)
 			i = MSG_ReadByte ();
 			if (i < 0 || i >= MAX_CL_STATS)
 				Sys_Error ("svc_updatestat: %i is invalid", i);
-			cl.stats[i] = MSG_ReadLong ();;
+			cl.stats[i] = MSG_ReadLong ();
 			break;
-			
+
 		case svc_spawnstaticsound:
 			CL_ParseStaticSound ();
 			break;
@@ -1326,18 +1319,25 @@ void CL_ParseServerMessage (void)
 			cl.intermission = 2;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());			
+			SCR_CenterPrint (MSG_ReadString ());
 			break;
 
 		case svc_cutscene:
 			cl.intermission = 3;
 			cl.completed_time = cl.time;
 			vid.recalc_refdef = true;	// go to full screen
-			SCR_CenterPrint (MSG_ReadString ());			
+			SCR_CenterPrint (MSG_ReadString ());
 			break;
 
 		case svc_sellscreen:
 			Cmd_ExecuteString ("help", src_command);
+			break;
+
+	    case svc_skybox:
+			Sky_LoadSkyBox(MSG_ReadString());
+			break;
+		case svc_fog:
+			Fog_ParseServerMessage ();
 			break;
 
 		case svc_achievement:
@@ -1356,19 +1356,8 @@ void CL_ParseServerMessage (void)
 			CL_ParseLimbUpdate();
 			break;
 
-		case svc_updatepoints:
-			i = MSG_ReadByte ();
-			if (i >= cl.maxclients)
-				Host_Error ("CL_ParseServerMessage: svc_updatepoints > MAX_SCOREBOARD");
-			cl.scores[i].points = MSG_ReadLong ();
-
-			break;
-
-		case svc_updatekills:
-			i = MSG_ReadByte ();
-			if (i >= cl.maxclients)
-				Host_Error ("CL_ParseServerMessage: svc_updatekills > MAX_SCOREBOARD");
-			cl.scores[i].kills = MSG_ReadShort ();
+		case svc_bspdecal:
+			//CL_ParseBSPDecal ();
 			break;
 		}
 	}

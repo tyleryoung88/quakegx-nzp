@@ -2279,7 +2279,7 @@ void PF_makestatic (void)
 
 	MSG_WriteByte (&sv.signon,svc_spawnstatic);
 
-	MSG_WriteByte (&sv.signon, SV_ModelIndex(pr_strings + ent->v.model));
+	MSG_WriteShort (&sv.signon, SV_ModelIndex(pr_strings + ent->v.model));
 
 	MSG_WriteByte (&sv.signon, ent->v.frame);
 	MSG_WriteByte (&sv.signon, ent->v.colormap);
@@ -4181,7 +4181,7 @@ PF_BettyPrompt, // #504
 PF_SetPlayerName, // #505
 PF_SetDoubleTapVersion, // #506
 PF_ScreenFlash, // #507
-PF_Fixme
+PF_Fixme,
 //PF_rumble
 };
 

@@ -324,6 +324,31 @@ extern	int				cl_numstaticbrushmodels;
 extern	entity_t		*cl_staticbrushmodels[MAX_VISEDICTS];
 
 //
+// model indexes
+typedef	enum modelindex_s
+{
+	mi_player,
+	mi_eyes,
+	mi_flame0,
+	mi_flame1,
+	mi_flame2,
+	mi_q3torso,
+	mi_q3head,
+/*
+	mi_vw_light,
+	mi_vw_nail1,
+	mi_vw_nail2,
+	mi_vw_rock1,
+	mi_vw_rock2,
+	mi_vw_shot1,
+	mi_vw_shot2,
+	mi_vw_player,
+*/
+	NUM_MODELINDEX
+} modelindex_t;
+
+extern modelindex_t	cl_modelindex[NUM_MODELINDEX];
+extern	char			*cl_modelnames[NUM_MODELINDEX];
 // cl_input
 //
 typedef struct

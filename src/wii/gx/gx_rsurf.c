@@ -86,7 +86,7 @@ void R_AddDynamicLights (msurface_t *surf)
 
 	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 	{
-		if ( !(surf->dlightbits & (1<<lnum) ) )
+		if (! (surf->dlightbits[lnum >> 5] & (1U << (lnum & 31))))
 			continue;		// not lit by this light
 
 		rad = cl_dlights[lnum].radius;
@@ -920,7 +920,7 @@ void R_DrawBrushModel (entity_t *e)
 	//c_guMtxIdentity(model);
 	guMtxCopy(view, model);
 e->angles[0] = -e->angles[0];	// stupid quake bug
-	R_RotateForEntity (e);
+	R_RotateForEntity (e, e->scale);
 	GX_LoadPosMtxImm(model, GX_PNMTX0);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 

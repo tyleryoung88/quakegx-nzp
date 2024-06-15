@@ -517,8 +517,8 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (ent->baseline.modelindex != ent->v.modelindex)
 			bits |= U_MODEL;
 		
-		//if (ent->v.scale != ENTSCALE_DEFAULT && ent->v.scale != 0)
-				//bits |= U_SCALE;
+		if (ent->v.scale != ENTSCALE_DEFAULT && ent->v.scale != 0)
+				bits |= U_SCALE;
 		
 		 // Tomaz - QC Alpha Scale Glow Begin
 /*
@@ -558,8 +558,8 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 			bits |= U_RENDERCOLOR3;
 		}
 	}
-*/
 
+*/
 		// Tomaz - QC Alpha Scale Glow End
 		if (e >= 256)//We have more than 256 entities
 			bits |= U_LONGENTITY;
@@ -567,14 +567,14 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (bits >= 256)//this is we've exceded some old 8-bit message
 			bits |= U_MOREBITS;
 	
-		/*
+		
 		// Tomaz - QC Control Begin
 		if (bits >= 65536)//this is if we've excited the original 16-bit message
 			bits |= U_EXTEND1;
 		if (bits >= 16777216)
 			bits |= U_EXTEND2;
 		// Tomaz - QC Control End
-		*/
+		
 	//
 	// write the message
 	//
@@ -582,21 +582,21 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		
 		if (bits & U_MOREBITS)
 			MSG_WriteByte (msg, bits>>8);
-		/*
+		
 		// Tomaz - QC Control Begin
 		if (bits & U_EXTEND1)
 			MSG_WriteByte (msg, bits>>16);
 		if (bits & U_EXTEND2)
 			MSG_WriteByte (msg, bits>>24);
 		// Tomaz - QC Control End
-		*/
+		
 		if (bits & U_LONGENTITY)
 			MSG_WriteShort (msg,e);
 		else
 			MSG_WriteByte (msg,e);
 
 		if (bits & U_MODEL)
-			MSG_WriteByte (msg, ent->v.modelindex);
+			MSG_WriteShort (msg, ent->v.modelindex);
 		if (bits & U_FRAME)
 			MSG_WriteByte (msg, ent->v.frame);
 		if (bits & U_COLORMAP)
@@ -604,7 +604,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (bits & U_SKIN)
 			MSG_WriteByte (msg, ent->v.skin);
 		if (bits & U_EFFECTS)
-			MSG_WriteByte (msg, ent->v.effects);
+			MSG_WriteShort (msg, ent->v.effects);
 		if (bits & U_ORIGIN1)
 			MSG_WriteCoord (msg, ent->v.origin[0]);		
 		if (bits & U_ANGLE1)
@@ -617,7 +617,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 			MSG_WriteCoord (msg, ent->v.origin[2]);
 		if (bits & U_ANGLE3)
 			MSG_WriteAngle(msg, ent->v.angles[2]);
-		/*
+	/*	
 		// Tomaz - QC Alpha Scale Glow Begin
 		if (bits & U_RENDERAMT)
 			MSG_WriteFloat(msg, renderamt);
@@ -634,10 +634,10 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		if (bits & U_RENDERCOLOR3)
 			MSG_WriteFloat(msg, rendercolor[2]);
 		// Tomaz - QC Alpha Scale Glow End
-		*/
 		
-		//if (bits & U_SCALE)
-			//MSG_WriteByte(msg, ENTSCALE_ENCODE(ent->v.scale));
+		*/
+		if (bits & U_SCALE)
+			MSG_WriteByte(msg, ENTSCALE_ENCODE(ent->v.scale));
 	}
 }
 
@@ -1050,7 +1050,7 @@ void SV_CreateBaseline (void)
 		MSG_WriteByte (&sv.signon,svc_spawnbaseline);		
 		MSG_WriteShort (&sv.signon,entnum);
 
-		MSG_WriteByte (&sv.signon, svent->baseline.modelindex);
+		MSG_WriteShort (&sv.signon, svent->baseline.modelindex);
 		MSG_WriteByte (&sv.signon, svent->baseline.frame);
 		MSG_WriteByte (&sv.signon, svent->baseline.colormap);
 		MSG_WriteByte (&sv.signon, svent->baseline.skin);

@@ -73,15 +73,15 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	ON_EPSILON		0.1f			// point on plane side epsilon
 
-#define	MAX_MSGLEN		8000		// max length of a reliable message
-#define	MAX_DATAGRAM	1024		// max length of unreliable message
+#define	MAX_MSGLEN		64000		// max length of a reliable message
+#define	MAX_DATAGRAM	8000		// max length of unreliable message
 
 //
 // per-level limits
 //
-#define	MAX_EDICTS		600			// FIXME: ouch! ouch! ouch!
+#define	MAX_EDICTS		800			// FIXME: ouch! ouch! ouch!
 #define	MAX_LIGHTSTYLES	64
-#define	MAX_MODELS		256			// these are sent over the net as bytes
+#define	MAX_MODELS		300			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
 
 #define	SAVEGAME_COMMENT_LENGTH	39

@@ -145,7 +145,7 @@ guVector axis2 = {0,0,1};
 guVector axis1 = {0,1,0};
 guVector axis0 = {1,0,0};
 
-void R_RotateForEntity (entity_t *e)
+void R_RotateForEntity (entity_t *e, unsigned char scale)
 {
 	Mtx temp;
 
@@ -159,6 +159,14 @@ void R_RotateForEntity (entity_t *e)
 	c_guMtxConcat(model, temp, model);
 	c_guMtxRotAxisRad(temp, &axis0, DegToRad(e->angles[2]));
 	c_guMtxConcat(model, temp, model);
+	
+	if (scale != ENTSCALE_DEFAULT && scale != 0) {
+		float scalefactor = ENTSCALE_DECODE(scale);
+		
+		c_guMtxScale (temp, scalefactor, scalefactor, scalefactor);
+		c_guMtxConcat(model, temp, model);
+		//glScalef(scalefactor, scalefactor, scalefactor);
+	}
 }
 
 /*
@@ -690,7 +698,7 @@ void R_DrawZombieLimb (entity_t *e, int which)
 
 	//glPushMatrix ();
 	c_guMtxIdentity(model);
-	R_RotateForEntity (e);
+	R_RotateForEntity (e, e->scale);
 	//R_RotateForEntity (e);
 
 	//glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
@@ -856,7 +864,7 @@ void R_DrawAliasModel (entity_t *e)
 			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
 	}
 	else
-		paliashdr = (aliashdr_t *)Mod_Extradata (currententity->model);
+		paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
 
 	c_alias_polys += paliashdr->numtris;
 
@@ -883,7 +891,7 @@ void R_DrawAliasModel (entity_t *e)
 	}
 
 	c_guMtxIdentity(model);
-	R_RotateForEntity (e);
+	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
 	if (!strcmp (clmodel->name, "progs/eyes.mdl") && gl_doubleeyes.value) {
 		c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));
@@ -892,7 +900,7 @@ void R_DrawAliasModel (entity_t *e)
 		c_guMtxScale (temp, paliashdr->scale[0]*2, paliashdr->scale[1]*2, paliashdr->scale[2]*2);
 		c_guMtxConcat(model, temp, model);
 	} else {
-		/*
+		
 		// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
 		if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
 			float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
@@ -915,13 +923,13 @@ void R_DrawAliasModel (entity_t *e)
 			c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2] * scale);
 			c_guMtxConcat(model, temp, model);
 		}
-		*/
 		
+		/*
 		c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 		c_guMtxConcat(model, temp, model);
 		c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 		c_guMtxConcat(model, temp, model);
-		
+		*/
 	}
 
 	c_guMtxConcat(view,model,modelview);

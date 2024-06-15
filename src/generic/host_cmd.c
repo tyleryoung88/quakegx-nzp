@@ -973,7 +973,7 @@ void Host_Color_f(void)
 	host_client->edict->v.team = bottom + 1;
 
 // send notification to all clients
-	MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
+	//MSG_WriteByte (&sv.reliable_datagram, svc_updatecolors);
 	MSG_WriteByte (&sv.reliable_datagram, host_client - svs.clients);
 	MSG_WriteByte (&sv.reliable_datagram, host_client->colors);
 }

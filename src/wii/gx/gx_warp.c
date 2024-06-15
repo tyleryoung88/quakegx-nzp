@@ -362,7 +362,7 @@ void Sky_LoadSkyBox(char* name)
 		return; //no change
 
 	//turn off skybox if sky is set to ""
-	if (!name) {
+	if (name[0] == '0') {
 		skybox_name[0] = 0;
 		skytexname[0] = 0;
 		return;

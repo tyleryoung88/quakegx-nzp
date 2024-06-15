@@ -45,6 +45,8 @@ cvar_t	m_side = {"m_side","0.8", TRUE};
 client_static_t	cls;
 client_state_t	cl;
 // FIXME: put these on hunk?
+modelindex_t		cl_modelindex[NUM_MODELINDEX]; 
+char				*cl_modelnames[NUM_MODELINDEX];
 efrag_t			cl_efrags[MAX_EFRAGS];
 entity_t		cl_entities[MAX_EDICTS];
 entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
@@ -167,7 +169,7 @@ void CL_EstablishConnection (char *host)
 	cls.state = ca_connected;
 	cls.signon = 0;				// need all the signon messages before playing
 	
-	MSG_WriteByte (&cls.message, clc_nop); // ProQuake NAT Fix 
+	//MSG_WriteByte (&cls.message, clc_nop); // ProQuake NAT Fix 
 }
 
 /*
@@ -195,9 +197,9 @@ Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
 		MSG_WriteString (&cls.message, va("name \"%s\"\n", cl_name.string));
 	
 		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va("color %i %i\n", ((int)cl_color.value)>>4, ((int)cl_color.value)&15));
+		//MSG_WriteString (&cls.message, va("color %i %i\n", ((int)cl_color.value)>>4, ((int)cl_color.value)&15));
 	
-		MSG_WriteByte (&cls.message, clc_stringcmd);
+		//MSG_WriteByte (&cls.message, clc_stringcmd);
 		sprintf (str, "spawn %s", cls.spawnparms);
 		MSG_WriteString (&cls.message, str);
 		break;
@@ -533,12 +535,12 @@ void CL_RelinkEntities (void)
 // determine partial update time	
 	frac = CL_LerpPoint();
 	
-	//CL_UpdatePowerUpAngles();
+	CL_UpdatePowerUpAngles();
 
 	cl_numvisedicts = 0;
 	cl_numstaticbrushmodels = 0;
 	
-	bobjrotate = anglemod(100*cl.time);
+	//bobjrotate = anglemod(100*cl.time);
 
 //
 // interpolate player info
@@ -628,13 +630,13 @@ void CL_RelinkEntities (void)
 
 // rotate binary objects locally
 		if (ent->model->flags & EF_ROTATE) {
-			/*
+			
 			ent->angles[0] = mdlflag_poweruprotate_currentangles[0];
 			ent->angles[1] = mdlflag_poweruprotate_currentangles[1];
 			ent->angles[2] = mdlflag_poweruprotate_currentangles[2];
-			*/
 			
-			ent->angles[1] = bobjrotate;
+			
+			//ent->angles[1] = bobjrotate;
 		}
 		
 		if (ent->effects & EF_BRIGHTFIELD)
@@ -693,7 +695,7 @@ void CL_RelinkEntities (void)
 			dl->origin[2] += 16;
 			dl->radius = 400 + (rand()&31);
 			dl->die = cl.time + 0.001f;
-		}
+		} /*
 		if (ent->effects & EF_DIMLIGHT)
 		{			
 			dl = CL_AllocDlight (i);
@@ -701,7 +703,7 @@ void CL_RelinkEntities (void)
 			dl->radius = 200 + (rand()&31);
 			dl->die = cl.time + 0.001f;
 		}
-
+	*/
 		if (ent->effects & EF_BLUELIGHT)
 		{
 			dl = CL_AllocDlight (i);
