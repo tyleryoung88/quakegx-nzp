@@ -929,6 +929,55 @@ e->angles[0] = -e->angles[0];	// stupid quake bug
 
 	//c_guMtxConcat(view,model,modelview);
 	//GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+	
+	//sBTODO at somepoint... will require more in depth studying of GX blendmodes 
+	
+	// naievil -- fixme
+  /*  
+	//Crow_bar half_life render.
+	if (ISADDITIVE(e))
+	{
+		//Con_DPrintf("ISADDITIVE:brush\n");
+		float deg = e->renderamt;
+		float alpha1 = deg;
+		float alpha2 = 1 - deg;
+		if(deg <= 0.7)
+			sceGuDepthMask(GU_TRUE);
+		
+		sceGuEnable (GU_BLEND);
+		sceGuBlendFunc(GU_ADD, GU_FIX, GU_FIX,
+		GU_COLOR(alpha1,alpha1,alpha1,alpha1),
+		GU_COLOR(alpha2,alpha2,alpha2,alpha2));
+		dlight = qfalse;
+	}
+	else if (ISSOLID(e))
+	{
+		sceGuEnable(GU_ALPHA_TEST);
+		int c = (int)(e->renderamt * 255.0f);
+		sceGuAlphaFunc(GU_GREATER, c, 0xff);
+		dlight = qfalse;
+	}
+	else if (ISGLOW(e))
+	{
+		sceGuTexFunc(GU_TFX_MODULATE , GU_TCC_RGBA);
+		sceGuDepthMask(GU_TRUE);
+		sceGuBlendFunc(GU_ADD, GU_SRC_ALPHA, GU_FIX, 0, 0xFFFFFFFF);
+		R_GlowSetupBegin(e);
+	}
+	else if (ISTEXTURE(e))
+	{
+		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+		sceGuColor(GU_RGBA(255, 255, 255, (int)(e->renderamt * 255.0f)));
+		dlight = qfalse;
+	}
+	else if (ISCOLOR(e))
+	{
+		sceGuTexFunc(GU_TFX_MODULATE, GU_TCC_RGBA);
+		sceGuColor(GU_RGBA((int)(e->rendercolor[0] * 255.0f),
+			(int)(e->rendercolor[1] * 255.0f),
+			(int)(e->rendercolor[2] * 255.0f), 255));
+	}
+	*/
 
 	//
 	// draw texture

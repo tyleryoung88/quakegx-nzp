@@ -356,6 +356,7 @@ void GL_Upload8 (gltexture_t *destination, byte *data, int width, int height,  q
 	s = width*height;
 	// if there are no transparent pixels, make it a 3 component
 	// texture even if it was specified as otherwise
+	
 	if (alpha)
 	{
 		noalpha = true;
@@ -850,13 +851,13 @@ int		image_width;
 int		image_height;
 
 int COM_OpenFile (char *filename, int *hndl);
-
 /*
 =================================================================
-  PCX Loading
+
+PCX LOADING
+
 =================================================================
 */
-
 typedef struct
 {
     char	manufacturer;
@@ -871,9 +872,8 @@ typedef struct
     unsigned short	bytes_per_line;
     unsigned short	palette_type;
     char	filler[58];
-    unsigned 	data;			// unbounded
+    unsigned char	data;			// unbounded
 } pcx_t;
-
 /*
 ============
 LoadPCX
@@ -881,23 +881,31 @@ LoadPCX
 */
 byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 {
-	pcx_t	*pcx, pcxbuf;
-	byte	palette[768];
+	pcx_t	*pcx;
+	//pcx_t	*pcxbuf;
+	byte	*palette;
+	//byte	palette[768];
+	byte	*out;
 	byte	*pix, *image_rgba;
 	int		x, y;
 	int		dataByte, runLength;
 	int		count;
 	
-	FILE*	f;
+	byte	*pic;
 
 //
 // parse the PCX file
 //
+	byte *pcx_data;
+	
 	// Figure out the length
-    COM_FOpenFile(filename, &f);
+    int handle;
+    int len = COM_OpenFile (filename, &handle);
+	
+	// Load the raw data into memory, then store it
+    pcx_data = COM_LoadFile(filename, 5);
 
-	fread (&pcxbuf, 1, sizeof(pcxbuf), f);
-	pcx = &pcxbuf;
+    pcx = (pcx_t *)pcx_data;
 	
 	pcx->xmin = LittleShort(pcx->xmin);
     pcx->ymin = LittleShort(pcx->ymin);
@@ -907,60 +915,86 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
     pcx->vres = LittleShort(pcx->vres);
     pcx->bytes_per_line = LittleShort(pcx->bytes_per_line);
     pcx->palette_type = LittleShort(pcx->palette_type);
-
-	if (pcx->manufacturer != 0x0a //0x0a
+	
+	if (pcx->manufacturer != 0x0a
 		|| pcx->version != 5
 		|| pcx->encoding != 1
 		|| pcx->bits_per_pixel != 8
-		|| pcx->xmax >= 514
-		|| pcx->ymax >= 514)
+		|| pcx->xmax >= 640
+		|| pcx->ymax >= 480)
 	{
-		Con_Printf ("Bad pcx file %s\n", filename);
-		return NULL;
+		Con_Printf ("Bad pcx file %i\n");
+		return 0;
 	}
+	
+	image_rgba = &pcx->data;
+
+	out = malloc ((pcx->ymax+1)*(pcx->xmax+1)*4);
+	
+	pic = out;
+
+	pix = out;
 
 	if (matchwidth && (pcx->xmax+1) != matchwidth)
-		return NULL;
+		return 0;
 	if (matchheight && (pcx->ymax+1) != matchheight)
-		return NULL;
-	// seek to palette
-	fseek(f, -768, SEEK_END);
-    fread(palette, 1, 768, f);
-    fseek(f, sizeof(pcxbuf) - 4, SEEK_SET);
+		return 0;
 	
-	count = (pcx->xmax+1) * (pcx->ymax+1);
-	image_rgba = (byte*)malloc( count * 4);
+	// seek to palette
+	/*
+	int start;
+	start = ftell (handle);
+	fseek (handle, start + len - 768, SEEK_SET);
+	fread (palette, 1, 768, handle);
+	//fseek (handle, sizeof(pcxbuf) - 4, SEEK_SET);
+	*/
+	
+	palette = malloc(768);
+	memcpy (palette, (byte *)pcx + len - 768, 768);
+	
+	//count = (pcx->xmax+1) * (pcx->ymax+1);
+	//image_rgba = (byte*)malloc( count * 4);
 
 	for (y=0 ; y<=pcx->ymax ; y++)
 	{
-		pix = image_rgba + 4*y*(pcx->xmax+1);
-		for (x=0 ; x<=pcx->xmax ; ) // muff - fixed - was referencing ymax
+		pix = out + 4*y*(pcx->xmax+1);
+		
+		for (x=0 ; x<=pcx->xmax ; )
 		{
-			dataByte = fgetc(f);
+			dataByte = *image_rgba++;
+
 			if((dataByte & 0xC0) == 0xC0)
 			{
 				runLength = dataByte & 0x3F;
-				dataByte = fgetc(f);
+				dataByte = *image_rgba++;
 			}
 			else
 				runLength = 1;
 
-			while(runLength-- > 0)
-			{
-				pix[3] = palette[dataByte*3];
+			while(runLength-- > 0) {
+				//pix[x++] = dataByte;
+				pix[3] = palette[dataByte*3+0];
 				pix[2] = palette[dataByte*3+1];
 				pix[1] = palette[dataByte*3+2];
 				pix[0] = 255;
 				pix += 4;
 				x++;
+				
 			}
 		}
+
 	}
+	
+
 	image_width = pcx->xmax+1;
 	image_height = pcx->ymax+1;
-
-	fclose(f);
-	return image_rgba;
+	
+	Con_Printf("n:%s w:%i h:%i\n",filename, image_width, image_height);
+	//fclose(handle);
+	free (palette);
+	free (pcx_data);
+	COM_CloseFile(handle);
+	return pic;
 }
 
 /*small function to read files with stb_image - single-file image loader library.
@@ -969,13 +1003,12 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 ** */
 #define STB_IMAGE_IMPLEMENTATION
 #define STBI_FAILURE_USERMSG
-//#define STBI_ONLY_JPEG
+#define STBI_ONLY_JPEG
 #define STBI_ONLY_PNG
 #define STBI_ONLY_TGA
 //#define STBI_ONLY_PIC
 #include "stb_image.h"
-
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight)
+byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, qboolean reverseRGBA)
 {
 	int bpp;
 	int width, height;
@@ -1003,14 +1036,28 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 		return NULL;
 	}
 
-	//Swap the colors the lazy way
-	for (i = 0; i < (width*height)*4; i++) {
-		image[i] = image[i+3];
-		image[i+1] = image[i+2];
-		image[i+2] = image[i+1];
-		image[i+3] = image[i];
-	}
+	//imagetype 4 = reverse order rgba 
 	
+	//still figuring this part out??
+	
+	//if (reverseRGBA) {
+		//Swap the colors the lazy way
+		for (i = 0; i < (width*height)*4; i++) {
+			image[i+0] = image[i+3];
+			image[i+1] = image[i+2];
+			image[i+2] = image[i+1];
+			image[i+3] = 255;
+		}
+	/*} else {
+		for (i = 0; i < (width*height)*4; i++) {
+			image[i+0] = image[i+3];
+			image[i+1] = image[i+2];
+			image[i+2] = image[i+1];
+			image[i+3] = 255;
+		}
+		
+	}
+	*/
 	free(rgba_data);
 	
 	//set image width/height for texture uploads
@@ -1025,10 +1072,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	int	f = 0;
 	int texnum;
 	char basename[128], name[132];
-	
-	int image_size = image_width * image_height;
-	
-	byte* data/* = (byte*)malloc(image_size * 4)*/;
+	byte* data;
 	byte *c;
 	
 	if (complain == false)
@@ -1045,64 +1089,66 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	
 	//Try PCX
-	/*
+	
 	sprintf (name, "%s.pcx", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0) {
-		//Con_Printf("Trying to load: %s", name);
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		COM_CloseFile (f);
+		//Con_Printf("Trying to load: %s", name);	
+		data = LoadPCX (name, matchwidth, matchheight);
+		if (!data)
+			return 0; //Sys_Error ("PCX: can't load %s", name);
 		
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, keep, 1);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, false, true, true, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
-	*/
+	
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);	
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
-		Con_Printf("%s : %i\n", name, texnum);
-		free(data);
 		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, true);	
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
+		//Con_Printf("%s : %i\n", name, texnum);
+		free(data);
 		return texnum;
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
 		//Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
 		Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
-		Con_Printf("Trying to load: %s", name);
+		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		//Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
 	
@@ -1141,7 +1187,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	
 	if (strcmp(skybox_name, ""))
 		return 0;
-	
+/*	
 	//Try PCX
 	sprintf (name, "%s.pcx", basename);
 	COM_FOpenFile (name, &f);
@@ -1155,52 +1201,52 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 		COM_CloseFile (f);
 		return texnum;
 	}
-	
+*/	
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);	
+		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, true);	
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
+		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
-		data = loadimagepixels (name, complain, matchwidth, matchheight);
-		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		COM_CloseFile (f);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		//Con_Printf("Trying to load: %s", name);
+		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, false, 4);
 		
 		free(data);
-		COM_CloseFile (f);
 		return texnum;
 	}
 	

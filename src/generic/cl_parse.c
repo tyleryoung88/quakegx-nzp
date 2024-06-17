@@ -531,7 +531,7 @@ void CL_ParseUpdate (int bits)
 		ent->msg_angles[0][2] = MSG_ReadAngle();
 	else
 		ent->msg_angles[0][2] = ent->baseline.angles[2];
-/*
+
 	// Tomaz - QC Alpha Scale Glow Begin
 	if (bits & U_RENDERAMT)
 	    ent->renderamt = MSG_ReadFloat();
@@ -558,7 +558,7 @@ void CL_ParseUpdate (int bits)
     else
 	    ent->rendercolor[2] = 0;
 // Tomaz - QC Alpha Scale Glow End
-*/
+
 	if (bits & U_SCALE)
 		ent->scale = MSG_ReadByte();
 	else

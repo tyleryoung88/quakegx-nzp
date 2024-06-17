@@ -521,8 +521,8 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 				bits |= U_SCALE;
 		
 		 // Tomaz - QC Alpha Scale Glow Begin
-/*
-	{
+
+	
 		//Smal Size
 		if ((val = GETEDICTFIELDVALUE(ent, eval_renderamt)) && val->_float != 255.0) // HalfLife support
 			 renderamt = val->_float / 255.0f;
@@ -532,9 +532,9 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 
 		if ((val = GETEDICTFIELDVALUE(ent, eval_rendercolor))) // HalfLife support
 		{
-			rendercolor[0] = val->vector[0] / 255.0f;
-			rendercolor[1] = val->vector[1] / 255.0f;
-			rendercolor[2] = val->vector[2] / 255.0f;
+			rendercolor[0] = val->vector[0];
+			rendercolor[1] = val->vector[1];
+			rendercolor[2] = val->vector[2];
 		}
 
 		if (renderamt > 0)
@@ -557,9 +557,9 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 		{
 			bits |= U_RENDERCOLOR3;
 		}
-	}
+	
 
-*/
+
 		// Tomaz - QC Alpha Scale Glow End
 		if (e >= 256)//We have more than 256 entities
 			bits |= U_LONGENTITY;
@@ -617,7 +617,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 			MSG_WriteCoord (msg, ent->v.origin[2]);
 		if (bits & U_ANGLE3)
 			MSG_WriteAngle(msg, ent->v.angles[2]);
-	/*	
+	
 		// Tomaz - QC Alpha Scale Glow Begin
 		if (bits & U_RENDERAMT)
 			MSG_WriteFloat(msg, renderamt);
@@ -635,7 +635,7 @@ void SV_WriteEntitiesToClient (edict_t	*clent, sizebuf_t *msg)
 			MSG_WriteFloat(msg, rendercolor[2]);
 		// Tomaz - QC Alpha Scale Glow End
 		
-		*/
+		
 		if (bits & U_SCALE)
 			MSG_WriteByte(msg, ENTSCALE_ENCODE(ent->v.scale));
 	}

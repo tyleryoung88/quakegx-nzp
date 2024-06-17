@@ -1779,10 +1779,10 @@ void SCR_UpdateScreen (void)
 		GX_DrawOSK();
 	
 	if(scr_loadscreen.value) {
-		SCR_DrawLoadScreen();
+		//SCR_DrawLoadScreen();
 	}
 	
-	Draw_LoadingFill();
+	//Draw_LoadingFill();
 
 	// ELUTODO: place correctly in the if_else structures above
 	

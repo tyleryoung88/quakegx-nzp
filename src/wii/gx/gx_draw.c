@@ -232,7 +232,7 @@ void Draw_Init (void)
 	// by hand, because we need to write the version
 	// string into the background before turning
 	// it into a texture
-	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0);
+	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0, true);
 /*
 	draw_chars = W_GetLumpName ("conchars");
 	for (i=0 ; i<256*64 ; i++)
@@ -1180,7 +1180,7 @@ void Draw_Crosshair (void)
 	
    	if (Hitmark_Time > sv.time) { 
 		Draw_AlphaPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 8/* - hitmark->width*/,
-				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 9/* - hitmark->height*/, hitmark, 185);
+				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 8/* - hitmark->height*/, hitmark, 185);
 	}
 	
 				 

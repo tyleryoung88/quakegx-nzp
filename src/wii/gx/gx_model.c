@@ -1663,7 +1663,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, false, false, true);
+			pheader->gl_texturenum[i][3] = loadtextureimage(model2, 0, 0, true, false, true);
 
 			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
 			{
