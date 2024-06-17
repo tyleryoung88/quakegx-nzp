@@ -989,7 +989,7 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	image_width = pcx->xmax+1;
 	image_height = pcx->ymax+1;
 	
-	Con_Printf("n:%s w:%i h:%i\n",filename, image_width, image_height);
+	//Con_Printf("n:%s w:%i h:%i\n",filename, image_width, image_height);
 	//fclose(handle);
 	free (palette);
 	free (pcx_data);

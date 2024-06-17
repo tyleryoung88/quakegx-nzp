@@ -42,9 +42,9 @@ cvar_t	scr_ofsz = {"scr_ofsz","0", false};
 cvar_t	cl_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	cl_rollangle = {"cl_rollangle", "2.0f"};
 
-cvar_t	cl_bob = {"cl_bob","0.02", false};
-cvar_t	cl_bobcycle = {"cl_bobcycle","0.06", false};
-cvar_t	cl_bobup = {"cl_bobup","0.02", false};
+cvar_t	cl_bob = {"cl_bob","0.01", false};
+cvar_t	cl_bobcycle = {"cl_bobcycle","0.02", false};
+cvar_t	cl_bobup = {"cl_bobup","0.01", false};
 
 cvar_t	cl_sidebobbing = {"cl_sidebobbing","1"};
 cvar_t	cl_bobside = {"cl_bobside","0.02"};

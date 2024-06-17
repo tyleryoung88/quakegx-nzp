@@ -515,23 +515,6 @@ void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
 		frame = 0;
 	}
 
-	// HACK: if we're a certain distance away, don't bother blending
-	// cypress -- Lets not care about Z (up).. chances are they're out of the frustum anyway
-	int dist_x = (cl.viewent.origin[0] - e->origin[0]);
-	int dist_y = (cl.viewent.origin[1] - e->origin[1]);
-	int distance_from_client = (int)((dist_x) * (dist_x) + (dist_y) * (dist_y)); // no use sqrting, just slows us down.
-
-	// They're too far away from us to care about blending their frames.
-	// cypress -- added an additional check not to lerp if there's only 1 frame
-	/*
-	if (distance_from_client >= 120000 || paliashdr->numframes <= 1) { // 200 * 200
-		// Fix them from jumping from last lerp
-		lerpdata->pose1 = lerpdata->pose2 = paliashdr->frames[frame].firstpose;
-
-		e->lerptime = 0.1;
-		lerpdata->blend = 1;
-	} else {
-		*/
 		posenum = paliashdr->frames[frame].firstpose;
 		numposes = paliashdr->frames[frame].numposes;
 
@@ -664,6 +647,7 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	entity_t 	*limb_ent;
 	lerpdata_t	lerpdata;
 	Mtx			temp;
+	float		add;
 
 	switch(which) {
 		case 1:
@@ -686,19 +670,35 @@ void R_DrawZombieLimb (entity_t *e, int which)
 
 	VectorCopy(e->origin, r_entorigin);
 	VectorSubtract(r_origin, r_entorigin, modelorg);
+	
+	for(int g = 0; g < 3; g++)
+	{
+		if(lightcolor[g] < 8)
+			lightcolor[g] = 8;
+		if(lightcolor[g] > 125)
+			lightcolor[g] = 125;
+	}
 
 	// locate the proper data
 	paliashdr = (aliashdr_t *)Mod_Extradata(clmodel);//e->model
 	c_alias_polys += paliashdr->numtris;
 
 	GL_DisableMultitexture();
-
+	
 	//Shpuld
 	if(r_model_brightness.value)
 	{
-		lightcolor[0] += 48;
-		lightcolor[1] += 48;
-		lightcolor[2] += 48;
+		lightcolor[0] += 60;
+		lightcolor[1] += 60;
+		lightcolor[2] += 60;
+	}
+	
+	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+	if (add > 0.0f)
+	{
+		lightcolor[0] += add / 3.0f;
+		lightcolor[1] += add / 3.0f;
+		lightcolor[2] += add / 3.0f;
 	}
 
 	//glPushMatrix ();
@@ -1228,7 +1228,7 @@ void R_DrawViewModel (void)
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
-#if 1
+#if 0
 /*
 ============
 R_PolyBlend

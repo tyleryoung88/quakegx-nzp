@@ -920,15 +920,14 @@ void R_DrawBrushModel (entity_t *e)
 		}
 	}
 
-	//c_guMtxIdentity(model);
-	guMtxCopy(view, model);
+	c_guMtxIdentity(model);
+	//guMtxCopy(view, model);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 	R_RotateForEntity (e, e->scale);
-	GX_LoadPosMtxImm(model, GX_PNMTX0);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 
-	//c_guMtxConcat(view,model,modelview);
-	//GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+	c_guMtxConcat(view,model,modelview);
+	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
 	//sBTODO at somepoint... will require more in depth studying of GX blendmodes 
 	
@@ -1000,7 +999,7 @@ e->angles[0] = -e->angles[0];	// stupid quake bug
 	R_BlendLightmaps ();
 	
 	//c_guMtxConcat(view,model,modelview);
-	GX_LoadPosMtxImm(view, GX_PNMTX0);
+	//GX_LoadPosMtxImm(view, GX_PNMTX0);
 }
 
 /*
