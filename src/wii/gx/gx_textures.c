@@ -1046,7 +1046,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 			image[i+0] = image[i+3];
 			image[i+1] = image[i+2];
 			image[i+2] = image[i+1];
-			image[i+3] = 255;
+			image[i+3] = image[i+0];
 		}
 	/*} else {
 		for (i = 0; i < (width*height)*4; i++) {

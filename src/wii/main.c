@@ -78,7 +78,7 @@ void shutdown_system(void)
 }
 
 // Set up the heap.
-static size_t	heap_size	= 19 * 1024 * 1024;
+static size_t	heap_size	= 21 * 1024 * 1024;
 static char		*heap;
 
 inline void *align32 (void *p)
@@ -427,6 +427,10 @@ static void* main_thread_function(void* dummy)
 	SYS_SetPowerCallback(shutdown_system);
 
 	VIDEO_SetBlack(false);
+	
+	//sB was here trying to figure out how vsync works
+	//VIDEO_Flush();
+	//VIDEO_WaitVSync();
 
 	// Run the main loop.
 	double current_time, last_time, seconds;
@@ -486,7 +490,7 @@ int main(int argc, char* argv[])
 	init();
 	//check_pak_file_exists();
 
-	frontend();
+	//frontend();
 
 	// Start the main thread.
 	lwp_t thread;

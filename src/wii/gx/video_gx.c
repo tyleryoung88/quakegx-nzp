@@ -184,15 +184,12 @@ void GL_Init (void)
 	if (rmode->aa)
 		GX_SetPixelFmt(GX_PF_RGB565_Z16, GX_ZC_LINEAR);
 	else
-		GX_SetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR);
+		GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	
-	//GX_SetPixelFmt(GX_PF_RGBA6_Z24, GX_ZC_LINEAR); //sB testing performance metrics
-
 	GX_CopyDisp(framebuffer[fb],GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
-	GX_SetZCompLoc(false); // ELUTODO
 	
-	GX_SetCullMode(GX_CULL_BACK);
+	GX_SetZCompLoc(false); // ELUTODO
 
 	GL_DisableMultitexture();
 
@@ -256,7 +253,7 @@ void GL_EndRendering (void)
 
 		GX_SetColorUpdate(GX_TRUE);
 		GX_SetAlphaUpdate(GX_TRUE);
-		GX_SetDstAlpha(GX_DISABLE, 0xFF); // 0xFF
+		//GX_SetDstAlpha(GX_DISABLE, 0xFF); // 0xFF
 		// Start copying the frame buffer every vsync.
 		GX_CopyDisp(framebuffer[fb], GX_TRUE);
 

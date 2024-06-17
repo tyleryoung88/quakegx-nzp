@@ -1480,6 +1480,10 @@ void PF_fopen (void)
 	{
 		case 0: // read
 			Sys_FileOpenRead (va("%s/%s",com_gamedir, p), &h);
+			if(h <= 0) {
+				G_FLOAT(OFS_RETURN) = -1;
+				return;
+			}
 			G_FLOAT(OFS_RETURN) = (float) h;
 			return;
 		case 1: // append -- this is nasty
@@ -1538,6 +1542,9 @@ void PF_fgets (void)
 	h = (int)G_FLOAT(OFS_PARM0);
 
 	count = Sys_FileRead(h, &buffer, 1);
+	if(!count)
+		return;
+	
 	if (count && buffer == '\r')	// carriage return
 	{
 		count = Sys_FileRead(h, &buffer, 1);	// skip
@@ -2726,9 +2733,10 @@ the platform can have out at once.
 nzp_maxai()
 =================
 */
+#define MaxZombies 24
 void PF_MaxZombies(void)
 {
-	G_FLOAT(OFS_RETURN) = 16;
+	G_FLOAT(OFS_RETURN) = MaxZombies;
 }
 
 /*
@@ -2768,7 +2776,6 @@ int closedset[MAX_WAYPOINTS]; // The set of nodes already evaluated.
 int openset[MAX_WAYPOINTS];//Actual sorted open list
 int opensetRef[MAX_WAYPOINTS];//Reference values of open list
 int opensetLength;//equivalent of javaScript's array[].length;
-#define MaxZombies 16
 
 zombie_ai zombie_list[MaxZombies];
 //Debug//

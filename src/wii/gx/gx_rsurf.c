@@ -170,7 +170,7 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 	lightmap = surf->samples;
 	
 // set to full bright if no light data
-	if (r_fullbright.value || !cl.worldmodel->lightdata)
+	if (r_fullbright.value /*|| !cl.worldmodel->lightdata*/)
 	{
 		// LordHavoc: .lit support begin
 		bl = blocklights;
@@ -519,7 +519,6 @@ void R_BlendLightmaps ()
 		return;
 
 	//QGX_ZMode(false);
-	
 	QGX_BlendTurb(true);
 
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
@@ -573,7 +572,6 @@ void R_BlendLightmaps ()
 	}
 
 	QGX_Blend(false);
-	
 	//QGX_ZMode(true);
 }
 
@@ -997,8 +995,7 @@ e->angles[0] = -e->angles[0];	// stupid quake bug
 	}
 
 	R_BlendLightmaps ();
-	
-	//c_guMtxConcat(view,model,modelview);
+
 	//GX_LoadPosMtxImm(view, GX_PNMTX0);
 }
 

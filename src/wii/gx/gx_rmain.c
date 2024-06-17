@@ -1228,7 +1228,7 @@ void R_DrawViewModel (void)
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
-#if 0
+#if 1
 /*
 ============
 R_PolyBlend

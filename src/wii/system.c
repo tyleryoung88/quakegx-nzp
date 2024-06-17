@@ -93,7 +93,7 @@ void Sys_Init_Logfile(void)
 {
 
 #ifdef LOGFILE	
- logfile= fopen("/apps/quake/logfile.txt", "w");
+ logfile= fopen("/apps/nzport/logfile.txt", "w");
 #endif
 }
 
@@ -240,7 +240,7 @@ int Sys_FileOpenRead (char *path, int *hndl)
 	i = findhandle ();
 
 	f = fopen(path, "rb");
-	if (!f)
+	if (f <= 0)
 	{
 		*hndl = -1;
 		return -1;
