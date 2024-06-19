@@ -265,7 +265,7 @@ void R_DrawSpriteModel (entity_t *e)
     GL_Bind0(frame->gl_texturenum);
 	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	
-	//Fog_DisableGFog ();
+	Fog_DisableGFog ();
 
 	QGX_Alpha(true);
 	QGX_Blend(true);
@@ -299,7 +299,7 @@ void R_DrawSpriteModel (entity_t *e)
 	QGX_Alpha(false);
 	QGX_Blend(false);
 	
-	//Fog_EnableGFog ();
+	Fog_EnableGFog ();
 }
 
 /*
@@ -1459,6 +1459,7 @@ void R_SetupGL (void)
 	extern	int glwidth, glheight;
 	int		x, x2, y2, y, w, h;
 	Mtx		temp;
+	GXFogAdjTbl table[10];
 
 	//
 	// set up viewpoint
@@ -1532,6 +1533,10 @@ void R_SetupGL (void)
 
 	c_guMtxTrans(temp, -r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
 	c_guMtxConcat(view, temp, view);
+	
+	GX_InitFogAdjTable	(table, r_refdef.vrect.width, perspective);
+	
+	GX_SetFogRangeAdj(GX_ENABLE, screenaspect, table);
 
 	// ELUTODOglGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
@@ -1695,7 +1700,7 @@ void R_RenderView (void)
 
 	// render normal view
 	
-	//Fog_EnableGFog (); //johnfitz
+	Fog_EnableGFog (); //johnfitz
 
 	R_RenderScene ();
 	R_DrawViewModel ();
@@ -1703,7 +1708,7 @@ void R_RenderView (void)
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	R_DrawWaterSurfaces ();
 
-	//Fog_DisableGFog (); //johnfitz	
+	Fog_DisableGFog (); //johnfitz	
 
 	// render mirror view
 	R_Mirror ();

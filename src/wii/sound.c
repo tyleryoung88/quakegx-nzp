@@ -35,8 +35,8 @@ static sample			dma_buffers[2][2048] __attribute__((aligned(32)));
 static size_t			current_dma_buffer		= 0;
 
 // Quake writes its audio into this mix buffer.
-static const size_t		samples_per_mix_buffer	= 65536;
-static sample			mix_buffer[65536];
+static const size_t		samples_per_mix_buffer	= 32768; //65536
+static sample			mix_buffer[32768];
 static volatile size_t	mix_buffer_pointer		= 0;
 
 // Called whenever more audio data is required.
@@ -81,7 +81,7 @@ qboolean SNDDMA_Init(void)
 	shm = &sn;
 	shm->channels			= 2;
 	shm->samplebits			= 16;
-	shm->speed				= 22050;
+	shm->speed				= 32000;
 	shm->soundalive			= true;
 	shm->splitbuffer		= false;
 	shm->samples			= samples_per_mix_buffer * shm->channels;

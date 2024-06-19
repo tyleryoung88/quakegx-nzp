@@ -263,8 +263,7 @@ void Fog_SetupFrame (void)
 	
 	//Wii documentation sucks hard.
 	
-	//GX_SetFog(GX_FOG_LIN, fog_start, fog_end, GX_PERSPECTIVE, GX_PERSPECTIVE, FogColor);	
-	GX_SetFog(GX_FOG_LIN, 50, 300, GX_PERSPECTIVE, GX_PERSPECTIVE, FogColor);		
+	GX_SetFog(GX_FOG_EXP, 10, 300, 0.0f, 1.0f, FogColor);		
 }
 
 /*
@@ -314,11 +313,7 @@ called before drawing stuff that should be fogged
 */
 void Fog_EnableGFog (void)
 {
-	if (!Fog_GetStart() == 0 || !Fog_GetEnd() <= 0) {
-		//glEnable(GL_FOG);
-		//GX_SetFog(GX_FOG_LIN, fog_start, fog_end, GX_PERSPECTIVE, GX_PERSPECTIVE, FogColor);	
-		GX_SetFog(GX_FOG_LIN, 50, 300, GX_PERSPECTIVE, GX_PERSPECTIVE, FogColor);	
-	}	
+	GX_SetFog(GX_FOG_EXP, 10, 300, 0.0f, 1.0f, FogColor);		
 }
 
 /*
@@ -330,9 +325,7 @@ called after drawing stuff that should be fogged
 */
 void Fog_DisableGFog (void)
 {
-	if (!Fog_GetStart() == 0 || !Fog_GetEnd() <= 0)
-		//glDisable(GL_FOG);
-		GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.1F, 1.0F, BLACK);
+	GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.1F, 1.0F, BLACK);
 }
 
 //==============================================================================

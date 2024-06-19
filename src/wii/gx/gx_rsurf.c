@@ -1208,7 +1208,7 @@ void R_DrawWorld (void)
 	
 	R_AddStaticBrushModelsToChains (); // shpuld
 	
-	//Fog_SetupFrame (); //johnfitz
+	Fog_SetupFrame (); //johnfitz
 
 	DrawTextureChains ();
 	

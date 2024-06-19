@@ -206,7 +206,7 @@ void R_Init (void)
 	R_InitParticleTexture ();
 	
 	Sky_Init (); //johnfitz
-	//Fog_Init (); //johnfitz
+	Fog_Init (); //johnfitz
 
 #ifdef GLTEST
 	Test_Init ();
@@ -348,7 +348,7 @@ void R_NewMap (void)
 	GL_BuildLightmaps ();
 	
 	Sky_NewMap (); //johnfitz -- skybox in worldspawn
-	//Fog_NewMap (); // johnfitz -- global fog in worldspawn
+	Fog_NewMap (); // johnfitz -- global fog in worldspawn
 
 	// identify sky texture
 	skytexturenum = -1;
