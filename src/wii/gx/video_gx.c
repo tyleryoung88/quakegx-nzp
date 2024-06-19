@@ -170,9 +170,10 @@ void GL_Init (void)
 	GX_Init(gp_fifo, fifo_size);
 
 	// clears the bg to color and clears the z buffer
-	GX_SetCopyClear(background, GX_MAX_Z24);
+	GX_SetCopyClear(background, 0x00ffffff);
 
 	// other gx setup
+	GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
 	yscale = GX_GetYScaleFactor(rmode->efbHeight,rmode->xfbHeight);
 	xfbHeight = GX_SetDispCopyYScale(yscale);
 	GX_SetScissor(0,0,rmode->fbWidth,rmode->efbHeight);
@@ -208,15 +209,16 @@ void GL_Init (void)
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
 */
+	GX_SetNumTexGens(1);
 	GX_SetNumChans(1);
 
-	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 	//GX_SetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 	//GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY);
-	GX_InvalidateTexAll();
-
+	
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE); // Will always be this OP
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	GX_InvalidateTexAll();
 }
 
 /*
@@ -311,7 +313,7 @@ void VID_Init(unsigned char *palette)
 	scr_width = rmode->fbWidth;
 	scr_height = rmode->efbHeight;
 
-	vid.width = 320; //320
+	vid.width = 330; //320
 	vid.height = 240; //240
 
 	if (vid.height > scr_height)
@@ -319,7 +321,7 @@ void VID_Init(unsigned char *palette)
 	if (vid.width > scr_width)
 		vid.width = scr_width;
 
-	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0); //320.0/240.0
+	vid.aspect = ((float)vid.height / (float)vid.width) * (330.0 / 240.0); //320.0/240.0
 	vid.numpages = 2;
 
 	GL_Init();

@@ -176,9 +176,9 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 		bl = blocklights;
 		for (i=0 ; i<size ; i++)
 		{
-			*bl++ = 255*256;
-			*bl++ = 255*256;
-			*bl++ = 255*256;
+			*bl++ = 254;
+			*bl++ = 254;
+			*bl++ = 254;
 		}
 		// LordHavoc: .lit support end
 		goto store;
@@ -244,7 +244,7 @@ store:
 				t = 255;
 			dest[1] = t;
 			
-			dest[0] = 255;
+			dest[0] = 0;
 			
 			bl += 3;
 			dest += 4;
@@ -508,7 +508,7 @@ void DrawGXPoly (glpoly_t *p)
 R_BlendLightmaps
 ================
 */
-void R_BlendLightmaps ()
+void R_BlendLightmaps (void)
 {
 	int			i, j;
 	glpoly_t	*p;
@@ -518,8 +518,8 @@ void R_BlendLightmaps ()
 	if (r_fullbright.value)
 		return;
 
-	//QGX_ZMode(false);
-	QGX_BlendTurb(true);
+	GX_SetZMode(GX_TRUE, GX_EQUAL, GX_TRUE);
+	QGX_BlendMap(true);
 
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
 	{
@@ -572,7 +572,7 @@ void R_BlendLightmaps ()
 	}
 
 	QGX_Blend(false);
-	//QGX_ZMode(true);
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 }
 
 /*
@@ -658,14 +658,8 @@ void R_RenderBrushPoly (msurface_t *fa)
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
 	GL_Bind0 (t->gl_texturenum);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
-	
-	if (!strncmp(fa->texinfo->texture->name,"{",1)) {
-		QGX_BlendTurb(true);
-		QGX_Alpha(true);
-		GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
-	}
-	
+	GX_SetMinMag (GX_NEAR, GX_NEAR);
+
 	if (fa->flags & SURF_DRAWTURB)
 	{	// warp texture, no lightmaps
 		EmitWaterPolys (fa);
@@ -677,11 +671,6 @@ void R_RenderBrushPoly (msurface_t *fa)
 	else
 		DrawGXPoly (fa->polys);
 	
-	if (!strncmp(fa->texinfo->texture->name,"{",1)) {
-		QGX_Alpha(false);
-		QGX_BlendTurb(false);
-	}
-
 	// add the poly to the proper lightmap chain
 
 	fa->polys->chain = lightmap_polys[fa->lightmaptexturenum];
@@ -818,6 +807,10 @@ void DrawTextureChains (void)
 	return;
 	*/
 	
+	//QGX_Alpha(true);
+	GX_SetAlphaCompare(GX_GREATER,0xaa,GX_AOP_AND,GX_ALWAYS,0xff);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+	
 	for (i=0 ; i<cl.worldmodel->numtextures ; i++)
 	{
 		t = cl.worldmodel->textures[i];
@@ -841,7 +834,9 @@ void DrawTextureChains (void)
 
 		t->texturechain = NULL;
 	}
-
+	
+	GX_SetAlphaCompare(GX_GREATER,0,GX_AOP_AND,GX_ALWAYS,0xff);
+	QGX_Alpha(false);
 }
 
 /*
@@ -918,16 +913,15 @@ void R_DrawBrushModel (entity_t *e)
 		}
 	}
 
+	
 	c_guMtxIdentity(model);
-	//guMtxCopy(view, model);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 	R_RotateForEntity (e, e->scale);
 e->angles[0] = -e->angles[0];	// stupid quake bug
-
-	c_guMtxConcat(view,model,modelview);
-	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
 	//sBTODO at somepoint... will require more in depth studying of GX blendmodes 
+	c_guMtxConcat(view,model,modelview);
+	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
 	// naievil -- fixme
   /*  
@@ -993,10 +987,7 @@ e->angles[0] = -e->angles[0];	// stupid quake bug
 			R_RenderBrushPoly (psurf);
 		}
 	}
-
 	R_BlendLightmaps ();
-
-	//GX_LoadPosMtxImm(view, GX_PNMTX0);
 }
 
 /*

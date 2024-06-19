@@ -314,7 +314,7 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 
 	GL_Bind0 (char_texture);
 	
-	GX_SetMinMag (GX_NEAR_MIP_NEAR, GX_NEAR);
+	GX_SetMinMag (GX_NEAR, GX_NEAR);
 
 	//glEnable(GL_BLEND);
 	QGX_Blend(true);

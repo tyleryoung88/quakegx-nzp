@@ -269,7 +269,6 @@ void QGX_ZMode(qboolean state);
 void QGX_Alpha(qboolean state);
 void QGX_Blend(qboolean state);
 void QGX_BlendMap(qboolean state);
-void QGX_BlendTurb(qboolean state);
 
 int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha, qboolean keep, int bytesperpixel);
 int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data);

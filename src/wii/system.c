@@ -35,8 +35,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../generic/quakedef.h"
 
-extern GXRModeObj*	rmode;
-
 FILE *logfile;
 
 void Sys_Error (const char *error, ...)

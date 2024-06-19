@@ -81,7 +81,7 @@ qboolean SNDDMA_Init(void)
 	shm = &sn;
 	shm->channels			= 2;
 	shm->samplebits			= 16;
-	shm->speed				= 32000;
+	shm->speed				= 22050;
 	shm->soundalive			= true;
 	shm->splitbuffer		= false;
 	shm->samples			= samples_per_mix_buffer * shm->channels;

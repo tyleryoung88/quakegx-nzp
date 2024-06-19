@@ -1704,7 +1704,7 @@ void COM_AddGameDirectory (char *dir)
 //
 // add any pak files in the format pak0.pak pak1.pak, ...
 //
-
+	/*
 	sprintf (pakfile, "%s/nzp.pak", dir, i);
 	pak = COM_LoadPackFile (pakfile);
 	if (pak)
@@ -1714,7 +1714,7 @@ void COM_AddGameDirectory (char *dir)
 		search->next = com_searchpaths;
 		com_searchpaths = search;   
 	}		
-		
+	
 	sprintf (pakfile, "%s/wii.pak", dir);
 	pak = COM_LoadPackFile (pakfile);
 	if (pak)
@@ -1724,7 +1724,7 @@ void COM_AddGameDirectory (char *dir)
 		search->next = com_searchpaths;
 		com_searchpaths = search;
 	}
-
+	*/
 //
 // add the contents of the parms.txt file to the end of the command line
 //
