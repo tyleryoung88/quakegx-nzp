@@ -1935,14 +1935,14 @@ void M_Options_Key (int k)
 		return;
 
 	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		options_cursor--;
 		if (options_cursor < 0)
 			options_cursor = OPTIONS_ITEMS-1;
 		break;
 
 	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		options_cursor++;
 		if (options_cursor >= OPTIONS_ITEMS)
 			options_cursor = 0;
@@ -2107,7 +2107,7 @@ void M_Keys_Key (int k)
 
 	if (bind_grab)
 	{	// defining a key
-		S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		if ((k == K_ESCAPE) || (k == K_JOY1) || (k == K_JOY10)|| (k == K_JOY21))
 		{
 			bind_grab = false;
@@ -2282,14 +2282,14 @@ void M_Options2_Key (int k)
 		return;
 
 	case K_UPARROW:
-		S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		options2_cursor--;
 		if (options2_cursor < 0)
 			options2_cursor = OPTIONS2_ITEMS-1;
 		break;
 
 	case K_DOWNARROW:
-		S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("sounds/menu/navigate.wav");
 		options2_cursor++;
 		if (options2_cursor >= OPTIONS2_ITEMS)
 			options2_cursor = 0;

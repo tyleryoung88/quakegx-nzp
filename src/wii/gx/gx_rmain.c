@@ -742,6 +742,158 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	//glPopMatrix ();
 }
 
+/*
+=================
+R_DrawTransparentAliasModel
+
+=================
+*/
+void R_DrawTransparentAliasModel (entity_t *e)
+{
+	int			i, j;
+	int			lnum;
+	vec3_t		dist;
+	float		add;
+	model_t		*clmodel;
+	vec3_t		mins, maxs;
+	aliashdr_t	*paliashdr;
+	trivertx_t	*verts, *v;
+	int			index;
+	float		s, t, an;
+	int			anim;
+	Mtx			temp;
+	lerpdata_t	lerpdata;
+
+	clmodel = currententity->model;
+
+	VectorAdd (currententity->origin, clmodel->mins, mins);
+	VectorAdd (currententity->origin, clmodel->maxs, maxs);
+	
+	Con_Printf("drawing transparent mdl");
+
+// naievil -- fixme: on psp this is == 2 ? 
+	if (R_CullBox (mins, maxs))
+		return;
+
+	VectorCopy (currententity->origin, r_entorigin);
+	VectorSubtract (r_origin, r_entorigin, modelorg);
+
+	// for(int g = 0; g < 3; g++)
+	// {
+	// 	if(lightcolor[g] < 8)
+	// 		lightcolor[g] = 8;
+	// 	if(lightcolor[g] > 125)
+	// 		lightcolor[g] = 125;
+	// }
+
+	// //
+	// // get lighting information
+	// //
+
+	// ambientlight = shadelight = R_LightPoint (currententity->origin);
+	// for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+	// {
+	// 	if (cl_dlights[lnum].die >= cl.time)
+	// 	{
+	// 		VectorSubtract (currententity->origin,
+	// 						cl_dlights[lnum].origin,
+	// 						dist);
+	// 		add = cl_dlights[lnum].radius - Length(dist);
+
+	// 		if (add > 0) {
+	// 			ambientlight += add;
+	// 			//ZOID models should be affected by dlights as well
+	// 			shadelight += add;
+	// 		}
+	// 	}
+	// }
+
+	// // clamp lighting so it doesn't overbright as much
+	// if (ambientlight > 128)
+	// 	ambientlight = 128;
+	// if (ambientlight + shadelight > 192)
+	// 	shadelight = 192 - ambientlight;
+
+	// shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+	// shadelight = shadelight / 200.0;
+	
+	// an = e->angles[1]/180*M_PI;
+	// shadevector[0] = cos(-an);
+	// shadevector[1] = sin(-an);
+	// shadevector[2] = 1;
+	// VectorNormalize (shadevector);
+
+	//
+	// locate the proper data
+	//
+	paliashdr = (aliashdr_t *)Mod_Extradata (e->model);
+	c_alias_polys += paliashdr->numtris;
+
+	//
+	// draw all the triangles
+	//
+
+	GL_DisableMultitexture();
+	lightcolor[0] = lightcolor[1] = lightcolor[2] = 256.0f;
+
+    c_guMtxIdentity(model);
+	R_RotateForEntity (e, e->scale);
+
+	c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	c_guMtxConcat(model, temp, model);
+	c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+	c_guMtxConcat(model, temp, model);
+	
+	c_guMtxConcat(view,model,modelview);
+	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
+
+	anim = (int)(cl.time*10) & 3;
+	GL_Bind0(paliashdr->gl_texturenum[e->skinnum][anim]);
+
+	/*
+	if (gl_smoothmodels.value)
+		glShadeModel (GL_SMOOTH);
+	*/
+
+	GX_SetZMode(GX_TRUE, GX_EQUAL, GX_TRUE);
+	QGX_Blend(true);
+
+	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+
+	/* ELUTODO
+	if (gl_affinemodels.value)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);*/
+
+	R_SetupAliasFrame (paliashdr, e->frame, &lerpdata);
+	R_SetupEntityTransform (e, &lerpdata);
+	GL_DrawAliasFrame(paliashdr, lerpdata);
+
+	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	
+	QGX_Blend(false);
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+	/*
+	glShadeModel (GL_FLAT);
+	if (gl_affinemodels.value)
+		glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
+
+	glPopMatrix ();
+
+	if (r_shadows.value)
+	{
+		glPushMatrix ();
+		R_RotateForEntity (e, e->scale);
+		glDisable (GL_TEXTURE_2D);
+		glEnable (GL_BLEND);
+		glColor4f (0,0,0,0.5);
+		GL_DrawAliasShadow (paliashdr, lastposenum);
+		glEnable (GL_TEXTURE_2D);
+		glDisable (GL_BLEND);
+		glColor4f (1,1,1,1);
+		glPopMatrix ();
+	}
+	*/
+}
 
 /*
 =================
@@ -1035,14 +1187,14 @@ void R_DrawEntitiesOnList (void)
 		currententity = cl_visedicts[i];
 		
 		specChar = currententity->model->name[strlen(currententity->model->name)-5];
-
+		
 		if(specChar == '(' || specChar == '^')//skip heads and arms: it's faster to do this than a strcmp...
 		{
 			continue;
 		}
 		doZHack = 0;
 		if(specChar == '%')
-		{	
+		{
 			if(zHackCount > 5 || ((currententity->z_head != 0) && (currententity->z_larm != 0) && (currententity->z_rarm != 0)))
 			{
 				doZHack = 1;
@@ -1052,14 +1204,15 @@ void R_DrawEntitiesOnList (void)
 				zHackCount ++;//drawing zombie piece by piece.
 			}
 		}
+		if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
+		{
+			Con_Printf("skipping transparent mdl\n");
+			continue;
+		}
 
 		switch (currententity->model->type)
 		{
 		case mod_alias:
-			if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
-			{
-				continue;
-			}
 			R_DrawAliasModel (currententity);
 			break;
 
@@ -1082,13 +1235,20 @@ void R_DrawEntitiesOnList (void)
 		{
 			continue;
 		}
+		
+		specChar = currententity->model->name[strlen(currententity->model->name)-5];
 
 		switch (currententity->model->type)
 		{
 			case mod_sprite:
 				R_DrawSpriteModel (currententity);
 				break;
-
+			case mod_alias:
+				if(specChar == '$') { //mdl model with blended alpha 
+					R_DrawTransparentAliasModel(currententity);
+				}
+				break;
+			
 			default:
 				break;
 		}
@@ -1229,7 +1389,7 @@ void R_DrawViewModel (void)
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
 
-#if 1
+#if 0
 /*
 ============
 R_PolyBlend
@@ -1345,25 +1505,73 @@ void R_PolyBlend (void)
 	c_guMtxConcat(view, temp, view);
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	//GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
-	GX_Position3f32(10.0f, 100.0f, 100.0f);
-	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
-	GX_TexCoord2f32(1.0f, 1.0f);
+	//GX_Position3f32(10.0f, 100.0f, 100.0f);
+	//GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	//GX_TexCoord2f32(1.0f, 1.0f);
 
-	GX_Position3f32(10.0f, -100.0f, 100.0f);
-	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
-	GX_TexCoord2f32(0.0f, 1.0f);
+	//GX_Position3f32(10.0f, -100.0f, 100.0f);
+	//GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	//GX_TexCoord2f32(0.0f, 1.0f);
 
-	GX_Position3f32(10.0f, -100.0f, -100.0f);
-	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
-	GX_TexCoord2f32(0.0f, 0.0f);
+	//GX_Position3f32(10.0f, -100.0f, -100.0f);
+	//GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	//GX_TexCoord2f32(0.0f, 0.0f);
 
-	GX_Position3f32(10.0f, 100.0f, -100.0f);
-	GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
-	GX_TexCoord2f32(1.0f, 0.0f);
+	//GX_Position3f32(10.0f, 100.0f, -100.0f);
+	//GX_Color4u8(v_blend[0]/* * 255*/, v_blend[1]/* * 255*/, v_blend[2]/* * 255*/, v_blend[3]/* * 255*/);
+	//GX_TexCoord2f32(1.0f, 0.0f);
+	
+	// ELUTODO: check if v_blend gets bigger than 1.0f
+	if (v_blend[3])
+	{
+		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
-	GX_End();
+		GX_Position3f32(10.0f, 100.0f, 100.0f);
+		GX_Color4u8(v_blend[0] * 255, v_blend[1] * 255, v_blend[2] * 255, v_blend[3] * 255);
+		GX_TexCoord2f32(1.0f, 1.0f);
+
+		GX_Position3f32(10.0f, -100.0f, 100.0f);
+		GX_Color4u8(v_blend[0] * 255, v_blend[1] * 255, v_blend[2] * 255, v_blend[3] * 255);
+		GX_TexCoord2f32(0.0f, 1.0f);
+
+		GX_Position3f32(10.0f, -100.0f, -100.0f);
+		GX_Color4u8(v_blend[0] * 255, v_blend[1] * 255, v_blend[2] * 255, v_blend[3] * 255);
+		GX_TexCoord2f32(0.0f, 0.0f);
+
+		GX_Position3f32(10.0f, 100.0f, -100.0f);
+		GX_Color4u8(v_blend[0] * 255, v_blend[1] * 255, v_blend[2] * 255, v_blend[3] * 255);
+		GX_TexCoord2f32(1.0f, 0.0f);
+
+		GX_End();
+	}
+
+	// ELUTODO quick hack
+	if (v_gamma.value != 1.0f)
+	{
+		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+
+		GX_Position3f32(10.0f, 100.0f, 100.0f);
+		GX_Color4u8(0xff, 0xff, 0xff, (v_gamma.value * -1.0f + 1.0f) * 0xff);
+		GX_TexCoord2f32(1.0f, 1.0f);
+
+		GX_Position3f32(10.0f, -100.0f, 100.0f);
+		GX_Color4u8(0xff, 0xff, 0xff, (v_gamma.value * -1.0f + 1.0f) * 0xff);
+		GX_TexCoord2f32(0.0f, 1.0f);
+
+		GX_Position3f32(10.0f, -100.0f, -100.0f);
+		GX_Color4u8(0xff, 0xff, 0xff, (v_gamma.value * -1.0f + 1.0f) * 0xff);
+		GX_TexCoord2f32(0.0f, 0.0f);
+
+		GX_Position3f32(10.0f, 100.0f, -100.0f);
+		GX_Color4u8(0xff, 0xff, 0xff, (v_gamma.value * -1.0f + 1.0f) * 0xff);
+		GX_TexCoord2f32(1.0f, 0.0f);
+
+		GX_End();
+	}
+
+	//GX_End();
 	/*
 	GX_SetNumChans(1);
 	GX_SetNumTexGens(1);
@@ -1371,7 +1579,7 @@ void R_PolyBlend (void)
 	QGX_Blend(false);
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
  	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	//GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 	QGX_Alpha(true);
 }
 #endif
