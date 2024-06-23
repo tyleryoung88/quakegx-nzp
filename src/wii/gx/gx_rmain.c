@@ -106,6 +106,7 @@ cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0"};
 cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
+cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
 
 //johnfitz -- struct for passing lerp information to drawing functions
 typedef struct {
@@ -265,7 +266,7 @@ void R_DrawSpriteModel (entity_t *e)
     GL_Bind0(frame->gl_texturenum);
 	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	
-	Fog_DisableGFog ();
+	//Fog_DisableGFog ();
 
 	QGX_Alpha(true);
 	QGX_Blend(true);
@@ -299,7 +300,7 @@ void R_DrawSpriteModel (entity_t *e)
 	QGX_Alpha(false);
 	QGX_Blend(false);
 	
-	Fog_EnableGFog ();
+	//Fog_EnableGFog ();
 }
 
 /*
@@ -1708,7 +1709,7 @@ void R_RenderView (void)
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	R_DrawWaterSurfaces ();
 
-	Fog_DisableGFog (); //johnfitz	
+	//Fog_DisableGFog (); //johnfitz	
 
 	// render mirror view
 	R_Mirror ();

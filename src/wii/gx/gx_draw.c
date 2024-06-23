@@ -173,7 +173,7 @@ qpic_t	*Draw_CachePic (char *path)
 
 		return &pic->pic;
 	}
-	return 0;
+	return NULL;
 }
 
 /*
@@ -232,13 +232,7 @@ void Draw_Init (void)
 	// by hand, because we need to write the version
 	// string into the background before turning
 	// it into a texture
-	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0, true);
-/*
-	draw_chars = W_GetLumpName ("conchars");
-	for (i=0 ; i<256*64 ; i++)
-		if (draw_chars[i] == 0)
-			draw_chars[i] = 255;	// proper transparent color
-*/
+	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0, 4);
 
 	// now turn them into textures
 	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true, true, 4);
@@ -292,7 +286,7 @@ This is the same as Draw_Character, but with RGBA color codes.
 ================
 */
 extern cvar_t scr_coloredtext;
-void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, int scale)
+void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float a, float scale)
 {
 	int				row, col;
 	float			frow, fcol, size;
@@ -346,15 +340,15 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 
 	GX_Position3f32(x+(8*(scale)), y, 0.0f);
 	GX_Color4u8(r, g, b, a);
-	GX_TexCoord2f32(fcol + (float)(size/(float)scale), frow);
+	GX_TexCoord2f32(fcol + (size/scale), frow);
 
 	GX_Position3f32(x+(8*(scale)), y+(8*(scale)), 0.0f);
 	GX_Color4u8(r, g, b, a);
-	GX_TexCoord2f32(fcol + (float)(size/(float)scale), frow + (float)(size/(float)scale));
+	GX_TexCoord2f32(fcol + (size/scale), frow + (size/scale));
 
 	GX_Position3f32(x, y+(8*(scale)), 0.0f);
 	GX_Color4u8(r, g, b, a);
-	GX_TexCoord2f32(fcol, frow + (float)(size/(float)scale));
+	GX_TexCoord2f32(fcol, frow + (size/scale));
 	//glEnd ();
 	GX_End ();
 	//glColor4f(1,1,1,1);
@@ -421,7 +415,7 @@ void Draw_Character (int x, int y, int num)
 	Draw_CharacterRGBA(x, y, num, 255, 255, 255, 255, 1);
 }
 
-void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, int scale) 
+void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
 {
 	while (*str)
 	{
@@ -438,7 +432,7 @@ Draw_String
 */
 void Draw_String (int x, int y, char *str)
 {
-	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1); 
+	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1.5); 
 }
 
 /*
@@ -870,7 +864,7 @@ void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a)
 	//glDisable (GL_TEXTURE_2D);
 	
 	GL_Bind0 (white_texturenum);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	//glEnable (GL_BLEND); //johnfitz -- for alpha
 	QGX_Blend(true);
 	//glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
@@ -931,7 +925,7 @@ void Draw_ConsoleBackground (int lines)
 		Draw_AlphaPic (0, lines - vid.conheight, conback, (float)(1.2 * lines)/y);
 	*/
 	
-	Draw_Fill(0, 0, vid.width, lines, 0, 0, 0, 255);
+	Draw_Fill(0, 0, vid.width, lines, 120, 40, 40, 175);
 }
 
 /*
@@ -1179,8 +1173,8 @@ void Draw_Crosshair (void)
 	
 	
    	if (Hitmark_Time > sv.time) { 
-		Draw_AlphaPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 8/* - hitmark->width*/,
-				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 8/* - hitmark->height*/, hitmark, 185);
+		Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
+				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
 	}
 	
 				 
@@ -1252,39 +1246,39 @@ void Draw_Crosshair (void)
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 		
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 7, '.', 255, (int)col, (int)col, 255, 1);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, 255, 1.4);
 
 		//x_value = (vid.width - 3)/2 - crosshair_offset_step;
 		//y_value = (vid.height - 1)/2;
-		x_value = ((scr_vrect.x + scr_vrect.width - 3)/2 + cl_crossx.value) * vid.conwidth/vid.width- crosshair_offset_step;
-		y_value = ((scr_vrect.y + scr_vrect.height - 1)/2 + cl_crossy.value) * vid.conheight/vid.height;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = ((scr_vrect.x + scr_vrect.width - 5)/2 + cl_crossx.value) * vid.conwidth/vid.width - crosshair_offset_step;
+		y_value = ((scr_vrect.y + scr_vrect.height - 2)/2 + cl_crossy.value) * vid.conheight/vid.height;
+		Draw_FillByColor(x_value, y_value, 5, 2, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 3)/2 + crosshair_offset_step;
 		//y_value = (vid.height - 1)/2;
-		x_value = ((scr_vrect.x + scr_vrect.width - 3)/2 + cl_crossx.value) * vid.conwidth/vid.width + crosshair_offset_step;
-		y_value = ((scr_vrect.y + scr_vrect.height - 1)/2 + cl_crossy.value) * vid.conheight/vid.height;
-		Draw_FillByColor(x_value, y_value, 3, 1, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = ((scr_vrect.x + scr_vrect.width - 5)/2 + cl_crossx.value) * vid.conwidth/vid.width + crosshair_offset_step;
+		y_value = ((scr_vrect.y + scr_vrect.height - 2)/2 + cl_crossy.value) * vid.conheight/vid.height;
+		Draw_FillByColor(x_value, y_value, 5, 2, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 1)/2;
 		//y_value = (vid.height - 3)/2 - crosshair_offset_step;
-		x_value = ((scr_vrect.x + scr_vrect.width - 1)/2 + cl_crossx.value) * vid.conwidth/vid.width;
-		y_value = ((scr_vrect.y + scr_vrect.height - 3)/2 + cl_crossy.value) * vid.conheight/vid.height - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = ((scr_vrect.x + scr_vrect.width - 2)/2 + cl_crossx.value) * vid.conwidth/vid.width;
+		y_value = ((scr_vrect.y + scr_vrect.height - 5)/2 + cl_crossy.value) * vid.conheight/vid.height - crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 2, 5, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 1)/2;
 		//y_value = (vid.height - 3)/2 + crosshair_offset_step;
-		x_value = ((scr_vrect.x + scr_vrect.width - 1)/2 + cl_crossx.value) * vid.conwidth/vid.width;
-		y_value = ((scr_vrect.y + scr_vrect.height - 3)/2 + cl_crossy.value) * vid.conheight/vid.height + crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value, 1, 3, 255, (int)col, (int)col, (int)crosshair_opacity);
+		x_value = ((scr_vrect.x + scr_vrect.width - 2)/2 + cl_crossx.value) * vid.conwidth/vid.width;
+		y_value = ((scr_vrect.y + scr_vrect.height - 5)/2 + cl_crossy.value) * vid.conheight/vid.height + crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value, 2, 5, 255, (int)col, (int)col, (int)crosshair_opacity);
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1.3);
 	}
 	// Dot crosshair (.)
 	else if (crosshair.value == 3) {
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 8, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 8, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1.3);
 	}
 	// Grenade crosshair
 	else if (crosshair.value == 4) {

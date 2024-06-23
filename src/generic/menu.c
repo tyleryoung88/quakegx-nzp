@@ -33,6 +33,7 @@ enum
 	m_options, 
 	m_video, 
 	m_keys, 
+	m_options2,
 	m_help, 
 	m_quit, 
 	m_restart,
@@ -58,6 +59,7 @@ void M_Menu_LanConfig_f (void);
 void M_Menu_GameOptions_f (void);
 void M_Menu_Search_f (void);
 void M_Menu_ServerList_f (void);
+void M_Paused_Menu_f (void);
 
 		void M_Load_Draw (void);
 		void M_Save_Draw (void);
@@ -251,61 +253,6 @@ void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
 }
 
 
-void M_DrawTextBox (int x, int y, int width, int lines)
-{
-	qpic_t	*p;
-	int		cx, cy;
-	int		n;
-
-	// draw left side
-	cx = x;
-	cy = y;
-	p = Draw_CachePic ("gfx/box_tl.lmp");
-	M_DrawTransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_ml.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		M_DrawTransPic (cx, cy, p);
-	}
-	p = Draw_CachePic ("gfx/box_bl.lmp");
-	M_DrawTransPic (cx, cy+8, p);
-
-	// draw middle
-	cx += 8;
-	while (width > 0)
-	{
-		cy = y;
-		p = Draw_CachePic ("gfx/box_tm.lmp");
-		M_DrawTransPic (cx, cy, p);
-		p = Draw_CachePic ("gfx/box_mm.lmp");
-		for (n = 0; n < lines; n++)
-		{
-			cy += 8;
-			if (n == 1)
-				p = Draw_CachePic ("gfx/box_mm2.lmp");
-			M_DrawTransPic (cx, cy, p);
-		}
-		p = Draw_CachePic ("gfx/box_bm.lmp");
-		M_DrawTransPic (cx, cy+8, p);
-		width -= 2;
-		cx += 16;
-	}
-
-	// draw right side
-	cy = y;
-	p = Draw_CachePic ("gfx/box_tr.lmp");
-	M_DrawTransPic (cx, cy, p);
-	p = Draw_CachePic ("gfx/box_mr.lmp");
-	for (n = 0; n < lines; n++)
-	{
-		cy += 8;
-		M_DrawTransPic (cx, cy, p);
-	}
-	p = Draw_CachePic ("gfx/box_br.lmp");
-	M_DrawTransPic (cx, cy+8, p);
-}
-
 //=============================================================================
 
 void M_Load_Menu_Pics ()
@@ -331,9 +278,9 @@ void M_ToggleMenu_f (void)
 {
 	m_entersound = true;
 
-	if (key_dest == key_menu)
+	if (key_dest == key_menu || key_dest == key_menu_pause)
 	{
-		if (m_state != m_main)
+		if (m_state != m_main && m_state != m_paused_menu)
 		{
 			M_Menu_Main_f ();
 			return;
@@ -345,6 +292,10 @@ void M_ToggleMenu_f (void)
 	if (key_dest == key_console)
 	{
 		Con_ToggleConsole_f ();
+	}
+	else if (sv.active && (svs.maxclients > 1 || key_dest == key_game))
+	{
+		M_Paused_Menu_f();
 	}
 	else
 	{
@@ -368,49 +319,51 @@ void M_Paused_Menu_f ()
 static void M_Paused_Menu_Draw ()
 {
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, 680, 340, 0, 0, 0, 80);
 
 	// Header
-	Draw_ColoredString(10, 10, "PAUSED", 255, 255, 255, 255, 2);
+	Draw_ColoredString(10, 10, "PAUSED", 255, 255, 255, 255, 3);
 
 	if ((M_Paused_Cusor == 0))
-		Draw_ColoredString(10, 135, "Resume", 255, 0, 0, 255, 1);
+		Draw_ColoredString(10, 135, "Resume", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 135, "Resume", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 135, "Resume", 255, 255, 255, 255, 1.5);
 
 	if ((M_Paused_Cusor == 1))
-		Draw_ColoredString(10, 145, "Restart", 255, 0, 0, 255, 1);
+		Draw_ColoredString(10, 145, "Restart", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 145, "Restart", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 145, "Restart", 255, 255, 255, 255, 1.5);
 
 	if ((M_Paused_Cusor == 2))
-		Draw_ColoredString(10, 155, "Settings", 255, 0, 0, 255, 1);
+		Draw_ColoredString(10, 155, "Settings", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 155, "Settings", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 155, "Settings", 255, 255, 255, 255, 1.5);
 
 	if (waypoint_mode.value) {
 		if ((M_Paused_Cusor == 3))
-			Draw_ColoredString(10, 165, "Save Waypoints", 255, 0, 0, 255, 1);
+			Draw_ColoredString(10, 165, "Save Waypoints", 255, 0, 0, 255, 1.5);
 		else
-			Draw_ColoredString(10, 165, "Save Waypoints", 255, 255, 255, 255, 1);
+			Draw_ColoredString(10, 165, "Save Waypoints", 255, 255, 255, 255, 1.5);
 	} else {
 		if ((M_Paused_Cusor == 3))
-			Draw_ColoredString(10, 165, "Achievements", 255, 0, 0, 255, 1);
+			Draw_ColoredString(10, 165, "Achievements", 255, 0, 0, 255, 1.5);
 		else
-			Draw_ColoredString(10, 165, "Achievements", 255, 255, 255, 255, 1);
+			Draw_ColoredString(10, 165, "Achievements", 255, 255, 255, 255, 1.5);
 	}
 
 	if ((M_Paused_Cusor == 4))
-		Draw_ColoredString(10, 175, "Main Menu", 255, 0, 0, 255, 1);
+		Draw_ColoredString(10, 175, "Main Menu", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 175, "Main Menu", 255, 255, 255, 255, 1);
+		Draw_ColoredString(10, 175, "Main Menu", 255, 255, 255, 255, 1.5);
 }
 
 static void M_Paused_Menu_Key (int key)
 {
 	switch (key)
 	{
+		case K_BACKSPACE:
 		case K_ESCAPE:
+		case K_JOY1:
 			S_LocalSound ("sounds/menu/enter.wav");
 			Cbuf_AddText("togglemenu\n");
 			break;
@@ -428,6 +381,7 @@ static void M_Paused_Menu_Key (int key)
 			break;
 
 		case K_ENTER:
+		case K_JOY0:
 			m_entersound = true;
 
 			switch (M_Paused_Cusor)
@@ -480,30 +434,30 @@ void M_Credits_Draw (void)
 	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
 
 	// Header
-	Draw_ColoredString(5, 5, "CREDITS", 255, 255, 255, 255, 2);
+	Draw_ColoredString(5, 5, "CREDITS", 255, 255, 255, 255, 3);
 
-	Draw_ColoredString(5, 30, "Programming:", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 40, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 50, "Cypress, ScatterBox", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 30, "Programming:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 40, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 50, "Cypress, ScatterBox", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 70, "Models:", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 80, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 70, "Models:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 80, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 100, "GFX:", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 110, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 100, "GFX:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 110, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 130, "Sounds/Music:", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 140, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 130, "Sounds/Music:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 140, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 160, "Special Thanks:", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 170, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 180, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 190, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 200, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 210, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1);
-	Draw_ColoredString(5, 220, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1);
+	Draw_ColoredString(5, 160, "Special Thanks:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 170, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 180, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 190, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 200, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 210, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 220, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1);
+	Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1.5);
 }
 
 
@@ -512,6 +466,8 @@ void M_Credits_Key (int key)
 	switch (key)
 	{
 		case K_ENTER:
+		case K_JOY0:
+		case K_JOY1:
             M_Menu_Main_f ();
             break;
 	}
@@ -547,6 +503,7 @@ void M_Restart_Key (int key)
 	switch (key)
 	{
 	case K_ESCAPE:
+	case K_JOY1:
 	case 'n':
 	case 'N':
 		m_state = m_paused_menu;
@@ -556,6 +513,7 @@ void M_Restart_Key (int key)
 	case 'Y':
 	case 'y':
 	case K_ENTER:
+	case K_JOY0:
 		key_dest = key_game;
 		m_state = m_none;
 		// Cbuf_AddText ("restart\n"); // nai -- old, now do soft reset
@@ -576,7 +534,6 @@ void M_Restart_Draw (void)
 	M_Draw ();
 	m_state = m_restart;
 
-	M_DrawTextBox (56, 76, 24, 4);
 	M_Print (64, 84,  restartMessage[0]);
 	M_Print (64, 92,  restartMessage[1]);
 	M_Print (64, 100, restartMessage[2]);
@@ -612,6 +569,7 @@ void M_Exit_Key (int key)
 	switch (key)
 	{
 	case K_ESCAPE:
+	case K_JOY1:
 	case 'n':
 	case 'N':
 		m_state = m_paused_menu;
@@ -621,6 +579,7 @@ void M_Exit_Key (int key)
 	case 'Y':
 	case 'y':
 	case K_ENTER:
+	case K_JOY0:
 		Cbuf_AddText("disconnect\n");
 		CL_ClearState ();
 		M_Menu_Main_f();
@@ -640,7 +599,6 @@ void M_Exit_Draw (void)
 	M_Draw ();
 	m_state = m_exit;
 
-	M_DrawTextBox (56, 76, 24, 4);
 	M_Print (64, 84,  exitMessage[0]);
 	M_Print (64, 92,  exitMessage[1]);
 	M_Print (64, 100, exitMessage[2]);
@@ -653,7 +611,7 @@ void M_Exit_Draw (void)
 /* MAIN MENU */
 
 int	m_main_cursor;
-#define	MAIN_ITEMS	5
+#define	MAIN_ITEMS	4
 
 
 void M_Menu_Main_f (void)
@@ -671,68 +629,85 @@ void M_Menu_Main_f (void)
 
 void M_Main_Draw (void)
 {
+	int y = 60;
+	
 	// Background
 	menu_bk = Draw_CachePic("gfx/menu/menu_background");
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 8)) + 4, 5, game_build_date, 255, 255, 255, 255, 1);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 8)) - 65, 6, game_build_date, 255, 255, 255, 255, 1.5);
 
 	// Header
-	Draw_ColoredString(5, 5, "MAIN MENU", 255, 255, 255, 255, 2);
+	Draw_ColoredString(6, 6, "MAIN MENU", 255, 255, 255, 255, 3.5);
 
 	// Solo
 	if (m_main_cursor == 0)
-		Draw_ColoredString(5, 40, "Solo", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Solo", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 40, "Solo", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Solo", 255, 255, 255, 255, 1.5);
 
+	y+=20;
 
 	// Co-Op (Unfinished, so non-selectable)
-	Draw_ColoredString(5, 50, "Co-Op (Coming Soon!)", 128, 128, 128, 255, 1);
+	Draw_ColoredString(5, y, "Co-Op (Coming Soon!)", 128, 128, 128, 255, 1.5);
+	
+	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, 63, 160, 2, 130, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 208, 130, 130, 255);
+	
+	y+=10;
 
 	if (m_main_cursor == 1)
-		Draw_ColoredString(5, 70, "Settings", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Settings", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 70, "Settings", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Settings", 255, 255, 255, 255, 1.5);
+	
+	y+=20;
 
-	Draw_ColoredString(5, 80, "Achievements", 128, 128, 128, 255, 1);
+	Draw_ColoredString(5, y, "Achievements", 128, 128, 128, 255, 1.5);
+	
+	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, 93, 160, 2, 130, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 208, 130, 130, 255);
+	
+	y+=10;
 
 	if (m_main_cursor == 2)
-		Draw_ColoredString(5, 100, "Credits", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Credits", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 100, "Credits", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Credits", 255, 255, 255, 255, 1.5);
+	
+	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, 113, 160, 2, 130, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 208, 130, 130, 255);
+	
+	y+=10;
 
 	if (m_main_cursor == 3)
-		Draw_ColoredString(5, 120, "Exit", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Exit", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 120, "Exit", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Exit", 255, 255, 255, 255, 1.5);
 
 	// Descriptions
 	switch(m_main_cursor) {
 		case 0: // Solo
-			Draw_ColoredString(5, 220, "Take on the Hordes by yourself.", 255, 255, 255, 255, 1);
+			Draw_ColoredString(12, 455, "Take on the Hordes by yourself.", 255, 255, 255, 255, 1.5);
 			break;
 		case 1: // Settings
-			Draw_ColoredString(5, 220, "Adjust your Settings to Optimize your Experience.", 255, 255, 255, 255, 1);
+			Draw_ColoredString(12, 455, "Adjust your Settings to Optimize your Experience.", 255, 255, 255, 255, 1.5);
 			break;
 		case 2: // Credits
-			Draw_ColoredString(5, 220, "See who made NZ:P possible.", 255, 255, 255, 255, 1);
+			Draw_ColoredString(12, 455, "See who made NZ:P possible.", 255, 255, 255, 255, 1.5);
 			break;
 		case 3: // Exit
-			Draw_ColoredString(5, 220, "Return to Home Menu.", 255, 255, 255, 255, 1);
+			Draw_ColoredString(12, 455, "Return to Home Menu.", 255, 255, 255, 255, 1.5);
 			break;
 	}
 }
@@ -798,6 +773,8 @@ void M_Menu_SinglePlayer_f (void)
 
 void M_SinglePlayer_Draw (void)
 {
+	int y = 60;
+	
 	// Background
 	menu_bk = Draw_CachePic("gfx/menu/menu_background");
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
@@ -806,94 +783,108 @@ void M_SinglePlayer_Draw (void)
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
-	Draw_ColoredString(5, 5, "SOLO", 255, 255, 255, 255, 2);
+	Draw_ColoredString(6, 6, "SOLO", 255, 255, 255, 255, 3);
 
 	// Nacht der Untoten
 	if (m_singleplayer_cursor == 0)
-		Draw_ColoredString(5, 40, "Nacht der Untoten", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Nacht der Untoten", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 40, "Nacht der Untoten", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Nacht der Untoten", 255, 255, 255, 255, 1.5);
+	
+	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, 53, 160, 2, 130, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 130, 130, 130, 255);
+	
+	y+=10;
 
 	// Warehouse
 	if (m_singleplayer_cursor == 1)
-		Draw_ColoredString(5, 60, "Warehouse", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Warehouse", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 60, "Warehouse", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Warehouse", 255, 255, 255, 255, 1.5);
+	
+	y+=20;
 
 	// Warehouse (Classic)
 	if (m_singleplayer_cursor == 2)
-		Draw_ColoredString(5, 70, "Warehouse (Classic)", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Warehouse (Classic)", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 70, "Warehouse (Classic)", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Warehouse (Classic)", 255, 255, 255, 255, 1.5);
+	
+	y+=20;
 
 	// Christmas Special
 	if (m_singleplayer_cursor == 3)
-		Draw_ColoredString(5, 80, "Christmas Special", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Christmas Special", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 80, "Christmas Special", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Christmas Special", 255, 255, 255, 255, 1.5);
+	
+	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, 93, 160, 2, 130, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 130, 130, 130, 255);
+	
+	y+=10;
 
 	// Custom Maps
 	if (m_singleplayer_cursor == 4)
-		Draw_ColoredString(5, 100, "Custom Maps", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Custom Maps", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(5, 100, "Custom Maps", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Custom Maps", 255, 255, 255, 255, 1.5);
+	
+	y+=22;
 
 	// Back
 	if (m_singleplayer_cursor == 5)
-		Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1);
+		Draw_ColoredString(5, y, "Back", 255, 0, 0, 255, 1.4);
 	else
-		Draw_ColoredString(5, 230, "Back", 255, 255, 255, 255, 1);
+		Draw_ColoredString(5, y, "Back", 255, 255, 255, 255, 1.4);
 
 	// Map description & pic
 	switch(m_singleplayer_cursor) {
 		case 0:
 			menu_ndu = Draw_CachePic("gfx/menu/nacht_der_untoten");
-			Draw_StretchPic(170, 40, menu_ndu, 145, 100);
-			Draw_ColoredString(30, 148, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 158, "rman airfield, stranded after a", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 168, "brutal plane crash surrounded by", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 178, "hordes of undead. Exploit myste-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 188, "rious forces at play and hold o-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 198, "ut against relentless waves. Der", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 208, "Anstieg ist jetzt. Will you fall", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 218, "to the overwhelming onslaught?", 255, 255, 255, 255, 1);
+			Draw_StretchPic(250, 30, menu_ndu, 360, 230);
+			Draw_ColoredString(262, 275, "Desolate bunker located on a Ge-", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 290, "rman airfield, stranded after a", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 305, "brutal plane crash surrounded by", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 320, "hordes of undead. Exploit myste-", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 335, "rious forces at play and hold o-", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 350, "ut against relentless waves. Der", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 365, "Anstieg ist jetzt. Will you fall", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 380, "to the overwhelming onslaught?", 255, 255, 255, 255, 1.3);
 			break;
 		case 1:
 			menu_wh2 = Draw_CachePic("gfx/menu/nzp_warehouse2");
-			Draw_StretchPic(170, 40, menu_wh2, 145, 100);
-			Draw_ColoredString(30, 148, "Four nameless marines find them-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 158, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 168, "or is it something more? Fight", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 178, "your way to uncovering its sec-", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 188, "rets, though you may not like", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 198, "what you find..", 255, 255, 255, 255, 1);
+			Draw_StretchPic(250, 30, menu_wh2, 360, 230);
+			Draw_ColoredString(262, 275, "Four nameless marines find them-", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 290, "selves at a forsaken warehouse,", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 305, "or is it something more? Fight", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 320, "your way to uncovering its sec-", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 335, "rets, though you may not like", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 350, "what you find..", 255, 255, 255, 255, 1.5);
 			break;
 		case 2:
 			menu_wh = Draw_CachePic("gfx/menu/nzp_warehouse");
-			Draw_StretchPic(170, 40, menu_wh, 145, 100);
-			Draw_ColoredString(30, 148, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 158, "Fight your way to the Power", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 168, "Switch through the Hordes!", 255, 255, 255, 255, 1);
+			Draw_StretchPic(250, 30, menu_wh, 360, 230);
+			Draw_ColoredString(262, 275, "Old Warehouse full of Zombies!", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 290, "Fight your way to the Power", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 305, "Switch through the Hordes!", 255, 255, 255, 255, 1.3);
 			break;
 		case 3:
 			menu_ch = Draw_CachePic("gfx/menu/christmas_special");
-			Draw_StretchPic(170, 40, menu_ch, 145, 100);
-			Draw_ColoredString(30, 148, "No Santa this year. Though we're", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 158, "sure you will get presents from", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 168, "the undead! Will you accept them?", 255, 255, 255, 255, 1);
+			Draw_StretchPic(250, 30, menu_ch, 360, 230);
+			Draw_ColoredString(262, 275, "No Santa this year. Though we're", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 290, "sure you will get presents from", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 305, "the undead! Will you accept them?", 255, 255, 255, 255, 1.3);
 			break;
 		case 4:
 			menu_custom = Draw_CachePic("gfx/menu/custom");
-			Draw_StretchPic(170, 40, menu_custom, 145, 100);
-			Draw_ColoredString(30, 148, "Custom Maps made by Community", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 158, "Members on GitHub and on the", 255, 255, 255, 255, 1);
-			Draw_ColoredString(30, 168, "NZ:P Forum!", 255, 255, 255, 255, 1);
+			Draw_StretchPic(250, 30, menu_custom, 360, 230);
+			Draw_ColoredString(262, 275, "Custom Maps made by Community", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 290, "Members on GitHub and on the", 255, 255, 255, 255, 1.3);
+			Draw_ColoredString(262, 305, "NZ:P Forum!", 255, 255, 255, 255, 1.3);
 			break;
 	}
 }
@@ -978,6 +969,8 @@ void M_SinglePlayer_Key (int key)
 		
 	// b button
 	case K_BACKSPACE:
+	case K_ESCAPE:
+	case K_JOY1:
 		M_Menu_Main_f();
 		break;
 	}
@@ -1141,10 +1134,9 @@ void M_Menu_CustomMaps_Draw (void)
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
-	Draw_ColoredString(5, 5, "CUSTOM MAPS", 255, 255, 255, 255, 2);
+	Draw_ColoredString(6, 6, "CUSTOM MAPS", 255, 255, 255, 255, 3);
 
 	int 	line_increment;
-
 	line_increment = 0;
 
 	if (current_custom_map_page > 1)
@@ -1161,100 +1153,100 @@ void M_Menu_CustomMaps_Draw (void)
 			if (custom_maps[i + multiplier].map_use_thumbnail == 1) {
 				menu_cuthum = Draw_CachePic(custom_maps[i + multiplier].map_thumbnail_path);
 				if (menu_cuthum != NULL) {
-					Draw_StretchPic(162, 40, menu_cuthum, 175, 100);
+					Draw_StretchPic(250, 30, menu_cuthum, 360, 230);
 				}
 			}
 			
 			if (custom_maps[i + multiplier].map_name_pretty != 0)
-				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name_pretty, 255, 0, 0, 255, 1);
+				Draw_ColoredString(5, 60 + (15 * i), custom_maps[i + multiplier].map_name_pretty, 255, 0, 0, 255, 1.5);
 			else
-				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name, 255, 0, 0, 255, 1);
+				Draw_ColoredString(5, 60 + (15 * i), custom_maps[i + multiplier].map_name, 255, 0, 0, 255, 1.5);
 
 			if (custom_maps[i + multiplier].map_desc_1 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_1, " ") != 0) {
-					Draw_ColoredString(140, 148, custom_maps[i + multiplier].map_desc_1, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 270, custom_maps[i + multiplier].map_desc_1, 255, 255, 255, 255, 1.3);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_2 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_2, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(140, 158, custom_maps[i + multiplier].map_desc_2, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 285, custom_maps[i + multiplier].map_desc_2, 255, 255, 255, 255, 1.5);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_3 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_3, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(140, 168, custom_maps[i + multiplier].map_desc_3, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 300, custom_maps[i + multiplier].map_desc_3, 255, 255, 255, 255, 1.5);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_4 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_4, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(140, 178, custom_maps[i + multiplier].map_desc_4, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 315, custom_maps[i + multiplier].map_desc_4, 255, 255, 255, 255, 1.5);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_5 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_5, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(140, 188, custom_maps[i + multiplier].map_desc_5, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 330, custom_maps[i + multiplier].map_desc_5, 255, 255, 255, 255, 1.5);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_6 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_6, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(140, 198, custom_maps[i + multiplier].map_desc_6, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 345, custom_maps[i + multiplier].map_desc_6, 255, 255, 255, 255, 1.5);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_7 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_7, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(140, 208, custom_maps[i + multiplier].map_desc_7, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 360, custom_maps[i + multiplier].map_desc_7, 255, 255, 255, 255, 1.5);
 				}
 			}
 			if (custom_maps[i + multiplier].map_desc_8 != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_desc_8, " ") != 0) {
 					line_increment++;
-					Draw_ColoredString(140, 218, custom_maps[i + multiplier].map_desc_8, 255, 255, 255, 255, 1);
+					Draw_ColoredString(255, 375, custom_maps[i + multiplier].map_desc_8, 255, 255, 255, 255, 1.5);
 				}
 			}
 			if (custom_maps[i + multiplier].map_author != 0) {
 				if (strcmp(custom_maps[i + multiplier].map_author, " ") != 0) {
-					int y = 158 + (10 * line_increment);
-					Draw_ColoredString(140, y, custom_maps[i + multiplier].map_author, 255, 255, 0, 255, 1);
+					int y = 238;
+					Draw_ColoredString(260, y, custom_maps[i + multiplier].map_author, 255, 255, 0, 255, 1.5);
 				}
 			}
 		} else {
 			if (custom_maps[i + multiplier].map_name_pretty != 0)
-				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name_pretty, 255, 255, 255, 255, 1);
+				Draw_ColoredString(6, 60 + (15 * i), custom_maps[i + multiplier].map_name_pretty, 255, 255, 255, 255, 1.5);
 			else
-				Draw_ColoredString(5, 40 + (10 * i), custom_maps[i + multiplier].map_name, 255, 255, 255, 255, 1);
+				Draw_ColoredString(6, 60 + (15 * i), custom_maps[i + multiplier].map_name, 255, 255, 255, 255, 1.5);
 		}
 	}
 
 	if (current_custom_map_page != custom_map_pages) {
 		if (m_map_cursor == 15)
-			Draw_ColoredString(5, 210, "Next Page", 255, 0, 0, 255, 1);
+			Draw_ColoredString(6, 315, "Next Page", 255, 0, 0, 255, 1.5);
 		else
-			Draw_ColoredString(5, 210, "Next Page", 255, 255, 255, 255, 1);
+			Draw_ColoredString(6, 315, "Next Page", 255, 255, 255, 255, 1.5);
 	} else {
-		Draw_ColoredString(5, 210, "Next Page", 128, 128, 128, 255, 1);
+		Draw_ColoredString(6, 315, "Next Page", 128, 128, 128, 255, 1.5);
 	}
 
 	if (current_custom_map_page != 1) {
 		if (m_map_cursor == 16)
-			Draw_ColoredString(5, 220, "Previous Page", 255, 0, 0, 255, 1);
+			Draw_ColoredString(6, 330, "Previous Page", 255, 0, 0, 255, 1.5);
 		else
-			Draw_ColoredString(5, 220, "Previous Page", 255, 255, 255, 255, 1);
+			Draw_ColoredString(6, 330, "Previous Page", 255, 255, 255, 255, 1.5);
 	} else {
-		Draw_ColoredString(5, 220, "Previous Page", 128, 128, 128, 255, 1);
+		Draw_ColoredString(6, 330, "Previous Page", 128, 128, 128, 255, 1.5);
 	}
 
 
 
 	if (m_map_cursor == 17)
-		Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1);
+		Draw_ColoredString(6, 348, "Back", 255, 0, 0, 255, 1.4);
 	else
-		Draw_ColoredString(5, 230, "Back", 255, 255, 255, 255, 1);
+		Draw_ColoredString(6, 348, "Back", 255, 255, 255, 255, 1.4);
 }
 
 
@@ -1454,17 +1446,14 @@ void M_Setup_Draw (void)
 	M_DrawPic ( (320-p->width)/2, 4, p);
 
 	M_Print (64, 40, "Hostname");
-	M_DrawTextBox (160, 32, 16, 1);
 	M_Print (168, 40, setup_hostname);
 
 	M_Print (64, 56, "Your name");
-	M_DrawTextBox (160, 48, 16, 1);
 	M_Print (168, 56, setup_myname);
 
 	M_Print (64, 80, "Shirt color");
 	M_Print (64, 104, "Pants color");
 
-	M_DrawTextBox (64, 140-8, 14, 1);
 	M_Print (72, 140, "Accept Changes");
 
 	p = Draw_CachePic ("gfx/bigbox.lmp");
@@ -1685,7 +1674,6 @@ void M_Net_Draw (void)
 	}
 
 	f = (320-26*8)/2;
-	M_DrawTextBox (f, 134, 24, 4);
 	f += 8;
 	M_Print (f, 142, net_helpMessage[m_net_cursor*4+0]);
 	M_Print (f, 150, net_helpMessage[m_net_cursor*4+1]);
@@ -1777,7 +1765,7 @@ void M_Menu_Options_f (void)
 
 void M_AdjustSliders (int dir)
 {
-	S_LocalSound ("misc/menu3.wav");
+	//S_LocalSound ("misc/menu3.wav");
 
 	switch (options_cursor)
 	{
@@ -1874,11 +1862,9 @@ void M_DrawCheckbox (int x, int y, int on)
 void M_Options_Draw (void)
 {
 	float		r;
-	qpic_t	*p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_option.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	
+	if (key_dest != key_menu_pause)
+		Draw_Pic (0, 0, menu_bk);
 
 	M_Print (16, 32, "    Customize controls");
 	M_Print (16, 40, "         Go to console");
@@ -1920,14 +1906,7 @@ void M_Options_Draw (void)
 void M_Options_Key (int k)
 {
 	switch (k)
-	{
-	case K_ESCAPE:
-	case K_JOY1:
-	case K_JOY10:
-	case K_JOY21:
-		M_Menu_Main_f ();
-		break;
-
+	{	
 	case K_ENTER:
 	case K_JOY0:
 	case K_JOY9:
@@ -1947,6 +1926,7 @@ void M_Options_Key (int k)
 			break;
 		case 10:
 			M_Menu_Options2_f ();
+			key_dest = key_menu_pause;
 			break;
 		default:
 			M_AdjustSliders (1);
@@ -1955,17 +1935,25 @@ void M_Options_Key (int k)
 		return;
 
 	case K_UPARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("misc/menu1.wav");
 		options_cursor--;
 		if (options_cursor < 0)
 			options_cursor = OPTIONS_ITEMS-1;
 		break;
 
 	case K_DOWNARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("misc/menu1.wav");
 		options_cursor++;
 		if (options_cursor >= OPTIONS_ITEMS)
 			options_cursor = 0;
+		break;
+		
+	case K_ESCAPE:
+	case K_JOY1:
+		if (key_dest == key_menu_pause)
+			M_Paused_Menu_f();
+		else
+			M_Menu_Main_f ();
 		break;
 
 	case K_LEFTARROW:
@@ -2188,7 +2176,7 @@ int		options2_cursor;
 void M_Menu_Options2_f (void)
 {
 	key_dest = key_menu;
-	//m_state = m_options2;
+	m_state = m_options2;
 	m_entersound = true;
 }
 
@@ -2200,7 +2188,7 @@ extern cvar_t	crosshair;
 
 void M_AdjustSliders2 (int dir)
 {
-	S_LocalSound ("misc/menu3.wav");
+	//S_LocalSound ("misc/menu3.wav");
 
 	switch (options2_cursor)
 	{
@@ -2241,11 +2229,6 @@ void M_AdjustSliders2 (int dir)
 void M_Options2_Draw (void)
 {
 	float		r;
-	qpic_t	*p;
-
-	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
-	p = Draw_CachePic ("gfx/p_option.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
 
 	M_Print (16, 32, "      Status Bar Alpha");
 	r = sbar_alpha.value;
@@ -2279,9 +2262,10 @@ void M_Options2_Key (int k)
 	{
 	case K_ESCAPE:
 	case K_JOY1:
-	case K_JOY10:
-	case K_JOY21:
-		M_Menu_Options_f ();
+		if (key_dest == key_menu_pause)
+			M_Paused_Menu_f();
+		else
+			M_Menu_Main_f ();
 		break;
 
 	case K_ENTER:
@@ -2298,14 +2282,14 @@ void M_Options2_Key (int k)
 		return;
 
 	case K_UPARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("misc/menu1.wav");
 		options2_cursor--;
 		if (options2_cursor < 0)
 			options2_cursor = OPTIONS2_ITEMS-1;
 		break;
 
 	case K_DOWNARROW:
-		//S_LocalSound ("misc/menu1.wav");
+		S_LocalSound ("misc/menu1.wav");
 		options2_cursor++;
 		if (options2_cursor >= OPTIONS2_ITEMS)
 			options2_cursor = 0;
@@ -2446,7 +2430,6 @@ void M_Quit_Draw (void)
 	sprintf(yes, "Y or A button: Yes");
 	sprintf(no, "N or B button: No");
 
-	M_DrawTextBox (56, 76, 24, 4);
 	M_Print (64, 84,  "Really quit?");
 	M_Print (64, 92,  "");
 	M_Print (64, 100, yes);
@@ -2510,19 +2493,16 @@ void M_LanConfig_Draw (void)
 	M_Print (basex+9*8, 52, my_tcpip_address);
 
 	M_Print (basex, lanConfig_cursor_table[0], "Port");
-	M_DrawTextBox (basex+8*8, lanConfig_cursor_table[0]-8, 6, 1);
 	M_Print (basex+9*8, lanConfig_cursor_table[0], lanConfig_portname);
 
 	if (JoiningGame)
 	{
 		M_Print (basex, lanConfig_cursor_table[1], "Search for local games...");
 		M_Print (basex, 108, "Join game at:");
-		M_DrawTextBox (basex+8, lanConfig_cursor_table[2]-8, 22, 1);
 		M_Print (basex+16, lanConfig_cursor_table[2], lanConfig_joinname);
 	}
 	else
 	{
-		M_DrawTextBox (basex, lanConfig_cursor_table[1]-8, 2, 1);
 		M_Print (basex+8, lanConfig_cursor_table[1], "OK");
 	}
 
@@ -2835,7 +2815,6 @@ void M_GameOptions_Draw (void)
 	p = Draw_CachePic ("gfx/p_multi.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
 
-	M_DrawTextBox (152, 32, 10, 1);
 	M_Print (160, 40, "begin game");
 
 	M_Print (0, 56, "      Max players");
@@ -2936,7 +2915,6 @@ void M_GameOptions_Draw (void)
 		if ((realtime - m_serverInfoMessageTime) < 5.0)
 		{
 			x = (320-26*8)/2;
-			M_DrawTextBox (x, 138, 24, 4);
 			x += 8;
 			M_Print (x, 146, "  More than 4 players   ");
 			M_Print (x, 154, " requires using command ");
@@ -3147,7 +3125,6 @@ void M_Search_Draw (void)
 	p = Draw_CachePic ("gfx/p_multi.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
 	x = (320/2) - ((12*8)/2) + 4;
-	M_DrawTextBox (x-8, 32, 12, 1);
 	M_Print (x, 40, "Searching...");
 
 	if(slistInProgress)
@@ -3352,7 +3329,7 @@ void M_Init (void)
 
 void M_Draw (void)
 {
-	if (m_state == m_none || key_dest != key_menu && key_dest != key_menu_pause)
+	if (m_state == m_none || (key_dest != key_menu && key_dest != key_menu_pause))
 		return;
 
 	if (!m_recursiveDraw)
@@ -3422,7 +3399,11 @@ void M_Draw (void)
 		break;
 
 	case m_gameoptions:
-		//M_GameOptions_Draw ();
+		M_GameOptions_Draw ();
+		break;
+		
+	case m_options2:
+		M_Options2_Draw ();
 		break;
 
 	case m_custommaps:
@@ -3493,7 +3474,11 @@ void M_Keydown (int key)
 		return;
 
 	case m_gameoptions:
-		//M_GameOptions_Key (key);
+		M_GameOptions_Key (key);
+		return;
+		
+	case m_options2:
+		M_Options2_Key (key);
 		return;
 
 	case m_custommaps:

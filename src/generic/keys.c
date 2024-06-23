@@ -647,6 +647,7 @@ void Key_Event (key_id_t key, qboolean down)
 			Key_Message (key);
 			break;
 		case key_menu:
+		case key_menu_pause:
 			M_Keydown (key);
 			break;
 		case key_game:
@@ -698,7 +699,7 @@ void Key_Event (key_id_t key, qboolean down)
 //
 // if not a consolekey, send to the interpreter no matter what mode is
 //
-	if ( (key_dest == key_menu && menubound[key])
+	if ( ((key_dest == key_menu || key_dest == key_menu_pause) && menubound[key])
 	|| (key_dest == key_console && !consolekeys[key])
 	|| (key_dest == key_game && ( !con_forcedup || !consolekeys[key] ) ) )
 	{
@@ -733,6 +734,7 @@ void Key_Event (key_id_t key, qboolean down)
 		Key_Message (key);
 		break;
 	case key_menu:
+	case key_menu_pause:
 		M_Keydown (key);
 		break;
 

@@ -86,7 +86,7 @@ void R_AddDynamicLights (msurface_t *surf)
 
 	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 	{
-		if (! (surf->dlightbits[lnum >> 5] & (1U << (lnum & 31))))
+		if ( !(surf->dlightbits & (1<<lnum) ) )
 			continue;		// not lit by this light
 
 		rad = cl_dlights[lnum].radius;
@@ -658,7 +658,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
 	GL_Bind0 (t->gl_texturenum);
-	GX_SetMinMag (GX_NEAR, GX_NEAR);
+	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 
 	if (fa->flags & SURF_DRAWTURB)
 	{	// warp texture, no lightmaps

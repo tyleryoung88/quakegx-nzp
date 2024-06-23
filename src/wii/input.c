@@ -934,9 +934,9 @@ void IN_Move (usercmd_t *cmd)
 	{
 		cl.viewangles[PITCH] = 80.0f;
 	}
-	else if (cl.viewangles[PITCH] < -70.0f)
+	else if (cl.viewangles[PITCH] < -60.0f)
 	{
-		cl.viewangles[PITCH] = -70.0f;
+		cl.viewangles[PITCH] = -60.0f;
 	}
 
 	if (wiimote_connected && nunchuk_connected && !nunchuk_stick_as_arrows.value)

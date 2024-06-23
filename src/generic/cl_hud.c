@@ -280,7 +280,7 @@ void HUD_EndScreen (void)
 
 	l = scoreboardlines;
 
-	Draw_ColoredString((vid.width - 9*8)/2, 40, "GAME OVER", 255, 0, 0, 255, 1);
+	Draw_ColoredString((vid.width - 9*8)/2, 40, "GAME OVER", 255, 0, 0, 255, 1.5);
 
 	sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
 	Draw_String ((vid.width - strlen (str)*8)/2, 52, str);
@@ -359,9 +359,8 @@ void HUD_Points (void)
 // draw the text
 	l = scoreboardlines;
 
-
-    x = 8;
-    y = 170;
+    x = 15;
+    y = 308;
 	for (i=0 ; i<l ; i++)
 	{
 		k = pointsort[i];
@@ -401,10 +400,10 @@ void HUD_Points (void)
 				point_change_interval_neg = 0;
 			}
 		}
-		Draw_Pic (x, y, sb_moneyback);
+		Draw_StretchPic (x, y, sb_moneyback, 96, 24);
 		xplus = strlen(va("%i", current_points))*8;
 
-		Draw_String (((64 - xplus)/2) + 11, y + 3, va("%i", current_points));
+		Draw_String (((64 - xplus)/2) + 24, y + 4, va("%i", current_points));
 
 		if (old_points != f)
 		{
@@ -489,7 +488,7 @@ void HUD_Blood (void)
 	    return;
     float color = 255.0 + modifier;
     
-    Draw_ColoredStretchPic(0, 0, fx_blood_lu, 400, 240, color,color,color,alpha);
+    Draw_ColoredStretchPic(0, 0, fx_blood_lu, 640, 480, color,color,color,alpha);
 
 }
 
@@ -540,15 +539,15 @@ void HUD_WorldText(int alpha)
 
 		if (!strcmp("location", key)) // search for location key
 		{
-			Draw_ColoredString(15, vid.height/2 + 16, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(15, vid.height/2 + 16, value, 255, 255, 255, alpha, 1.5);
 		}
 		if (!strcmp("date", key)) // search for date key
 		{
-			Draw_ColoredString(15, vid.height/2 + 26, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(15, vid.height/2 + 26, value, 255, 255, 255, alpha, 1.5);
 		}
 		if (!strcmp("person", key)) // search for person key
 		{
-			Draw_ColoredString(15, vid.height/2 + 36, value, 255, 255, 255, alpha, 1);
+			Draw_ColoredString(15, vid.height/2 + 36, value, 255, 255, 255, alpha, 1.5);
 		}
 	}
 }
@@ -567,7 +566,7 @@ void HUD_MaxAmmo(void)
 	maxammoy -= cl.time * 0.003;
 	maxammoopac -= 5;
 
-	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1);
+	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1.5);
 
 	if (maxammoopac <= 0) {
 		domaxammo = false;
@@ -597,7 +596,6 @@ int 	maxammoopac;
 
 void HUD_Rounds (void)
 {
-
 	int i, x_offset, icon_num, savex;
 	int num[3];
 	x_offset = 0;
@@ -687,11 +685,11 @@ void HUD_Rounds (void)
 	{
 		Draw_ColorPic (round_center_x, round_center_y, sb_round[0], 107, 1, 0, 255);
 		round_center_x = round_center_x - (229/108) - 0.2;
-		round_center_y = round_center_y + 1;
+		round_center_y = round_center_y + 1.38;
 		if (round_center_x <= 5)
 			round_center_x = 5;
-		if (round_center_y >= 192) // vid.height - sb_round[0]->height
-			round_center_y = 192; // vid.height - sb_round[0]->height
+		if (round_center_y >= 412) // vid.height - sb_round[0]->height
+			round_center_y = 412; // vid.height - sb_round[0]->height
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 3)//shift to white
 	{
@@ -702,7 +700,7 @@ void HUD_Rounds (void)
 			color_shift[2] = 0;
 			for (i = 0; i < 3; i++)
 			{
-				color_shift_end[i] = 107;
+				color_shift_end[i] = 255;
 				color_shift_steps[i] = (color_shift_end[i] - color_shift[i])/60;
 			}
 			color_shift_init = 1;
@@ -1084,9 +1082,7 @@ void HUD_Rounds (void)
 			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
 		}
 	}
-
 }
-
 /*
 ===============
 HUD_Perks
@@ -1109,9 +1105,9 @@ void HUD_Perks (void)
 
 	int x, y, scale;
 
-	x = 18;
-	y = 2;
-	scale = 22;
+	x = 48;
+	y = 8;
+	scale = 36;
 
 	// Double-Tap 2.0 specialty icon
 	qpic_t* double_tap_icon;
@@ -1136,8 +1132,8 @@ void HUD_Perks (void)
 		y += scale;
 	}
 
-	x = 6;
-	y = 2;
+	x = 12;
+	y = 8;
 
 	// Now the first column.
 	for (int i = 0; i < 4; i++) {
@@ -1176,13 +1172,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic((vid.width/2) - 27, 240 - 29, x2pic, 26, 26);
-		Draw_StretchPic((vid.width/2) + 3, 240 - 29, instapic, 26, 26);
+		Draw_StretchPic((vid.width/2) - 27, 450, x2pic, 26, 26);
+		Draw_StretchPic((vid.width/2) + 3, 450, instapic, 26, 26);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic((vid.width/2) - 13, 240 - 29, x2pic, 26, 26);
+			Draw_StretchPic((vid.width/2) - 13, 450, x2pic, 26, 26);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic ((vid.width/2) - 13, 240 - 29, instapic, 28, 28);
+			Draw_StretchPic ((vid.width/2) - 13, 450, instapic, 28, 28);
 	}
 
 }
@@ -1313,9 +1309,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG]) {
-		Draw_ColoredString((255-(reslen*8)) - strlen(magstring)*8, 218, magstring, 255, 0, 0, 255, 1);
+		Draw_ColoredString((520-(reslen*12)) - strlen(magstring)*12, 452, magstring, 255, 0, 0, 255, 1.5);
 	} else {
-		Draw_ColoredString((255-(reslen*8)) - strlen(magstring)*8, 218, magstring, 255, 255, 255, 255, 1);
+		Draw_ColoredString((520-(reslen*12)) - strlen(magstring)*12, 452, magstring, 255, 255, 255, 255, 1.5);
 	}
 
 	//
@@ -1323,9 +1319,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("/%i", cl.stats[STAT_AMMO]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) {
-		Draw_ColoredString(255 - strlen(magstring)*8, 218, magstring, 255, 0, 0, 255, 1);
+		Draw_ColoredString(520 - strlen(magstring)*12, 452, magstring, 255, 0, 0, 255, 1.5);
 	} else {
-		Draw_ColoredString(255 - strlen(magstring)*8, 218, magstring, 255, 255, 255, 255, 1);
+		Draw_ColoredString(520 - strlen(magstring)*12, 452, magstring, 255, 255, 255, 255, 1.5);
 	}
 }
 
@@ -1344,13 +1340,13 @@ void HUD_AmmoString (void)
 
 		if (0 < cl.stats[STAT_AMMO] && cl.stats[STAT_CURRENTMAG] >= 0) {
 			x = (vid.width - strlen("Reload")*8)/2;
-			Draw_ColoredString (x, 140, "Reload", 255, 255, 255, 255, 1);
+			Draw_ColoredString (x, 340, "Reload", 255, 255, 255, 255, 1.6);
 		} else if (0 < cl.stats[STAT_CURRENTMAG]) {
 			x = (vid.width - strlen("LOW AMMO")*8)/2;
-			Draw_ColoredString (x, 140, "LOW AMMO", 255, 255, 0, 255, 1);
+			Draw_ColoredString (x, 340, "LOW AMMO", 255, 255, 0, 255, 1.6);
 		} else {
 			x = (vid.width - strlen("NO AMMO")*8)/2;
-			Draw_ColoredString (x, 140, "NO AMMO", 255, 0, 0, 255, 1);
+			Draw_ColoredString (x, 340, "NO AMMO", 255, 0, 0, 255, 1.6);
 		}
 	}
 
@@ -1367,21 +1363,21 @@ HUD_Grenades
 void HUD_Grenades (void)
 {
 
-	Draw_StretchPic (266, 205, fragpic, 22, 22);
+	Draw_StretchPic (560, 430, fragpic, 36, 36);
 	if (cl.stats[STAT_GRENADES] & UI_FRAG)
 	{
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (356 + 12, 205 + 16, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1);
+			Draw_ColoredString (578, 452, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1.5);
 		else
-			Draw_String (266 + 12, 205 + 16, va ("%i",cl.stats[STAT_PRIGRENADES]));
+			Draw_String (578, 452, va ("%i",cl.stats[STAT_PRIGRENADES]));
 	}
 	if (cl.stats[STAT_GRENADES] & UI_BETTY)
 	{
-		Draw_StretchPic (266 + 20, 205, bettypic, 22, 22);
+		Draw_StretchPic (560, 430, bettypic, 36, 36);
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (356 + 20 + 12, 205 + 16, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1);
+			Draw_ColoredString (578, 452, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1.5);
 		else
-			Draw_String (266 + 20 + 12, 205 + 16, va ("%i",cl.stats[STAT_SECGRENADES]));
+			Draw_String (578, 452, va ("%i",cl.stats[STAT_SECGRENADES]));
 	}
 
 }
@@ -1395,16 +1391,14 @@ void HUD_Weapon (void)
 {
 	char str[32];
 	float l;
-	int x;
 	x_value = vid.width;
-	y_value = 195;
+	y_value = 422;
 
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	x = x_value/2 - l;
-	x_value = 300 - l*8;
-	Draw_ColoredString (x_value, y_value + l, str, 255, 255, 255, 255, 1);
+	x_value = 520 - l*8;
+	Draw_ColoredString (x_value, y_value + l, str, 255, 255, 255, 255, 1.5);
 }
 
 /*
@@ -1443,7 +1437,7 @@ void HUD_PlayerName (void)
 	if (nameprint_time - sv.time < 1)
 		alpha = (int)((nameprint_time - sv.time)*255);
 
-	Draw_ColoredString(30, 130, player_name, 255, 255, 255, alpha, 1);
+	Draw_ColoredString(30, 130, player_name, 255, 255, 255, alpha, 1.5);
 }
 
 /*

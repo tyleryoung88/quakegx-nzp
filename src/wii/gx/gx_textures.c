@@ -621,7 +621,7 @@ void GL_Update32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	}
 
 	DCFlushRange(destination->data, scaled_width * scaled_height * sizeof(unsigned));
-	GX_InvalidateTexAll();
+	//GX_InvalidateTexAll();
 }
 
 /*
@@ -721,9 +721,8 @@ void GL_UpdateLightmapTextureRegion32 (gltexture_t *destination, unsigned *data,
 		}
 	}
 
-	// ELUTODO: flush region only
 	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * sizeof(unsigned));
-	GX_InvalidateTexAll();
+	//GX_InvalidateTexAll();
 }
 extern int lightmap_textures;
 /*
@@ -999,7 +998,7 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 #define STBI_ONLY_TGA
 #define STBI_ONLY_PIC
 #include "stb_image.h"
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, qboolean reverseRGBA)
+byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, int reverseRGBA)
 {
 	int bpp;
 	int width, height;
@@ -1007,53 +1006,61 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	
 	byte* rgba_data;
 	
-	// Figure out the length
-    int handle;
-    int len = COM_OpenFile (filename, &handle);
-    COM_CloseFile(handle);
-	
 	// Load the raw data into memory, then store it
     rgba_data = COM_LoadFile(filename, 5);
 
 	if (rgba_data == NULL) {
 		Con_Printf("NULL: %s", filename);
-		return NULL;
+		return 0;
 	}
 
-    byte *image = stbi_load_from_memory(rgba_data, len, &width, &height, &bpp, 4);
+    byte *image = stbi_load_from_memory(rgba_data, com_filesize, &width, &height, &bpp, 4);
 	
 	if(image == NULL) {
 		Con_Printf("%s\n", stbi_failure_reason());
-		return NULL;
+		return 0;
 	}
-
-	//imagetype 4 = reverse order rgba 
-	
-	//still figuring this part out??
-	
-	//if (reverseRGBA) {
-		//Swap the colors the lazy way
-		for (i = 0; i < (width*height)*4; i++) {
-			image[i+0] = image[i+3];
-			image[i+1] = image[i+2];
-			image[i+2] = image[i+1];
-			image[i+3] = image[i+0];
-		}
-	/*} else {
-		for (i = 0; i < (width*height)*4; i++) {
-			image[i+0] = image[i+3];
-			image[i+1] = image[i+2];
-			image[i+2] = image[i+1];
-			image[i+3] = 255;
-		}
-		
-	}
-	*/
-	free(rgba_data);
 	
 	//set image width/height for texture uploads
 	image_width = width;
 	image_height = height;
+
+	//still figuring this part out??
+	
+	int pixels = image_width*image_height;
+	
+	if (reverseRGBA == 4) {
+		//Swap the colors the lazy way
+		for (i = 0; i < pixels; i++) {
+		unsigned char tempR = image[i * 4 + 0];
+        unsigned char tempG = image[i * 4 + 1];
+        unsigned char tempB = image[i * 4 + 2];
+        unsigned char tempA = image[i * 4 + 3];
+
+        // Reverse the order: RGBA to ABGR
+        image[i * 4 + 0] = tempA;
+        image[i * 4 + 1] = tempR;
+        image[i * 4 + 2] = tempG;
+        image[i * 4 + 3] = tempB;
+		}
+	} else
+	{
+		//Swap the colors the lazy way
+		for (i = 0; i < pixels; i++) {
+		unsigned char tempR = image[i * 4 + 0];
+        unsigned char tempG = image[i * 4 + 1];
+        unsigned char tempB = image[i * 4 + 2];
+        unsigned char tempA = image[i * 4 + 3];
+
+        // Reverse the order: RGBA to ABGR
+        image[i * 4 + 0] = tempA;
+        image[i * 4 + 1] = tempB;
+        image[i * 4 + 2] = tempG;
+        image[i * 4 + 3] = tempR;
+		}
+	}
+	
+	free(rgba_data);
 
 	return image;
 }
@@ -1101,7 +1108,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, true);	
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		//Con_Printf("%s : %i\n", name, texnum);
 		free(data);
@@ -1112,7 +1119,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		//Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
@@ -1124,7 +1131,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
@@ -1135,7 +1142,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		//Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
 		
@@ -1143,7 +1150,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		return texnum;
 	}
 	
-	if (data == NULL) { 
+	if (data <= 0) { 
 		return 0;
 	}
 	
@@ -1199,7 +1206,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, true);	
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
 		//Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
@@ -1211,7 +1218,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
@@ -1223,7 +1230,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		
@@ -1234,7 +1241,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
-		data = loadimagepixels (name, complain, matchwidth, matchheight, false);
+		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		//Con_Printf("Trying to load: %s", name);
 		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
 		

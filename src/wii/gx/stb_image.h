@@ -5536,7 +5536,7 @@ static void *stbi__tga_load(stbi__context *s, int *x, int *y, int *comp, int req
    if (tga_comp >= 3 && !tga_rgb16)
    {
       unsigned char* tga_pixel = tga_data;
-      for (i=0; i < tga_width * tga_height; ++i)
+      for (i=0; i < tga_width * tga_height * 4; ++i)
       {
          unsigned char temp = tga_pixel[0];
          tga_pixel[0] = tga_pixel[2];
@@ -5544,8 +5544,7 @@ static void *stbi__tga_load(stbi__context *s, int *x, int *y, int *comp, int req
          tga_pixel += tga_comp;
       }
    }
-   */
-
+*/
    // convert to target component count
    if (req_comp && req_comp != tga_comp)
       tga_data = stbi__convert_format(tga_data, tga_comp, req_comp, tga_width, tga_height);

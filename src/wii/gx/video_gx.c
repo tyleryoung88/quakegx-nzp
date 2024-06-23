@@ -115,6 +115,7 @@ void	VID_SetPalette (unsigned char *palette)
 void VID_ConModeUpdate(void)
 {
 	// update console resolution
+	/*
 	switch((int)vid_conmode.value)
 	{
 		default:
@@ -139,6 +140,11 @@ void VID_ConModeUpdate(void)
 			vid.conheight = 480;
 			break;
 	}
+	*/
+	
+	vid.conwidth = 640;
+	vid.conheight = 480;
+	
 	if (vid.conheight > scr_height)
 		vid.conheight = scr_height;
 	if (vid.conwidth > scr_width)
@@ -238,11 +244,11 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 	GX_SetScissor(*x,*y,*width,*height);
 	
 	GX_SetDstAlpha(GX_ENABLE, 0);
-
+	
 	// ELUTODO: really necessary?
-	GX_InvVtxCache();
-	GX_InvalidateTexAll();
-	Sbar_Changed(); // force status bar redraw every frame
+	//GX_InvVtxCache();
+	//GX_InvalidateTexAll();
+	//Sbar_Changed(); // force status bar redraw every frame
 }
 
 void GL_EndRendering (void)
@@ -313,15 +319,15 @@ void VID_Init(unsigned char *palette)
 	scr_width = rmode->fbWidth;
 	scr_height = rmode->efbHeight;
 
-	vid.width = 330; //320
-	vid.height = 240; //240
+	vid.width = 640; //320
+	vid.height = 480; //240
 
 	if (vid.height > scr_height)
 		vid.height = scr_height;
 	if (vid.width > scr_width)
 		vid.width = scr_width;
 
-	vid.aspect = ((float)vid.height / (float)vid.width) * (330.0 / 240.0); //320.0/240.0
+	vid.aspect = ((float)vid.height / (float)vid.width) * (640.0 / 480.0); //320.0/240.0
 	vid.numpages = 2;
 
 	GL_Init();

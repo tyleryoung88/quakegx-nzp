@@ -1521,7 +1521,9 @@ void fclose (float)
 void PF_fclose (void)
 {
 	int h = (int)G_FLOAT(OFS_PARM0);
-	Sys_FileClose(h);
+	if (h > 0) {
+		Sys_FileClose(h);
+	}
 }
 
 /*

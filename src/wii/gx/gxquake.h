@@ -213,6 +213,8 @@ extern	cvar_t	gl_playermip;
 
 extern cvar_t vid_tvborder;
 
+extern  cvar_t	r_part_muzzleflash;
+
 extern int white_texturenum;
 
 extern	int			mirrortexturenum;

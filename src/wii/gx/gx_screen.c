@@ -526,16 +526,16 @@ void SCR_DrawUseString (void)
 		return;
 // the finale prints the characters one at a time
 
-	y = 190;
+	y = 285;
 	l = strlen (scr_usestring);
-	x = (vid.width - l*8)/2;
+	x = (vid.width - l*12)/2;
 
 	l2 = strlen (scr_usestring2);
-	x2 = (vid.width - l2*8)/2;
+	x2 = (vid.width - l2*12)/2;
 
     Draw_String (x, y, scr_usestring);
-	Draw_String (x2, y + 12, scr_usestring2);
-	Draw_StretchPic (x + (button_pic_x*8), y, GetButtonIcon("+use"), 10, 10);
+	Draw_String (x2, y + 20, scr_usestring2);
+	Draw_StretchPic (x + (button_pic_x*8) + 18, y - 3, GetButtonIcon("+use"), 18, 18);
 }
 
 void SCR_CheckDrawUseString (void)
@@ -1150,33 +1150,35 @@ void SCR_DrawLoadScreen (void)
 	}
 
 	if (loadingScreen) {
-		Draw_FillByColor(0, 0, 320, 240, 0, 0, 0, 255);
+		Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
 		if (!loadscreeninit) {
-			load_screen_exists = false;
+			load_screen_exists = true;
 
 			char* lpath;
-			lpath = (char*)Z_Malloc(sizeof(char)*32);
+			lpath = (char*)malloc(sizeof(char)*128);
 			strcpy(lpath, "gfx/lscreen/");
 			strcat(lpath, loadname2);
 
 			lscreen = Draw_CachePic(lpath);
 			awoo = Draw_CachePic("gfx/menu/awoo");
 
-			if (lscreen != NULL)
-				load_screen_exists = true;	
+			if (lscreen == 0)
+				load_screen_exists = false;	
 
 			loadscreeninit = true;
+			free(lpath);
 		}
 
 		if (load_screen_exists == true)
+			//Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
 			Draw_StretchPic(0, 0, lscreen, vid.width, vid.height);
 		else
-			Draw_FillByColor(0, 0, 320, 240, 0, 0, 0, 255);
+			Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
 
 		Draw_FillByColor(0, 0, 320, 24, 0, 0, 0, 175);
-		Draw_FillByColor(0, 216, 320, 24, 0, 0, 0, 175);
+		Draw_FillByColor(0, 470, 320, 24, 0, 0, 0, 175);
 
-		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 2);
+		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 3);
 	}
 
 	if (loadingtimechange < Sys_FloatTime ())
@@ -1187,7 +1189,7 @@ void SCR_DrawLoadScreen (void)
 	}
 
 	if (key_dest == key_game) {
-		Draw_ColoredString(vid.width/2 - loadingtextwidth/2, 225, lodinglinetext, 255, 255, 255, 255, 1);
+		Draw_ColoredString((vid.width - loadingtextwidth)/2 - 30, 465, lodinglinetext, 255, 255, 255, 255, 1.5);
 
 		if (strcmp(lodinglinetext, "Please help me find the meaning of   . Thanks.") == 0) {
 			Draw_Pic(120, 200, awoo);

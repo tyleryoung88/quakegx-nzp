@@ -55,7 +55,7 @@ cvar_t	v_kicktime = {"v_kicktime", "0.5", false};
 cvar_t	v_kickroll = {"v_kickroll", "0.6", false};
 cvar_t	v_kickpitch = {"v_kickpitch", "0.6", false};
 
-cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", true};
+cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "1", true};
 
 cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", false};
 cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", false};
@@ -660,8 +660,17 @@ void CalcGunAngle (void)
 		// ELUTODO: Some small gimbal lock issues
 		cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - cl_crossx.value/scr_vrect.width * IR_YAWRANGE;
 		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
-		if (cl_weapon_inrollangle.value)
+		if (cl_weapon_inrollangle.value) {
 			cl.viewent.angles[ROLL] = in_rollangle;
+			
+			//Con_Printf("roll: %i\n", in_rollangle);
+			
+			if(in_rollangle < 0.03f)
+				in_rollangle = 0.03;
+			
+			if(in_rollangle > 0.03f)
+				in_rollangle = 0.03;
+		}
 	}
 	else
 	{

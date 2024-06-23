@@ -644,6 +644,7 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_MUZZLEFLASH)
 		{
+			/*
 			vec3_t		fv, rv, uv;
 
 			dl = CL_AllocDlight (i);
@@ -655,8 +656,9 @@ void CL_RelinkEntities (void)
 			dl->radius = 200 + (rand()&31);
 			dl->minlight = 32;
 			dl->die = cl.time + 0.1f;
-			/*
-			if (i == cl.viewentity && qmb_initialized && r_part_muzzleflash.value)
+			*/
+			
+			if (i == cl.viewentity /*&& qmb_initialized*/ && r_part_muzzleflash.value)
 			{
 				vec3_t		start, smokeorg, v_forward, v_right, v_up;
 				vec3_t tempangles;
@@ -685,7 +687,7 @@ void CL_RelinkEntities (void)
 				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
 				//QMB_MuzzleFlash (smokeorg);
 			}
-			*/
+			
 		}
 		
 		if (ent->effects & EF_BRIGHTLIGHT)
