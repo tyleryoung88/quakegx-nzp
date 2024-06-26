@@ -235,7 +235,7 @@ void Draw_Init (void)
 	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0, 4);
 
 	// now turn them into textures
-	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true, true, 4);
+	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, true, true, true, 4);
 /*
 	start = Hunk_LowMark();
 
@@ -493,7 +493,8 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	
 	GL_Bind0 (gl->texnum);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
 	GX_Position3f32(x, y, 0.0f);
@@ -543,7 +544,7 @@ void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float
 	QGX_Blend(true);
 	
 	GL_Bind0 (gl->texnum);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
 	GX_Position3f32(x, y, 0.0f);
@@ -708,7 +709,7 @@ void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
 		gltextures[translate_texture].height, trans, gltextures[translate_texture].mipmap, false);
 
 	GL_Bind0 (translate_texture);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
 	GX_Position3f32(x, y, 0.0f);
@@ -798,7 +799,7 @@ refresh window.
 void Draw_TileClear (int x, int y, int w, int h)
 {
 	GL_Bind0 (*(int *)draw_backtile->data);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
 	GX_Position3f32(x, y, 0.0f);
@@ -830,23 +831,23 @@ refresh window.
 void Draw_AlphaTileClear (int x, int y, int w, int h, float alpha)
 {
 	GL_Bind0 (*(int *)draw_backtile->data);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
 	GX_Position3f32(x, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_Color4u8(0xff, 0xff, 0xff, alpha);
 	GX_TexCoord2f32(x / 64.0, y / 64.0);
 
 	GX_Position3f32(x + w, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_Color4u8(0xff, 0xff, 0xff, alpha);
 	GX_TexCoord2f32((x + w) / 64.0, y / 64.0);
 
 	GX_Position3f32(x + w, y + h, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_Color4u8(0xff, 0xff, 0xff, alpha);
 	GX_TexCoord2f32((x + w) / 64.0, (y + h) / 64.0);
 
 	GX_Position3f32(x, y + h, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, (u8)(0xff * alpha));
+	GX_Color4u8(0xff, 0xff, 0xff, alpha);
 	GX_TexCoord2f32(x / 64.0, (y + h) / 64.0);
 	GX_End();
 }
@@ -862,16 +863,20 @@ Fills a box of pixels with a single color
 void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a)
 {
 	//glDisable (GL_TEXTURE_2D);
-	
+
 	GL_Bind0 (white_texturenum);
-	//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	//glEnable (GL_BLEND); //johnfitz -- for alpha
 	QGX_Blend(true);
 	//glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
 	QGX_Alpha(false);
 	//glColor4f (r/255, g/255, b/255, a/255);
 	//GX_Color4u8(r, g, b, a);
-
+	/*
+	GX_SetVtxDesc(GX_VA_TEX0, GX_NONE);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
+	*/
 	//glBegin (GL_QUADS);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
@@ -900,6 +905,10 @@ void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a)
 
 	//glEnd ();
 	GX_End ();
+	/*
+	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+ 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	*/
 	//glColor4f (1,1,1,1);
 	//glDisable (GL_BLEND); //johnfitz -- for alpha
 	QGX_Blend(false);
@@ -925,7 +934,7 @@ void Draw_ConsoleBackground (int lines)
 		Draw_AlphaPic (0, lines - vid.conheight, conback, (float)(1.2 * lines)/y);
 	*/
 	
-	Draw_Fill(0, 0, vid.width, lines, 120, 40, 40, 175);
+	//Draw_Fill(0, 0, vid.width, lines, 120, 40, 40, 175);
 }
 
 /*
@@ -1325,7 +1334,6 @@ void Draw_FadeScreen (void)
 	QGX_Blend(true);
 
 	GL_Bind0 (white_texturenum);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
 	GX_Position3f32(0, 0, 0.0f);

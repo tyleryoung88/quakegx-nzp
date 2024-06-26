@@ -319,15 +319,15 @@ void VID_Init(unsigned char *palette)
 	scr_width = rmode->fbWidth;
 	scr_height = rmode->efbHeight;
 
-	vid.width = 640; //320
-	vid.height = 480; //240
+	vid.width = 640; //640
+	vid.height = 480; //480
 
 	if (vid.height > scr_height)
 		vid.height = scr_height;
 	if (vid.width > scr_width)
 		vid.width = scr_width;
 
-	vid.aspect = ((float)vid.height / (float)vid.width) * (640.0 / 480.0); //320.0/240.0
+	vid.aspect = ((float)vid.height / (float)vid.width) * (640.0 / 480.0); //640.0/480.0
 	vid.numpages = 2;
 
 	GL_Init();

@@ -660,7 +660,7 @@ void R_DrawParticles (void)
 	unsigned		color;
 
 	GL_Bind0(particletexture);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	QGX_Blend (true);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);

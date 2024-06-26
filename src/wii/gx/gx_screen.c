@@ -1276,11 +1276,13 @@ void SCR_DrawConsole (void)
 		Con_DrawConsole (scr_con_current, true);
 		clearconsole = 0;
 	}
+	/*
 	else
 	{
 		if (key_dest == key_game || key_dest == key_message)
 			Con_DrawNotify ();	// only draw notify in game
 	}
+	*/
 }
 
 
@@ -1515,10 +1517,10 @@ void SCR_BringDownConsole (void)
 	int		i;
 	
 	scr_centertime_off = 0;
-	
+	/*
 	for (i=0 ; i<20 && scr_conlines != scr_con_current ; i++)
 		SCR_UpdateScreen ();
-
+	*/
 	cl.cshifts[0].percent = 0;		// no area contents palette on next frame
 	VID_SetPalette (host_basepal);
 }
@@ -1777,9 +1779,6 @@ void SCR_UpdateScreen (void)
 	SCR_DrawConsole ();	
 	M_Draw ();
 	
-	if (in_osk)
-		GX_DrawOSK();
-	
 	if(scr_loadscreen.value) {
 		SCR_DrawLoadScreen();
 	}
@@ -1787,8 +1786,10 @@ void SCR_UpdateScreen (void)
 	Draw_LoadingFill();
 
 	// ELUTODO: place correctly in the if_else structures above
+	if (in_osk)
+		GX_DrawOSK();
 	
-	V_UpdatePalette ();
+	//V_UpdatePalette ();
 
 	GL_EndRendering ();
 }

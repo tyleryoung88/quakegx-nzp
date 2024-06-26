@@ -42,14 +42,14 @@ cvar_t	scr_ofsz = {"scr_ofsz","0", false};
 cvar_t	cl_rollspeed = {"cl_rollspeed", "200"};
 cvar_t	cl_rollangle = {"cl_rollangle", "2.0f"};
 
-cvar_t	cl_bob = {"cl_bob","0.01", false};
-cvar_t	cl_bobcycle = {"cl_bobcycle","0.02", false};
-cvar_t	cl_bobup = {"cl_bobup","0.01", false};
+cvar_t	cl_bob = {"cl_bob","0.02", false};
+cvar_t	cl_bobcycle = {"cl_bobcycle","0.06", false};
+cvar_t	cl_bobup = {"cl_bobup","0.01", false};//BLUB changed to 0.02
 
 cvar_t	cl_sidebobbing = {"cl_sidebobbing","1"};
-cvar_t	cl_bobside = {"cl_bobside","0.02"};
-cvar_t	cl_bobsidecycle = {"cl_bobsidecycle","0.06"};
-cvar_t	cl_bobsideup = {"cl_bobsideup","0.02"};
+cvar_t	cl_bobside = {"cl_bobside","0.1"};
+cvar_t	cl_bobsidecycle = {"cl_bobsidecycle","0.9"};
+cvar_t	cl_bobsideup = {"cl_bobsideup","0.5"};
 
 cvar_t	v_kicktime = {"v_kicktime", "0.5", false};
 cvar_t	v_kickroll = {"v_kickroll", "0.6", false};
@@ -661,6 +661,13 @@ void CalcGunAngle (void)
 		cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - cl_crossx.value/scr_vrect.width * IR_YAWRANGE;
 		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
 		if (cl_weapon_inrollangle.value) {
+			
+			if(in_rollangle < 0.03f)
+				in_rollangle = 0.03;
+			
+			if(in_rollangle > 0.03f)
+				in_rollangle = 0.03;
+			
 			cl.viewent.angles[ROLL] = in_rollangle;
 			
 			//Con_Printf("roll: %i\n", in_rollangle);
@@ -682,7 +689,7 @@ void CalcGunAngle (void)
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 	cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
 	cl.viewent.angles[YAW] -= v_idlescale.value * sinf(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
-/*	
+/*
 	//^^^ Model swaying
 	if(cl.stats[STAT_ZOOM] == 1)
 	{
@@ -803,7 +810,7 @@ void V_CalcIntermissionRefdef (void)
 // allways idle in intermission
 	old = v_idlescale.value;
 	v_idlescale.value = 1;
-	V_AddIdle ();
+	//V_AddIdle ();
 	v_idlescale.value = old;
 }
 
@@ -846,7 +853,7 @@ void V_CalcRefdef (void)
 	
 	static float oldz = 0;
 
-	V_DriftPitch ();
+	//V_DriftPitch ();
 	DropRecoilKick();
 
 // ent is the player model (visible when out of body)
@@ -876,8 +883,8 @@ void V_CalcRefdef (void)
 	r_refdef.vieworg[2] += 1.0/32;
 
 	VectorCopy (cl.viewangles, r_refdef.viewangles);
-	V_CalcViewRoll ();
-	V_AddIdle ();
+	//V_CalcViewRoll ();
+	//V_AddIdle ();
 
 // offsets
 	angles[PITCH] = -ent->angles[PITCH];	// because entity pitches are								
@@ -885,12 +892,12 @@ void V_CalcRefdef (void)
 	angles[ROLL] = ent->angles[ROLL];
 
 	AngleVectors (angles, forward, right, up);
-
+/*
 	for (i=0 ; i<3 ; i++)
 		r_refdef.vieworg[i] += scr_ofsx.value*forward[i]
 			+ scr_ofsy.value*right[i]
 			+ scr_ofsz.value*up[i];
-	
+*/	
 	V_BoundOffsets ();
 		
 // set up gun position
@@ -925,7 +932,7 @@ void V_CalcRefdef (void)
 	}
 
 	cVerticalOffset += (VerticalOffset - cVerticalOffset) * 0.3;
-
+/*
 	temp_up[0] *= cVerticalOffset;
 	temp_up[1] *= cVerticalOffset;
 	temp_up[2] *= cVerticalOffset;
@@ -933,7 +940,7 @@ void V_CalcRefdef (void)
 	view->origin[0] +=(temp_up[0]);
 	view->origin[1] +=(temp_up[1]);
 	view->origin[2] +=(temp_up[2]);
-
+*/
 	if(cVerticalOffset > VerticalOffset - 2 && cVerticalOffset < VerticalOffset + 2)//Close enough to goal
 	{
 		VerticalOffset = 0;
@@ -1009,16 +1016,16 @@ void V_CalcRefdef (void)
 //			mz->origin[i] += forward[i]*bob*0.4;
 		}
 	}
-	//view->origin[2] += bob;
+	view->origin[2] += bob;
 
 // fudge position around to keep amount of weapon visible
 // roughly equal with different FOV
 
 //=============================== Added View Bobbing Code Block (Blubs wuz here)=======================
 	vec3_t vbob;
-	vbob[0] = V_CalcVBob(speed,0) * cl_bob.value * 50;//cl_bob * 50 undo each other, but we want to give some control to people to limit view bobbing
-	vbob[1] = V_CalcVBob(speed,1) * cl_bob.value * 50;
-	vbob[2] = V_CalcVBob(speed,2) * cl_bob.value * 50;
+	vbob[0] = V_CalcVBob(speed,0) * cl_bob.value * 30;//cl_bob * 50 undo each other, but we want to give some control to people to limit view bobbing
+	vbob[1] = V_CalcVBob(speed,1) * cl_bob.value * 30;
+	vbob[2] = V_CalcVBob(speed,2) * cl_bob.value * 30;
 
 	r_refdef.viewangles[YAW] = angledelta(r_refdef.viewangles[YAW] + (vbob[0] * 0.1));
 	r_refdef.viewangles[PITCH] = angledelta(r_refdef.viewangles[PITCH] + (vbob[1] * 0.1));

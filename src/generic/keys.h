@@ -118,6 +118,8 @@ enum key_id_e
 
 	K_MWHEELUP,
 	K_MWHEELDOWN,
+	
+	K_SHAKE,
 
 	KEY_COUNT = 256
 };

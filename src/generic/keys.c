@@ -139,6 +139,8 @@ static keyname_t keynames[] =
 
 	{"MWHEELUP", K_MWHEELUP},
 	{"MWHEELDOWN", K_MWHEELDOWN},
+	
+	{"SHAKENUN", K_SHAKE},
 
 	{"SEMICOLON", ';'},	// because a raw semicolon seperates commands
 

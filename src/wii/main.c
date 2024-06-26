@@ -427,10 +427,6 @@ static void* main_thread_function(void* dummy)
 	SYS_SetPowerCallback(shutdown_system);
 
 	VIDEO_SetBlack(false);
-	
-	//sB was here trying to figure out how vsync works
-	//VIDEO_Flush();
-	//VIDEO_WaitVSync();
 
 	// Run the main loop.
 	double current_time, last_time, seconds;

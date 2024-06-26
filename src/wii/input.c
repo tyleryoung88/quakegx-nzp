@@ -112,6 +112,8 @@ u32 wpad_keys = 0x0000;
 ir_t pointer;
 orient_t orientation;
 expansion_t expansion;
+nunchuk_t nunchuk; //Shake
+gforce_t gforce;
 
 bool wiimote_connected = true;
 bool nunchuk_connected = false;
@@ -372,10 +374,11 @@ void IN_Commands (void)
 		pad_keys = PAD_ButtonsHeld(PAD_CHAN0);
 		wpad_keys = WPAD_ButtonsHeld(WPAD_CHAN_0);
 	}
-
+	
 	WPAD_IR(WPAD_CHAN_0, &pointer);
 	WPAD_Orientation(WPAD_CHAN_0, &orientation);
 	WPAD_Expansion(WPAD_CHAN_0, &expansion);
+	WPAD_GForce(WPAD_CHAN_0, &gforce); //Shake to reload
 
 	//On screen keyboard
 	if (wiimote_connected && (wpad_keys & WPAD_BUTTON_MINUS))
@@ -587,8 +590,16 @@ void IN_Commands (void)
 					Key_Event(K_JOY8, ((wpad_keys & WPAD_NUNCHUK_BUTTON_C) == WPAD_NUNCHUK_BUTTON_C));
 				}
 				
+				//Con_Printf("xge:%f, acy:%f\n", expansion.nunchuk.gforce.x, expansion.nunchuk.accel.y);
+				
+				if(/*expansion.nunchuk.gforce.x > 0.8 && */expansion.nunchuk.gforce.y > 0.44) {
+					Key_Event(K_SHAKE, true);
+				} else {
+					Key_Event(K_SHAKE, false);
+				}
+				
 //Emulation of the wimote arrows with the nunchuk stick
-				if(nunchuk_stick_as_arrows.value) 	
+				if(nunchuk_stick_as_arrows.value)
 				{
 					const s8 nunchuk_stick_x = WPAD_StickX(0);
 					const s8 nunchuk_stick_y = WPAD_StickY(0);
@@ -955,13 +966,13 @@ void IN_Move (usercmd_t *cmd)
 	//Con_Printf("%f\n", x2);
 	
 	// crosshair stuff
-	if (x2 < 0.06f && x2 > -0.06f && y2 < 0.06f && y2 > -0.06f) {
+	if (x2 < 0.065f && x2 > -0.065f && y2 < 0.065f && y2 > -0.065f) {
 		croshhairmoving = false;
 
 		crosshair_opacity += 22;
 
-		if (crosshair_opacity >= 215)
-			crosshair_opacity = 215;
+		if (crosshair_opacity >= 255)
+			crosshair_opacity = 255;
 	} else {
 		croshhairmoving = true;
 		crosshair_opacity -= 8;

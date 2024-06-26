@@ -1864,7 +1864,7 @@ void M_Options_Draw (void)
 	float		r;
 	
 	if (key_dest != key_menu_pause)
-		Draw_Pic (0, 0, menu_bk);
+		Draw_StretchPic (0, 0, menu_bk, vid.width, vid.height);
 
 	M_Print (16, 32, "    Customize controls");
 	M_Print (16, 40, "         Go to console");
@@ -1973,6 +1973,7 @@ char *bindnames[][2] =
 {
 {"+attack", 		"attack"},
 {"+switch", 		"change weapon"},
+{"+reload",			"reload"},
 {"+jump", 			"jump / swim up"},
 {"+forward", 		"walk forward"},
 {"+back", 			"backpedal"},
@@ -1984,7 +1985,7 @@ char *bindnames[][2] =
 {"+strafe", 		"sidestep"},
 {"+lookup", 		"look up"},
 {"+lookdown", 		"look down"},
-{"+aim", 			"ADS"},
+{"+aim", 			"aim down sight"},
 {"+knife", 			"knife"},
 {"+grenade", 		"grenade"},
 {"+moveup",			"swim up"},

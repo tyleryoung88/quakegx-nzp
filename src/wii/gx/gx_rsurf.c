@@ -527,7 +527,7 @@ void R_BlendLightmaps (void)
 		if (!p)
 			continue;
 		GL_Bind0(lightmap_textures+i);
-		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+		//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 		if (lightmap_modified[i])
 		{
 			lightmap_modified[i] = false;
@@ -658,7 +658,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
 	GL_Bind0 (t->gl_texturenum);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 
 	if (fa->flags & SURF_DRAWTURB)
 	{	// warp texture, no lightmaps
@@ -773,7 +773,7 @@ void R_DrawWaterSurfaces (void)
 		// set modulate mode explicitly
 			
 		GL_Bind0 (t->gl_texturenum);
-		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+		//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 
 		for ( ; s ; s=s->texturechain)
 			EmitWaterPolys (s);

@@ -133,12 +133,14 @@ Returns true if the box is completely outside the frustom
 */
 qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 {
+	/*
 	int		i;
 
 	// ELUTODO: check for failure cases (rendering to an aspect different of that of the quake-calculated frustum, etc
 	for (i=0 ; i<4 ; i++)
 		if (BoxOnPlaneSide (mins, maxs, &frustum[i]) == 2)
 			return true;
+	*/
 	return false;
 }
 
@@ -264,7 +266,7 @@ void R_DrawSpriteModel (entity_t *e)
 	GL_DisableMultitexture();
 
     GL_Bind0(frame->gl_texturenum);
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 	
 	//Fog_DisableGFog ();
 
@@ -689,9 +691,9 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	//Shpuld
 	if(r_model_brightness.value)
 	{
-		lightcolor[0] += 60;
-		lightcolor[1] += 60;
-		lightcolor[2] += 60;
+		lightcolor[0] += 15;
+		lightcolor[1] += 15;
+		lightcolor[2] += 15;
 	}
 	
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
@@ -769,7 +771,7 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	VectorAdd (currententity->origin, clmodel->mins, mins);
 	VectorAdd (currententity->origin, clmodel->maxs, maxs);
 	
-	Con_Printf("drawing transparent mdl");
+	//Con_Printf("drawing transparent mdl");
 
 // naievil -- fixme: on psp this is == 2 ? 
 	if (R_CullBox (mins, maxs))
@@ -778,13 +780,13 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 
-	// for(int g = 0; g < 3; g++)
-	// {
-	// 	if(lightcolor[g] < 8)
-	// 		lightcolor[g] = 8;
-	// 	if(lightcolor[g] > 125)
-	// 		lightcolor[g] = 125;
-	// }
+	for(int g = 0; g < 3; g++)
+	{
+		if(lightcolor[g] < 8)
+			lightcolor[g] = 8;
+		if(lightcolor[g] > 125)
+			lightcolor[g] = 125;
+	}
 
 	// //
 	// // get lighting information
@@ -808,11 +810,11 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	// 	}
 	// }
 
-	// // clamp lighting so it doesn't overbright as much
-	// if (ambientlight > 128)
-	// 	ambientlight = 128;
-	// if (ambientlight + shadelight > 192)
-	// 	shadelight = 192 - ambientlight;
+	// clamp lighting so it doesn't overbright as much
+	if (ambientlight > 128)
+		ambientlight = 128;
+	if (ambientlight + shadelight > 192)
+		shadelight = 192 - ambientlight;
 
 	// shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 	// shadelight = shadelight / 200.0;
@@ -834,7 +836,22 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	//
 
 	GL_DisableMultitexture();
-	lightcolor[0] = lightcolor[1] = lightcolor[2] = 256.0f;
+	
+	//Shpuld
+	if(r_model_brightness.value)
+	{
+		lightcolor[0] += 15;
+		lightcolor[1] += 15;
+		lightcolor[2] += 15;
+	}
+	
+	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
+	if (add > 0.0f)
+	{
+		lightcolor[0] += add / 3.0f;
+		lightcolor[1] += add / 3.0f;
+		lightcolor[2] += add / 3.0f;
+	}
 
     c_guMtxIdentity(model);
 	R_RotateForEntity (e, e->scale);
@@ -855,7 +872,8 @@ void R_DrawTransparentAliasModel (entity_t *e)
 		glShadeModel (GL_SMOOTH);
 	*/
 
-	GX_SetZMode(GX_TRUE, GX_EQUAL, GX_TRUE);
+	//GX_SetZMode(GX_TRUE, GX_GEQUAL, GX_TRUE);
+	QGX_Alpha(false);
 	QGX_Blend(true);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
@@ -870,8 +888,10 @@ void R_DrawTransparentAliasModel (entity_t *e)
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 	
+	//QGX_Blend(false);
+	//GX_SetZMode(GX_TRUE, GX_EQUAL, GX_TRUE);
 	QGX_Blend(false);
-	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
+	QGX_Alpha(true);
 	/*
 	glShadeModel (GL_FLAT);
 	if (gl_affinemodels.value)
@@ -1013,20 +1033,27 @@ void R_DrawAliasModel (entity_t *e)
 
 	GL_DisableMultitexture();
 	
-	//Shpuld
-	if(r_model_brightness.value)
-	{
-		lightcolor[0] += 60;
-		lightcolor[1] += 60;
-		lightcolor[2] += 60;
-	}
-	
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
-	if (add > 0.0f)
-	{
+	if (add > 0.0f && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
+	{	
 		lightcolor[0] += add / 3.0f;
 		lightcolor[1] += add / 3.0f;
 		lightcolor[2] += add / 3.0f;
+	}
+	
+	//Shpuld
+	if(r_model_brightness.value && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
+	{		
+		lightcolor[0] += 15;
+		lightcolor[1] += 15;
+		lightcolor[2] += 15;
+	}
+	
+	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
+	{
+		lightcolor[0] += 100;
+		lightcolor[1] += 100;
+		lightcolor[2] += 100;
 	}
 
 	c_guMtxIdentity(model);
@@ -1080,24 +1107,24 @@ void R_DrawAliasModel (entity_t *e)
 		{
 			case 0:
 				GL_Bind0(zombie_skins[0]);
-				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			case 1:
 				GL_Bind0(zombie_skins[1]);
-				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			case 2:
 				GL_Bind0(zombie_skins[2]);
-				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			case 3:
 				GL_Bind0(zombie_skins[3]);
-				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			default: //out of bounds? assuming 0
 				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
 				GL_Bind0(zombie_skins[0]);
-				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 		}
 	}
@@ -1114,7 +1141,6 @@ void R_DrawAliasModel (entity_t *e)
 		i = currententity - cl_entities;
 		if (i >= 1 && i<=cl.maxclients)
 		    GL_Bind0(playertextures[i - 1]);
-			GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	}
 
 	/* ELUTODO if (gl_smoothmodels.value)
@@ -1206,7 +1232,6 @@ void R_DrawEntitiesOnList (void)
 		}
 		if(specChar == '$')//This is for smooth alpha, draw in the following loop, not this one
 		{
-			Con_Printf("skipping transparent mdl\n");
 			continue;
 		}
 
@@ -1408,7 +1433,6 @@ void R_PolyBlend (void)
 	QGX_Blend(true);
 	QGX_ZMode(false);
 	GL_Bind0(white_texturenum); // ELUTODO: do not use a texture
-	GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 
 	c_guMtxIdentity(view);
@@ -1576,10 +1600,11 @@ void R_PolyBlend (void)
 	GX_SetNumChans(1);
 	GX_SetNumTexGens(1);
 	*/
-	QGX_Blend(false);
+	
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
  	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	QGX_Blend(false);
 	QGX_Alpha(true);
 }
 #endif
