@@ -660,23 +660,20 @@ void CalcGunAngle (void)
 		// ELUTODO: Some small gimbal lock issues
 		cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - cl_crossx.value/scr_vrect.width * IR_YAWRANGE;
 		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
+		
 		if (cl_weapon_inrollangle.value) {
-			
-			if(in_rollangle < 0.03f)
-				in_rollangle = 0.03;
-			
-			if(in_rollangle > 0.03f)
-				in_rollangle = 0.03;
-			
-			cl.viewent.angles[ROLL] = in_rollangle;
-			
-			//Con_Printf("roll: %i\n", in_rollangle);
-			
-			if(in_rollangle < 0.03f)
-				in_rollangle = 0.03;
-			
-			if(in_rollangle > 0.03f)
-				in_rollangle = 0.03;
+			if (cl.stats[STAT_ZOOM] == 0) {	
+				if(in_rollangle <= 1.5f && in_rollangle >= -1.5f)
+					return;
+				
+				if(in_rollangle > 12.5f)
+					in_rollangle = 12.5;
+				else if(in_rollangle < -12.5f)
+					in_rollangle = -12.5f;
+				
+				//Con_Printf("roll: %f\n", in_rollangle);
+				cl.viewent.angles[ROLL] = in_rollangle;
+			}
 		}
 	}
 	else
@@ -684,6 +681,21 @@ void CalcGunAngle (void)
 		// ELUTODO: Maybe there are other cases besides demo playback
 		cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
 		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
+		
+		if (cl_weapon_inrollangle.value) {
+			if (cl.stats[STAT_ZOOM] == 0) {	
+				if(in_rollangle <= 1.5f && in_rollangle >= -1.5f)
+					return;
+				
+				if(in_rollangle > 12.5f)
+					in_rollangle = 12.5;
+				else if(in_rollangle < -12.5f)
+					in_rollangle = -12.5f;
+				
+				//Con_Printf("roll: %f\n", in_rollangle);
+				cl.viewent.angles[ROLL] = in_rollangle;
+			}
+		}
 	}
 
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
