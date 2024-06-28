@@ -46,7 +46,7 @@ state bit 2 is edge triggered on the down to up transition
 */
 
 
-kbutton_t	in_mlook, in_klook;
+kbutton_t	in_vlock, in_klook;
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack, in_grenade, in_reload, in_switch, in_knife, in_aim;
@@ -118,12 +118,11 @@ qboolean croshhairmoving = false;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
-void IN_MLookDown (void) {KeyDown(&in_mlook);}
-void IN_MLookUp (void) {
-KeyUp(&in_mlook);
-if ( !(in_mlook.state&1) &&  lookspring.value)
-	V_StartPitchDrift();
+void IN_VLockDown (void) {
+	//if(cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2)
+		KeyDown(&in_vlock);
 }
+void IN_VLockUp (void) {KeyUp(&in_vlock);}
 void IN_UpDown(void) {KeyDown(&in_up);}
 void IN_UpUp(void) {KeyUp(&in_up);}
 void IN_DownDown(void) {KeyDown(&in_down);}
@@ -691,6 +690,7 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
-
+	Cmd_AddCommand ("+vlock", IN_VLockDown);
+	Cmd_AddCommand ("-vlock", IN_VLockUp);
 }
 

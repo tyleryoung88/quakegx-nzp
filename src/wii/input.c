@@ -826,9 +826,9 @@ void IN_Move (usercmd_t *cmd)
 		y1 = clamp(((float)left_stick_y / (128.0f)) * 1.5, -1.0f, 1.0f);
 
 		x2 = clamp(((float)right_stick_x / 128.0f) * 1.5, -1.0f, 1.0f);
-		Cvar_SetValue("cl_crossx", (in_mlook.state & 1) ? scr_vrect.width / 2 * x2 : 0);
+		Cvar_SetValue("cl_crossx", /*(in_vlock.state & 1) ? */scr_vrect.width / 2 * x2/* : 0*/);
 		y2 = clamp(((float)right_stick_y / (-128.0f)) * 1.5, -1.0f, 1.0f);
-		Cvar_SetValue("cl_crossy", (in_mlook.state & 1) ? scr_vrect.height / 2 * y2 : 0);
+		Cvar_SetValue("cl_crossy", /*(in_vlock.state & 1) ? */scr_vrect.height / 2 * y2/* : 0*/);
 	}
 // Movement management of 2 gamecube controller sticks (x1/y1) e  (y1/y2) if neither the cc nor nn is connected
 	else
@@ -843,10 +843,10 @@ void IN_Move (usercmd_t *cmd)
 		y1 = clamp(stick_y / 90.0f, -1.0f, 1.0f);
 
 		x2 = clamp(sub_stick_x / 80.0f, -1.0f, 1.0f);
-		Cvar_SetValue("cl_crossx", (in_mlook.state & 1) ? scr_vrect.width / 2 * x2 : 0);
+		Cvar_SetValue("cl_crossx", /*(in_vlock.state & 1) ? */scr_vrect.width / 2 * x2/* : 0*/);
 
 		y2 = clamp(sub_stick_y / -80.0f, -1.0f, 1.0f);
-		Cvar_SetValue("cl_crossy", (in_mlook.state & 1) ? scr_vrect.height / 2 * y2 : 0);
+		Cvar_SetValue("cl_crossy", /*(in_vlock.state & 1) ? */scr_vrect.height / 2 * y2/* : 0*/);
 	}
 
 	last_irx = wiimote_ir_x;
@@ -863,7 +863,7 @@ void IN_Move (usercmd_t *cmd)
 	}
 
 	// Lock view?
-	if (in_mlook.state & 1)
+	if (in_vlock.state & 1)
 	{
 		x2 = 0;
 		y2 = 0;

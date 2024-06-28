@@ -890,9 +890,11 @@ void V_CalcRefdef (void)
 // never let it sit exactly on a node line, because a water plane can
 // dissapear when viewed with the eye exactly on it.
 // the server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
+	/*
 	r_refdef.vieworg[0] += 1.0/32;
 	r_refdef.vieworg[1] += 1.0/32;
 	r_refdef.vieworg[2] += 1.0/32;
+	*/
 
 	VectorCopy (cl.viewangles, r_refdef.viewangles);
 	//V_CalcViewRoll ();
@@ -904,12 +906,12 @@ void V_CalcRefdef (void)
 	angles[ROLL] = ent->angles[ROLL];
 
 	AngleVectors (angles, forward, right, up);
-/*
+
 	for (i=0 ; i<3 ; i++)
 		r_refdef.vieworg[i] += scr_ofsx.value*forward[i]
 			+ scr_ofsy.value*right[i]
 			+ scr_ofsz.value*up[i];
-*/	
+	
 	V_BoundOffsets ();
 		
 // set up gun position
@@ -944,7 +946,7 @@ void V_CalcRefdef (void)
 	}
 
 	cVerticalOffset += (VerticalOffset - cVerticalOffset) * 0.3;
-/*
+
 	temp_up[0] *= cVerticalOffset;
 	temp_up[1] *= cVerticalOffset;
 	temp_up[2] *= cVerticalOffset;
@@ -952,7 +954,7 @@ void V_CalcRefdef (void)
 	view->origin[0] +=(temp_up[0]);
 	view->origin[1] +=(temp_up[1]);
 	view->origin[2] +=(temp_up[2]);
-*/
+
 	if(cVerticalOffset > VerticalOffset - 2 && cVerticalOffset < VerticalOffset + 2)//Close enough to goal
 	{
 		VerticalOffset = 0;
@@ -1041,7 +1043,7 @@ void V_CalcRefdef (void)
 
 	r_refdef.viewangles[YAW] = angledelta(r_refdef.viewangles[YAW] + (vbob[0] * 0.1));
 	r_refdef.viewangles[PITCH] = angledelta(r_refdef.viewangles[PITCH] + (vbob[1] * 0.1));
-	r_refdef.viewangles[ROLL] = anglemod(r_refdef.viewangles[ROLL] + (vbob[2] * 0.05));
+	r_refdef.viewangles[ROLL] = anglemod(r_refdef.viewangles[ROLL] + (vbob[2] * 0.07));
 
 	// ELUTODO: are these the best values?
 	//if (scr_viewsize.value == 110)
@@ -1129,23 +1131,8 @@ void V_RenderView (void)
 	if (con_forcedup)
 		return;
 
-// don't allow cheats in multiplayer
-	if (cl.maxclients > 1)
-	{
-		Cvar_Set ("scr_ofsx", "0");
-		Cvar_Set ("scr_ofsy", "0");
-		Cvar_Set ("scr_ofsz", "0");
-	}
-
-	if (cl.intermission)
-	{	// intermission / finale rendering
-		V_CalcIntermissionRefdef ();	
-	}
-	else
-	{
-		if (!cl.paused /* && (sv.maxclients > 1 || key_dest == key_game) */ )
-			V_CalcRefdef ();
-	}
+	if (!cl.paused && key_dest == key_game)
+		V_CalcRefdef ();
 
 	R_PushDlights ();
 

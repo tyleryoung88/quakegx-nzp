@@ -270,7 +270,7 @@ void R_DrawSpriteModel (entity_t *e)
 	
 	//Fog_DisableGFog ();
 
-	QGX_Alpha(true);
+	QGX_Alpha(false);
 	QGX_Blend(true);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
@@ -299,7 +299,7 @@ void R_DrawSpriteModel (entity_t *e)
 	GX_TexCoord2f32(1, 1);
 
 	GX_End();
-	QGX_Alpha(false);
+	QGX_Alpha(true);
 	QGX_Blend(false);
 	
 	//Fog_EnableGFog ();
@@ -993,15 +993,15 @@ void R_DrawAliasModel (entity_t *e)
 
 	// ZOID: never allow players to go totally black
 	i = currententity - cl_entities;
-	if (i >= 1 && i<=cl.maxclients /* && !strcmp (currententity->model->name, "progs/player.mdl") */)
+	if (i >= 1 && i<=cl.maxclients && !strcmp (currententity->model->name, "progs/player.mdl"))
 		if (ambientlight < 8)
 			ambientlight = shadelight = 8;
-
+	/*
 	// HACK HACK HACK -- no fullbright colors, so make torches full light
 	if (!strcmp (clmodel->name, "progs/flame2.mdl")
 		|| !strcmp (clmodel->name, "progs/flame.mdl") )
 		ambientlight = shadelight = 256;
-
+	*/
 	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 	shadelight = shadelight / 200.0;
 	
@@ -1794,7 +1794,7 @@ r_refdef must be set before the first call
 */
 void R_RenderScene (void)
 {
-	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	//GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 
 	R_SetupFrame ();
 
@@ -1943,7 +1943,7 @@ void R_RenderView (void)
 	//Fog_DisableGFog (); //johnfitz	
 
 	// render mirror view
-	R_Mirror ();
+	//R_Mirror ();
 
 	R_PolyBlend ();
 
