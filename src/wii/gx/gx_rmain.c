@@ -1933,8 +1933,6 @@ void R_RenderView (void)
 	R_Clear ();
 
 	// render normal view
-	
-	Fog_EnableGFog (); //johnfitz
 
 	R_RenderScene ();
 	R_DrawViewModel ();

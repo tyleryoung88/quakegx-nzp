@@ -672,7 +672,7 @@ void HUD_Rounds (void)
 			textstate = 0;
 		}
 
-		Draw_ColoredStretchPic ((vid.width - sb_round[0]->width) /2, (vid.height - sb_round[0]->height) /2, sb_round[0], 15, 67, 107, 1, 0, alphabling); // 11x48
+		Draw_ColoredStretchPic ((vid.width - sb_round[0]->width) /2, (vid.height - sb_round[0]->height) /2, sb_round[0], 18, 78, 107, 1, 0, alphabling); // 11x48
 
 		alphabling = alphabling + 15;
 
@@ -683,13 +683,13 @@ void HUD_Rounds (void)
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 2)//this is the rounds icon moving from middle
 	{
-		Draw_ColoredStretchPic (round_center_x, round_center_y, sb_round[0], 15, 67, 107, 1, 0, 255);
+		Draw_ColoredStretchPic (round_center_x, round_center_y, sb_round[0], 18, 78, 107, 1, 0, 255);
 		round_center_x = round_center_x - (229/108) - 0.2;
-		round_center_y = round_center_y + 1.38;
+		round_center_y = round_center_y + 1.3;
 		if (round_center_x <= 5)
 			round_center_x = 5;
-		if (round_center_y >= 412) // vid.height - sb_round[0]->height
-			round_center_y = 412; // vid.height - sb_round[0]->height
+		if (round_center_y >= 397) // vid.height - sb_round[0]->height
+			round_center_y = 397; // vid.height - sb_round[0]->height
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 3)//shift to white
 	{
@@ -720,14 +720,14 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					savex = x_offset + 10;
-					x_offset = x_offset + 10;
+					x_offset = x_offset + 20;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5 + savex, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					continue;
 				}
 				if (i > 4)
@@ -735,9 +735,9 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				Draw_ColoredStretchPic (5 + x_offset, vid.height - (sb_round[icon_num]->height * 1.6363) - 4, sb_round[icon_num], 18, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * 1.6363) + 3;
 			}
 		}
 		else
@@ -745,23 +745,23 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 45, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255); //32x48
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[2]]->height * 1.6363) - 4, sb_round_num[num[2]], 52, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255); //32x48
+				x_offset = x_offset + (sb_round_num[num[2]]->width * 1.6363) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[1]]->height * 1.6363) - 4, sb_round_num[num[1]], 52, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * 1.6363) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[0]]->height * 1.6363) - 4, sb_round_num[num[0]], 52, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * 1.6363) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 4)//blink white
@@ -782,14 +782,14 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 255, 255, 255, blinking);
 					savex = x_offset + 10;
 					x_offset = x_offset + 10;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 + savex, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -797,9 +797,9 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 15, 67, 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 + x_offset, vid.height - (sb_round[icon_num]->height * 1.6363) - 4, sb_round[icon_num], 18, 78, 255, 255, 255, blinking);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * 1.6363) + 3;
 			}
 		}
 		else
@@ -807,23 +807,23 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 15, 67, 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[2]]->height * 1.6363) - 4, sb_round_num[num[2]], 52, 78, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * 1.6363) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 15, 67, 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[1]]->height * 1.6363) - 4, sb_round_num[num[1]], 52, 78, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * 1.6363) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 15, 67, 255, 255, 255, blinking);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[0]]->height * 1.6363) - 4, sb_round_num[num[0]], 52, 78, 255, 255, 255, blinking);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * 1.6363) - 8;
 		}
 
 		if (endroundchange == 0) {
@@ -843,14 +843,14 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 255, 255, 255, blinking);
 					savex = x_offset + 10;
 					x_offset = x_offset + 10;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 + savex, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -858,9 +858,9 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 15, 67, 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 + x_offset, vid.height - (sb_round[icon_num]->height * 1.6363) - 4, sb_round[icon_num], 18, 78, 255, 255, 255, blinking);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * 1.6363) + 3;
 			}
 		}
 		else
@@ -868,23 +868,23 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 15, 67, 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[2]]->height * 1.6363) - 4, sb_round_num[num[2]], 52, 78, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * 1.6363) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 15, 67, 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[1]]->height * 1.6363) - 4, sb_round_num[num[1]], 52, 78, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * 1.6363) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 15, 67, 255, 255, 255, blinking);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[0]]->height * 1.6363) - 4, sb_round_num[num[0]], 52, 78, 255, 255, 255, blinking);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * 1.6363) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 6)//blink white while fading back
@@ -905,14 +905,14 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 255, 255, 255, blinking);
 					savex = x_offset + 10;
 					x_offset = x_offset + 10;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 255, 255, 255, blinking);
+					Draw_ColoredStretchPic (5 + savex, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 255, 255, 255, blinking);
 					continue;
 				}
 				if (i > 4)
@@ -920,9 +920,9 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 15, 67, 255, 255, 255, blinking);
+				Draw_ColoredStretchPic (5 + x_offset, vid.height - (sb_round[icon_num]->height * 1.6363) - 4, sb_round[icon_num], 18, 78, 255, 255, 255, blinking);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * 1.6363) + 3;
 			}
 		}
 		else
@@ -930,23 +930,23 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 15, 67, 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[2]]->height * 1.6363) - 4, sb_round_num[num[2]], 52, 78, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * 1.6363) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 15, 67, 255, 255, 255, blinking);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[1]]->height * 1.6363) - 4, sb_round_num[num[1]], 52, 78, 255, 255, 255, blinking);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * 1.6363) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 15, 67, 255, 255, 255, blinking);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[0]]->height * 1.6363) - 4, sb_round_num[num[0]], 52, 78, 255, 255, 255, blinking);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * 1.6363) - 8;
 		}
 	}
 	else if (cl.stats[STAT_ROUNDCHANGE] == 7)//blink white while fading back
@@ -977,14 +977,14 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					savex = x_offset + 10;
 					x_offset = x_offset + 10;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+					Draw_ColoredStretchPic (5 + savex, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 					continue;
 				}
 				if (i > 4)
@@ -992,9 +992,9 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				Draw_ColoredStretchPic (5 + x_offset, vid.height - (sb_round[icon_num]->height * 1.6363) - 4, sb_round[icon_num], 18, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * 1.6363) + 3;
 			}
 		}
 		else
@@ -1002,23 +1002,23 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[2]]->height * 1.6363) - 4, sb_round_num[num[2]], 52, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * 1.6363) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[1]]->height * 1.6363) - 4, sb_round_num[num[1]], 52, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * 1.6363) - 8;
 			}
 			else
 				num[1] = 0;
 
 			num[0] = cl.stats[STAT_ROUNDS] - num[2]*100 - num[1]*10;
-			Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 15, 67, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[0]]->height * 1.6363) - 4, sb_round_num[num[0]], 52, 78, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * 1.6363) - 8;
 		}
 	}
 	else
@@ -1034,14 +1034,14 @@ void HUD_Rounds (void)
 			{
 				if (i == 4)
 				{
-					Draw_ColoredStretchPic (5, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 107, 1, 0, 255);
+					Draw_ColoredStretchPic (5, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 107, 1, 0, 255);
 					savex = x_offset + 10;
 					x_offset = x_offset + 10;
 					continue;
 				}
 				if (i == 9)
 				{
-					Draw_ColoredStretchPic (5 + savex, vid.height - sb_round[4]->height - 4, sb_round[4], 15, 67, 107, 1, 0, 255);
+					Draw_ColoredStretchPic (5 + savex, vid.height - (sb_round[4]->height * 1.6363) - 4, sb_round[4], 96, 78, 107, 1, 0, 255);
 					continue;
 				}
 				if (i > 4)
@@ -1049,9 +1049,9 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 + x_offset, vid.height - sb_round[icon_num]->height - 4, sb_round[icon_num], 15, 67, 107, 1, 0, 255);
+				Draw_ColoredStretchPic (5 + x_offset, vid.height - (sb_round[icon_num]->height * 1.6363) - 4, sb_round[icon_num], 18, 78, 107, 1, 0, 255);
 
-				x_offset = x_offset + sb_round[icon_num]->width + 3;
+				x_offset = x_offset + (sb_round[icon_num]->width * 1.6363) + 3;
 			}
 		}
 		else
@@ -1059,16 +1059,16 @@ void HUD_Rounds (void)
 			if (cl.stats[STAT_ROUNDS] >= 100)
 			{
 				num[2] = (int)(cl.stats[STAT_ROUNDS]/100);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[2]]->height - 4, sb_round_num[num[2]], 15, 67, 107, 1, 0, 255);
-				x_offset = x_offset + sb_round_num[num[2]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[2]]->height * 1.6363) - 4, sb_round_num[num[2]], 52, 78, 107, 1, 0, 255);
+				x_offset = x_offset + (sb_round_num[num[2]]->width * 1.6363) - 8;
 			}
 			else
 				num[2] = 0;
 			if (cl.stats[STAT_ROUNDS] >= 10)
 			{
 				num[1] = (int)((cl.stats[STAT_ROUNDS] - num[2]*100)/10);
-				Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[1]]->height - 4, sb_round_num[num[1]], 15, 67, 107, 1, 0, 255);
-				x_offset = x_offset + sb_round_num[num[1]]->width - 8;
+				Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[1]]->height * 1.6363) - 4, sb_round_num[num[1]], 52, 78, 107, 1, 0, 255);
+				x_offset = x_offset + (sb_round_num[num[1]]->width * 1.6363) - 8;
 			}
 			else
 				num[1] = 0;
@@ -1078,8 +1078,8 @@ void HUD_Rounds (void)
 			if(cl.stats[STAT_ROUNDS] == 0)
 				return;
 			
-			Draw_ColoredStretchPic (2 + x_offset, vid.height - sb_round_num[num[0]]->height - 4, sb_round_num[num[0]], 15, 67, 107, 1, 0, 255);
-			x_offset = x_offset + sb_round_num[num[0]]->width - 8;
+			Draw_ColoredStretchPic (2 + x_offset, vid.height - (sb_round_num[num[0]]->height * 1.6363) - 4, sb_round_num[num[0]], 52, 78, 107, 1, 0, 255);
+			x_offset = x_offset + (sb_round_num[num[0]]->width * 1.6363) - 8;
 		}
 	}
 }

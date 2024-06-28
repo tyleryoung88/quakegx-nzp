@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // ELUTODO: I use libfat here, move everything to system_libfat.h and use generic calls here
 
 // Handy switches.
-#define CONSOLE_DEBUG		1
+#define CONSOLE_DEBUG		0
 #define TIME_DEMO			0
 #define USE_THREAD			1
 #define TEST_CONNECTION		0
