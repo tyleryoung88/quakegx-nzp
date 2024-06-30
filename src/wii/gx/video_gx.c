@@ -176,10 +176,10 @@ void GL_Init (void)
 	GX_Init(gp_fifo, fifo_size);
 
 	// clears the bg to color and clears the z buffer
-	GX_SetCopyClear(background, 0x00ffffff);
+	GX_SetCopyClear(background, GX_MAX_Z24);
 
 	// other gx setup
-	GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
+	//GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
 	yscale = GX_GetYScaleFactor(rmode->efbHeight,rmode->xfbHeight);
 	xfbHeight = GX_SetDispCopyYScale(yscale);
 	GX_SetScissor(0,0,rmode->fbWidth,rmode->efbHeight);
@@ -193,37 +193,38 @@ void GL_Init (void)
 	else
 		GX_SetPixelFmt(GX_PF_RGB8_Z24, GX_ZC_LINEAR);
 	
-	GX_CopyDisp(framebuffer[fb],GX_TRUE);
+	GX_CopyDisp(framebuffer[fb & 1],GX_TRUE);
 	GX_SetDispCopyGamma(GX_GM_1_0);
-	
+
 	GX_SetZCompLoc(false); // ELUTODO
-
+	
 	GL_DisableMultitexture();
-
+	
 	// setup the vertex attribute table
 	// describes the data
 	// args: vat location 0-7, type of data, data format, size, scale
 	// so for ex. in the first call we are sending position data with
 	// 3 values X,Y,Z of size F32. scale sets the number of fractional
 	// bits for non float data.
+ 
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
-/*
+ 
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
-*/
-	GX_SetNumTexGens(1);
+ 
 	GX_SetNumChans(1);
+	GX_SetNumTexGens(1);
+	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
 
-	//GX_SetTevOrder(GX_TEVSTAGE1, GX_TEXCOORD1, GX_TEXMAP1, GX_COLOR0A0);
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
 	//GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY);
-	
-	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE); // Will always be this OP
-	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+
+	GX_InvVtxCache();
 	GX_InvalidateTexAll();
 }
 
@@ -243,7 +244,7 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 	GX_SetScissor(*x,*y,*width,*height);
 	
-	GX_SetDstAlpha(GX_ENABLE, 0);
+	//GX_SetDstAlpha(GX_ENABLE, 0);
 	
 	// ELUTODO: really necessary?
 	//GX_InvVtxCache();
@@ -257,19 +258,18 @@ void GL_EndRendering (void)
 		GX_Flush();
 		GX_DrawDone();
 
-		fb ^= 1;
-
-		GX_SetColorUpdate(GX_TRUE);
-		GX_SetAlphaUpdate(GX_TRUE);
 		//GX_SetDstAlpha(GX_DISABLE, 0xFF); // 0xFF
 		// Start copying the frame buffer every vsync.
-		GX_CopyDisp(framebuffer[fb], GX_TRUE);
-
-		VIDEO_SetNextFramebuffer(framebuffer[fb]);
+		GX_CopyDisp(framebuffer[fb & 1], GX_TRUE);
+		GX_SetColorUpdate(GX_TRUE);
+		GX_SetAlphaUpdate(GX_TRUE);
+		VIDEO_SetNextFramebuffer(framebuffer[fb & 1]);
 
 		// Keep framerate
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
+		
+		fb ^= 1;
 }
 
 // This is not the "v_gamma/gamma" cvar

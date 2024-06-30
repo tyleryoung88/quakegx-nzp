@@ -55,7 +55,7 @@ cvar_t	v_kicktime = {"v_kicktime", "0.5", false};
 cvar_t	v_kickroll = {"v_kickroll", "0.6", false};
 cvar_t	v_kickpitch = {"v_kickpitch", "0.6", false};
 
-cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "1", true};
+cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", true};
 
 cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", false};
 cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", false};

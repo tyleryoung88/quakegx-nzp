@@ -90,7 +90,7 @@ cvar_t	r_dynamic = {"r_dynamic","1"};
 cvar_t	r_novis = {"r_novis","0"};
 cvar_t	r_lerpmodels = {"r_lerpmodels", "1"};
 cvar_t  r_lerpmove = {"r_lerpmove", "1"};
-cvar_t 	r_skyfog = {"r_skyfog", "1"};
+cvar_t 	r_skyfog = {"r_skyfog", "0"};
 
 cvar_t	gl_finish = {"gl_finish","0"};
 cvar_t	gl_clear = {"gl_clear","0"};
@@ -106,7 +106,7 @@ cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0"};
 cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
-cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
+cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "0",true};
 
 //johnfitz -- struct for passing lerp information to drawing functions
 typedef struct {
@@ -370,6 +370,8 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 
 	commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	
+	l = shadedots[verts1->lightnormalindex];
+	
 	//glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
 	//
 	
@@ -413,7 +415,7 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 				verts1++;
 
 			}
-			GX_Color4u8(lightcolor[2], lightcolor[1], lightcolor[0], 0xff);
+			GX_Color4u8(lightcolor[0], lightcolor[1], lightcolor[2], 0xff);
 			GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
 			
 			commands += 2;
@@ -691,9 +693,9 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	//Shpuld
 	if(r_model_brightness.value)
 	{
-		lightcolor[0] += 15;
-		lightcolor[1] += 15;
-		lightcolor[2] += 15;
+		lightcolor[0] += 10;
+		lightcolor[1] += 10;
+		lightcolor[2] += 10;
 	}
 	
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
@@ -840,9 +842,9 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	//Shpuld
 	if(r_model_brightness.value)
 	{
-		lightcolor[0] += 15;
-		lightcolor[1] += 15;
-		lightcolor[2] += 15;
+		lightcolor[0] += 10;
+		lightcolor[1] += 10;
+		lightcolor[2] += 10;
 	}
 	
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
@@ -949,7 +951,7 @@ void R_DrawAliasModel (entity_t *e)
 
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
-
+	
 	for(int g = 0; g < 3; g++)
 	{
 		if(lightcolor[g] < 8)
@@ -957,17 +959,19 @@ void R_DrawAliasModel (entity_t *e)
 		if(lightcolor[g] > 125)
 			lightcolor[g] = 125;
 	}
-
+	
 	//
 	// get lighting information
 	//
 
-	ambientlight = shadelight = R_LightPoint (currententity->origin);
-
+	//ambientlight = shadelight = R_LightPoint (currententity->origin);
+	
+	R_LightPoint (currententity->origin);
+	/*
 	// allways give the gun some light
 	if (e == &cl.viewent && ambientlight < 24)
 		ambientlight = shadelight = 24;
-
+	*/
 	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 	{
 		if (cl_dlights[lnum].die >= cl.time)
@@ -976,34 +980,49 @@ void R_DrawAliasModel (entity_t *e)
 							cl_dlights[lnum].origin,
 							dist);
 			add = cl_dlights[lnum].radius - Length(dist);
-
+			/*
 			if (add > 0) {
 				ambientlight += add;
 				//ZOID models should be affected by dlights as well
 				shadelight += add;
 			}
+			*/
+			if (add > 0)
+			{
+				lightcolor[0] += add * cl_dlights[lnum].color[0];
+				lightcolor[1] += add * cl_dlights[lnum].color[1];
+				lightcolor[2] += add * cl_dlights[lnum].color[2];
+			}
 		}
 	}
-
+	/*
 	// clamp lighting so it doesn't overbright as much
 	if (ambientlight > 128)
 		ambientlight = 128;
 	if (ambientlight + shadelight > 192)
 		shadelight = 192 - ambientlight;
-
+	*/
 	// ZOID: never allow players to go totally black
 	i = currententity - cl_entities;
-	if (i >= 1 && i<=cl.maxclients && !strcmp (currententity->model->name, "progs/player.mdl"))
-		if (ambientlight < 8)
-			ambientlight = shadelight = 8;
-	/*
-	// HACK HACK HACK -- no fullbright colors, so make torches full light
-	if (!strcmp (clmodel->name, "progs/flame2.mdl")
-		|| !strcmp (clmodel->name, "progs/flame.mdl") )
-		ambientlight = shadelight = 256;
-	*/
+	if (i >= 1 && i<=cl.maxclients/* && !strcmp (currententity->model->name, "progs/player.mdl")*/)
+	{
+		if (lightcolor[0] < 8)
+			lightcolor[0] = 8;
+		if (lightcolor[1] < 8)
+			lightcolor[1] = 8;
+		if (lightcolor[2] < 8)
+			lightcolor[2] = 8;
+	}
+		//if (ambientlight < 8)
+			//ambientlight = shadelight = 8;
+	
 	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
-	shadelight = shadelight / 200.0;
+	//shadelight = shadelight / 200.0;
+	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
+	
+	if (e == &cl.viewent || e == &cl.viewent2) {
+		VectorScale(lightcolor, 100.0f, lightcolor);
+	}
 	
 	an = e->angles[1]/180*M_PI;
 	shadevector[0] = cos(-an);
@@ -1044,17 +1063,21 @@ void R_DrawAliasModel (entity_t *e)
 	//Shpuld
 	if(r_model_brightness.value && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
 	{		
-		lightcolor[0] += 15;
-		lightcolor[1] += 15;
-		lightcolor[2] += 15;
+		lightcolor[0] += 20;
+		lightcolor[1] += 20;
+		lightcolor[2] += 20;
 	}
 	
 	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
 	{
-		lightcolor[0] += 100;
-		lightcolor[1] += 100;
-		lightcolor[2] += 100;
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 216;
 	}
+	
+	// HACK HACK HACK -- no fullbright colors, so make torches full light
+	if (!strcmp (clmodel->name, "progs/flame2.mdl")
+		|| !strcmp (clmodel->name, "progs/flame.mdl") )
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+		//ambientlight = shadelight = 192;
 
 	c_guMtxIdentity(model);
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
@@ -1380,7 +1403,7 @@ void R_DrawViewModel (void)
 	currententity = &cl.viewent;
 	if (!currententity->model)
 		return;
-
+/*
 	j = R_LightPoint (currententity->origin);
 
 	if (j < 24)
@@ -1407,7 +1430,7 @@ void R_DrawViewModel (void)
 
 	ambient[0] = ambient[1] = ambient[2] = ambient[3] = (float)ambientlight / 128;
 	diffuse[0] = diffuse[1] = diffuse[2] = diffuse[3] = (float)shadelight / 128;
-
+*/
 	// hack the depth range to prevent view model from poking into walls
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 0.3f);
 	R_DrawAliasModel (currententity);

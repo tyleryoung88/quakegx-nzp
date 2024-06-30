@@ -658,7 +658,7 @@ void M_Main_Draw (void)
 	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, y, 160, 2, 208, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 130, 130, 130, 255);
 	
 	y+=10;
 
@@ -674,7 +674,7 @@ void M_Main_Draw (void)
 	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, y, 160, 2, 208, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 130, 130, 130, 255);
 	
 	y+=10;
 
@@ -686,7 +686,7 @@ void M_Main_Draw (void)
 	y+=20;
 
 	// Divider
-	Draw_FillByColor(5, y, 160, 2, 208, 130, 130, 255);
+	Draw_FillByColor(5, y, 160, 2, 130, 130, 130, 255);
 	
 	y+=10;
 

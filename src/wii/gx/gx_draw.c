@@ -55,8 +55,8 @@ typedef struct
 	float		sl, tl, sh, th;
 } glpic_t;
 
-byte		conback_buffer[sizeof(qpic_t) + sizeof(glpic_t)];
-qpic_t		*conback = (qpic_t *)&conback_buffer;
+//byte		conback_buffer[sizeof(qpic_t) + sizeof(glpic_t)];
+//qpic_t		*conback = (qpic_t *)&conback_buffer;
 
 //=============================================================================
 /* Support Routines */
@@ -741,7 +741,7 @@ void Draw_LoadingFill(void)
     if(!loading_num_step)
 		return;
 
-	int size       	= 8;
+	int size       	= 16;
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
     int y          	= vid.height - (size/ 2) - 25;
@@ -772,7 +772,7 @@ void Draw_LoadingFill(void)
 	}
 
 	l = strlen (text);
-	Draw_String((vid.width - l*8)/2, y, text);
+	Draw_String((vid.width - l*12)/2, y+2, text);
 
 	loading_cur_step_bk = loading_cur_step;
 }

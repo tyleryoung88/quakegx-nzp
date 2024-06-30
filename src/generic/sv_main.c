@@ -1625,5 +1625,5 @@ void Load_Waypoint ()
 		waypoints[i].dist[7]);
 	}
 	W_fclose(h);
-	//Z_Free (w_string_temp);
+	Z_Free (w_string_temp);
 }

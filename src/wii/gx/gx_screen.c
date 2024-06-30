@@ -589,14 +589,12 @@ Internal use only
 */
 static void SCR_CalcRefdef (void)
 {
-	float		size;
-
+	int		size;
+	int			h;
+	qboolean	full = false;
 
 	scr_fullupdate = 0;		// force a background redraw
 	vid.recalc_refdef = 0;
-
-// force the status bar to redraw
-	Sbar_Changed ();
 
 //========================================
 	
@@ -612,29 +610,11 @@ static void SCR_CalcRefdef (void)
 	if (scr_fov.value > 170)
 		Cvar_Set ("fov","170");
 
-// intermission is always full screen	
-	if (cl.intermission)
-		size = 120;
-	else
-		size = scr_viewsize.value;
+// intermission is always full screen
+	full = true;
+    size = 1;
 
-	if (size >= 120)
-		sb_lines = 0;		// no status bar at all
-	else if (size >= 110)
-		sb_lines = 24;		// no inventory
-	else
-		sb_lines = 24+16+8;
-
-	if (scr_viewsize.value >= 100.0)
-		size = 100.0;
-	else
-		size = scr_viewsize.value;
-	if (cl.intermission)
-	{
-		size = 100;
-		sb_lines = 0;
-	}
-	size /= 100.0;
+	h = vid.height;
 
 	r_refdef.vrect.width = vid.width * size;
 	if (r_refdef.vrect.width < 96)
@@ -642,14 +622,18 @@ static void SCR_CalcRefdef (void)
 		size = 96.0 / r_refdef.vrect.width;
 		r_refdef.vrect.width = 96;	// min for icons
 	}
-	if (r_refdef.vrect.width > vid.width)
-			r_refdef.vrect.width = vid.width;
 
 	r_refdef.vrect.height = vid.height * size;
 	if (r_refdef.vrect.height > vid.height)
+		r_refdef.vrect.height = vid.height;
+	if (r_refdef.vrect.height > vid.height)
 			r_refdef.vrect.height = vid.height;
 	r_refdef.vrect.x = (vid.width - r_refdef.vrect.width)/2;
-	r_refdef.vrect.y = (vid.height - r_refdef.vrect.height)/2;
+
+	if (full)
+		r_refdef.vrect.y = 0;
+	else
+		r_refdef.vrect.y = (h - r_refdef.vrect.height)/2;
 
 	r_refdef.fov_x = scr_fov.value;
 	r_refdef.fov_y = CalcFov (r_refdef.fov_x, r_refdef.vrect.width, r_refdef.vrect.height);
@@ -1175,8 +1159,8 @@ void SCR_DrawLoadScreen (void)
 		else
 			Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
 
-		Draw_FillByColor(0, 0, 320, 24, 0, 0, 0, 175);
-		Draw_FillByColor(0, 470, 320, 24, 0, 0, 0, 175);
+		Draw_FillByColor(0, 0, 640, 48, 0, 0, 0, 175);
+		Draw_FillByColor(0, 470, 640, 48, 0, 0, 0, 175);
 
 		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 3);
 	}
@@ -1184,12 +1168,12 @@ void SCR_DrawLoadScreen (void)
 	if (loadingtimechange < Sys_FloatTime ())
 	{
         lodinglinetext = ReturnLoadingtex();
-		loadingtextwidth = strlen(lodinglinetext)*8;
+		loadingtextwidth = strlen(lodinglinetext)*12;
         loadingtimechange = Sys_FloatTime () + 5;
 	}
 
 	if (key_dest == key_game) {
-		Draw_ColoredString((vid.width - loadingtextwidth)/2 - 30, 465, lodinglinetext, 255, 255, 255, 255, 1.5);
+		Draw_ColoredString((vid.width - loadingtextwidth)/2, 465, lodinglinetext, 255, 255, 255, 255, 1.5);
 
 		if (strcmp(lodinglinetext, "Please help me find the meaning of   . Thanks.") == 0) {
 			Draw_Pic(120, 200, awoo);
@@ -1276,13 +1260,13 @@ void SCR_DrawConsole (void)
 		Con_DrawConsole (scr_con_current, true);
 		clearconsole = 0;
 	}
-	/*
+	
 	else
 	{
 		if (key_dest == key_game || key_dest == key_message)
 			Con_DrawNotify ();	// only draw notify in game
 	}
-	*/
+	
 }
 
 
@@ -1517,12 +1501,12 @@ void SCR_BringDownConsole (void)
 	int		i;
 	
 	scr_centertime_off = 0;
-	/*
+	
 	for (i=0 ; i<20 && scr_conlines != scr_con_current ; i++)
 		SCR_UpdateScreen ();
-	*/
+	
 	cl.cshifts[0].percent = 0;		// no area contents palette on next frame
-	VID_SetPalette (host_basepal);
+	//VID_SetPalette (host_basepal);
 }
 
 void SCR_TileClear (void)
@@ -1761,7 +1745,7 @@ void SCR_UpdateScreen (void)
 	//
 	// draw any areas not covered by the refresh
 	//
-	SCR_TileClear ();
+	//SCR_TileClear ();
 	/*
 	if (crosshair.value) {
 			Draw_Character ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width,
@@ -1789,7 +1773,7 @@ void SCR_UpdateScreen (void)
 	if (in_osk)
 		GX_DrawOSK();
 	
-	//V_UpdatePalette ();
+	V_UpdatePalette ();
 
 	GL_EndRendering ();
 }

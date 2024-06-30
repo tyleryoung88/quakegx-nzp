@@ -115,11 +115,12 @@ void KeyUp (kbutton_t *b)
 }
 
 qboolean croshhairmoving = false;
+extern float scr_usetime_off;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
 void IN_VLockDown (void) {
-	//if(cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2)
+	if(scr_usetime_off <= 0)	
 		KeyDown(&in_vlock);
 }
 void IN_VLockUp (void) {KeyUp(&in_vlock);}
@@ -152,8 +153,16 @@ void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
 
-void IN_UseDown (void) {KeyDown(&in_use);}
-void IN_UseUp (void) {KeyUp(&in_use);}
+void IN_UseDown (void) {
+	if(scr_usetime_off <= 0)	
+		KeyDown(&in_vlock);
+	else
+		KeyDown(&in_use);
+}
+void IN_UseUp (void) {
+	KeyUp(&in_vlock);
+	KeyUp(&in_use);
+}
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
 void IN_GrenadeDown (void) {KeyDown(&in_grenade);}

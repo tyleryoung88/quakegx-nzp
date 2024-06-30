@@ -441,12 +441,6 @@ void IN_Commands (void)
 				Key_Event(K_UPARROW, ((wpad_keys & WPAD_CLASSIC_BUTTON_UP) == WPAD_CLASSIC_BUTTON_UP));
 			}
 	
-			if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_HOME) != (wpad_keys & WPAD_CLASSIC_BUTTON_HOME))
-			{
-				// Send a press event.
-				Key_Event(K_ESCAPE, ((wpad_keys & WPAD_CLASSIC_BUTTON_HOME) == WPAD_CLASSIC_BUTTON_HOME));
-			}
-	
 			if ((wpad_previous_keys & WPAD_CLASSIC_BUTTON_A) != (wpad_keys & WPAD_CLASSIC_BUTTON_A))
 			{
 				// Send a press event.
@@ -535,12 +529,6 @@ void IN_Commands (void)
 			{
 				// Send a press event.
 				Key_Event(K_UPARROW, ((wpad_keys & WPAD_BUTTON_UP) == WPAD_BUTTON_UP));
-			}
-	
-			if ((wpad_previous_keys & WPAD_BUTTON_HOME) != (wpad_keys & WPAD_BUTTON_HOME))
-			{
-				// Send a press event.
-				Key_Event(K_ESCAPE, ((wpad_keys & WPAD_BUTTON_HOME) == WPAD_BUTTON_HOME));
 			}
 			
 			if ((wpad_previous_keys & WPAD_BUTTON_A) != (wpad_keys & WPAD_BUTTON_A))

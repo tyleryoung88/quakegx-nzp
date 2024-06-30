@@ -639,6 +639,7 @@ void Key_Event (key_id_t key, qboolean down)
 //
 // handle escape specialy, so the user can never unbind it
 //
+/*
 	if (key == K_ESCAPE)
 	{
 		if (!down)
@@ -661,7 +662,7 @@ void Key_Event (key_id_t key, qboolean down)
 		}
 		return;
 	}
-
+*/
 //
 // key up events only generate commands if the game key binding is
 // a button command (leading + sign).  These will occur even in console mode,

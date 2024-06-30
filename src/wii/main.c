@@ -62,7 +62,7 @@ GXRModeObj	*rmode			= 0;
 
 int want_to_reset = 0;
 int want_to_shutdown = 0;
-int texture_memory = 30;
+int texture_memory = 32;
 double time_wpad_off = 0;
 double current_time = 0;
 int rumble_on = 0;
@@ -78,7 +78,7 @@ void shutdown_system(void)
 }
 
 // Set up the heap.
-static size_t	heap_size	= 21 * 1024 * 1024;
+static size_t	heap_size	= 16 * 1024 * 1024;
 static char		*heap;
 
 inline void *align32 (void *p)
@@ -103,7 +103,7 @@ static void init()
 	VIDEO_Configure(rmode);
 
 			// Set the frame buffer.
-	VIDEO_SetNextFramebuffer(framebuffer[fb]);
+	VIDEO_SetNextFramebuffer(framebuffer[fb & 1]);
 
 	VIDEO_SetBlack(false);
 	VIDEO_Flush();
@@ -112,10 +112,12 @@ static void init()
 	{
 		VIDEO_WaitVSync();
 	}
+	
+	fb++;
 
 			// Initialise the debug console.
 			// ELUTODO: only one framebuffer with it?
-	console_init(framebuffer[0], 20, 20, rmode->fbWidth, rmode->xfbHeight, rmode->fbWidth * 2);
+	console_init(framebuffer[fb & 1], 20, 20, rmode->fbWidth, rmode->xfbHeight, rmode->fbWidth * 2);
 
 			// Initialise the controller library.
 	PAD_Init();
@@ -468,7 +470,7 @@ qboolean isDedicated = false;
 
 int main(int argc, char* argv[])
 {
-	void *qstack = malloc(2 * 1024 * 1024); // ELUTODO: clean code to prevent needing a stack this huge
+	void *qstack = malloc(4 * 1024 * 1024); // ELUTODO: clean code to prevent needing a stack this huge
 
 #if USBGECKO_DEBUG
 	DEBUG_Init(GDBSTUB_DEVICE_USB, 1); // Slot B
