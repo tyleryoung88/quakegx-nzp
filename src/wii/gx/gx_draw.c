@@ -1255,7 +1255,8 @@ void Draw_Crosshair (void)
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step) * 0.5;
 		
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, 255, 1.4);
+		//Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, 255, 1.4);
+		Draw_FillByColor((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 1, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 1, 2, 2, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 3)/2 - crosshair_offset_step;
 		//y_value = (vid.height - 1)/2;
