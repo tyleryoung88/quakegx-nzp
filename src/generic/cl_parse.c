@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_parse.c  -- parse a message received from the server
 
 #include "quakedef.h"
+#include <wiiuse/wpad.h>
 
 extern qboolean domaxammo;
 qboolean crosshair_pulse_grenade;
@@ -1078,6 +1079,9 @@ extern int screenflash_type;
 extern double screenflash_worktime;
 extern double screenflash_starttime;
 extern int lock_viewmodel; 
+extern double time_wpad_off;
+extern int rumble_on;
+extern cvar_t  rumble;
 /*
 =====================
 CL_ParseServerMessage
@@ -1363,6 +1367,10 @@ void CL_ParseServerMessage (void)
 			
 		case svc_lockviewmodel:
 			lock_viewmodel = MSG_ReadByte();
+			break;
+			
+		case svc_rumble:
+			//IN_StartRumble((int)MSG_ReadShort(), (int)MSG_ReadShort(), (int)MSG_ReadShort());
 			break;
 		}
 	}

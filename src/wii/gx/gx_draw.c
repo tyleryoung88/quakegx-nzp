@@ -1176,10 +1176,6 @@ void Draw_Crosshair (void)
 		Draw_StretchPic (0, 0, sniper_scope, vid.width, vid.height);
 	}
 	
-	if (cl.stats[STAT_ZOOM] == 3)
-		return;
-	
-	
    	if (Hitmark_Time > sv.time) { 
 		Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
 				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
@@ -1190,10 +1186,6 @@ void Draw_Crosshair (void)
 	Draw_Character ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width,
 					(scr_vrect.y + scr_vrect.height/2 + cl_crossy.value - hitmark->height) * vid.conheight/vid.height, '+');
 	*/
-
-	// Make sure to do this after hitmark drawing.
-	if (cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 1)
-		return;
 
 	if (!crosshair_opacity)
 		crosshair_opacity = 255;
@@ -1229,6 +1221,13 @@ void Draw_Crosshair (void)
 
 	int x_value, y_value;
     int crosshair_offset;
+	
+	//Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, 255, 1.4);
+	Draw_FillByColor((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 2, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
+
+	// Make sure to do this after hitmark drawing.
+	if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 3)
+		return;
 
 	// Standard crosshair (+)
 	if (crosshair.value == 1) {
@@ -1253,9 +1252,6 @@ void Draw_Crosshair (void)
 		*/
 
 		crosshair_offset_step += (crosshair_offset - crosshair_offset_step)/* * 0.5*/; //0.5 place
-		
-		//Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, 255, 1.4);
-		Draw_FillByColor((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 2, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 3)/2 - crosshair_offset_step;
 		//y_value = (vid.height - 1)/2;

@@ -3628,6 +3628,9 @@ void(float time) rumble
 added for wii rumble
 ===============
 */
+
+// this was an old existing rumble. not used anymore but is nice to have for reference. 
+/*
 void PF_rumble (void)
 {
 	if (!rumble.value) return;
@@ -3639,6 +3642,57 @@ void PF_rumble (void)
 	rumble_on=1;
 	time_wpad_off = Sys_FloatTime() + rumble_time;
 	
+}
+*/
+/*
+=================
+PF_Rumble
+
+Server tells client to rumble their
+GamePad.
+
+nzp_rumble()
+=================
+*/
+void PF_Rumble(void)
+{
+	/*
+	client_t	*client;
+	int			entnum;
+	int 		low_frequency;
+	int 		high_frequency;
+	int 		duration;
+
+	entnum = G_EDICTNUM(OFS_PARM0);
+	low_frequency = G_FLOAT(OFS_PARM1);
+	high_frequency = G_FLOAT(OFS_PARM2);
+	duration = G_FLOAT(OFS_PARM3);
+
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+
+	client = &svs.clients[entnum-1];
+	MSG_WriteByte (&client->message, svc_rumble);
+	MSG_WriteShort (&client->message, low_frequency);
+	MSG_WriteShort (&client->message, high_frequency);
+	MSG_WriteShort (&client->message, duration);
+	*/
+	client_t	*client;
+	int			entnum;
+	
+	entnum = G_EDICTNUM(OFS_PARM0);
+	
+	if (entnum < 1 || entnum > svs.maxclients)
+		return;
+	
+	if (!rumble.value) return;
+	double rumble_time;
+	rumble_time = G_FLOAT(OFS_PARM3) / 1000.0;
+	
+	//it switches rumble on for rumble_time milliseconds  
+	WPAD_Rumble(0, true);
+	rumble_on=1;
+	time_wpad_off = Sys_FloatTime() + rumble_time;
 }
 
 /*
@@ -4218,6 +4272,7 @@ PF_SetPlayerName, // #505
 PF_SetDoubleTapVersion, // #506
 PF_ScreenFlash, // #507
 PF_LockViewmodel,	// #508
+PF_Rumble,					// #509
 //PF_rumble
 };
 

@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t	osk_repeat_delay = {"osk_repeat_delay","0.25"};
 cvar_t	kb_repeat_delay = {"kb_repeat_delay","0.1"};
 cvar_t	nunchuk_stick_as_arrows = {"nunchuk_stick_as_arrows","0"};
-cvar_t  rumble = {"rumble","0"};
+cvar_t  rumble = {"rumble","1"};
 
 char keycode_normal[256] = { 
 	'\0', '\0', '\0', '\0', //0-3

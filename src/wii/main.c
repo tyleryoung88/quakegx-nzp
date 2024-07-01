@@ -78,7 +78,7 @@ void shutdown_system(void)
 }
 
 // Set up the heap.
-static size_t	heap_size	= 16 * 1024 * 1024;
+static size_t	heap_size	= 19 * 1024 * 1024;
 static char		*heap;
 
 inline void *align32 (void *p)
@@ -492,7 +492,7 @@ int main(int argc, char* argv[])
 
 	// Start the main thread.
 	lwp_t thread;
-	LWP_CreateThread(&thread, &main_thread_function, 0, qstack, 2 * 1024 * 1024, 64);
+	LWP_CreateThread(&thread, &main_thread_function, 0, qstack, 4 * 1024 * 1024, 64);
 
 	// Wait for it to finish.
 	void* result;
