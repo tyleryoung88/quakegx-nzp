@@ -658,7 +658,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
 	GL_Bind0 (t->gl_texturenum);
-	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
+	GX_SetMinMag (GX_NEAR, GX_LINEAR);
 
 	if (fa->flags & SURF_DRAWTURB)
 	{	// warp texture, no lightmaps

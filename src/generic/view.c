@@ -597,6 +597,7 @@ CalcGunAngle
 static float OldYawTheta;
 static float OldPitchTheta;
 
+int lock_viewmodel; 
 
 static vec3_t cADSOfs;
 void CalcGunAngle (void)
@@ -653,49 +654,53 @@ void CalcGunAngle (void)
 	float side;
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
 	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5));
+	
+	if (lock_viewmodel != 1) {
 
-	// ELUTODO: all around the code: scr_vrect.height doesn't count the status bar
-	if (!cls.demoplayback && !in_osk)
-	{
-		// ELUTODO: Some small gimbal lock issues
-		cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - cl_crossx.value/scr_vrect.width * IR_YAWRANGE;
-		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
-		
-		if (cl_weapon_inrollangle.value) {
-			if (cl.stats[STAT_ZOOM] == 0) {	
-				if(in_rollangle <= 1.5f && in_rollangle >= -1.5f)
-					return;
-				
-				if(in_rollangle > 12.5f)
-					in_rollangle = 12.5;
-				else if(in_rollangle < -12.5f)
-					in_rollangle = -12.5f;
-				
-				//Con_Printf("roll: %f\n", in_rollangle);
-				cl.viewent.angles[ROLL] = in_rollangle;
+		// ELUTODO: all around the code: scr_vrect.height doesn't count the status bar
+		if (!cls.demoplayback && !in_osk)
+		{
+			// ELUTODO: Some small gimbal lock issues
+			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - cl_crossx.value/scr_vrect.width * IR_YAWRANGE;
+			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
+			
+			if (cl_weapon_inrollangle.value) {
+				if (cl.stats[STAT_ZOOM] == 0) {	
+					if(in_rollangle <= 1.5f && in_rollangle >= -1.5f)
+						return;
+					
+					if(in_rollangle > 12.5f)
+						in_rollangle = 12.5;
+					else if(in_rollangle < -12.5f)
+						in_rollangle = -12.5f;
+					
+					//Con_Printf("roll: %f\n", in_rollangle);
+					cl.viewent.angles[ROLL] = in_rollangle;
+				}
 			}
 		}
-	}
-	else
-	{
-		// ELUTODO: Maybe there are other cases besides demo playback
-		cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
-		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
-		
-		if (cl_weapon_inrollangle.value) {
-			if (cl.stats[STAT_ZOOM] == 0) {	
-				if(in_rollangle <= 1.5f && in_rollangle >= -1.5f)
-					return;
-				
-				if(in_rollangle > 12.5f)
-					in_rollangle = 12.5;
-				else if(in_rollangle < -12.5f)
-					in_rollangle = -12.5f;
-				
-				//Con_Printf("roll: %f\n", in_rollangle);
-				cl.viewent.angles[ROLL] = in_rollangle;
+		else
+		{
+			// ELUTODO: Maybe there are other cases besides demo playback
+			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
+			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
+			
+			if (cl_weapon_inrollangle.value) {
+				if (cl.stats[STAT_ZOOM] == 0) {	
+					if(in_rollangle <= 1.5f && in_rollangle >= -1.5f)
+						return;
+					
+					if(in_rollangle > 12.5f)
+						in_rollangle = 12.5;
+					else if(in_rollangle < -12.5f)
+						in_rollangle = -12.5f;
+					
+					//Con_Printf("roll: %f\n", in_rollangle);
+					cl.viewent.angles[ROLL] = in_rollangle;
+				}
 			}
 		}
+	
 	}
 
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;

@@ -1077,6 +1077,7 @@ extern double screenflash_duration;
 extern int screenflash_type;
 extern double screenflash_worktime;
 extern double screenflash_starttime;
+extern int lock_viewmodel; 
 /*
 =====================
 CL_ParseServerMessage
@@ -1358,6 +1359,10 @@ void CL_ParseServerMessage (void)
 
 		case svc_bspdecal:
 			//CL_ParseBSPDecal ();
+			break;
+			
+		case svc_lockviewmodel:
+			lock_viewmodel = MSG_ReadByte();
 			break;
 		}
 	}

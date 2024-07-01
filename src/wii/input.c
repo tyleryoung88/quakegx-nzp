@@ -580,7 +580,7 @@ void IN_Commands (void)
 				
 				//Con_Printf("xge:%f, acy:%f\n", expansion.nunchuk.gforce.x, expansion.nunchuk.accel.y);
 				
-				if(/*expansion.nunchuk.gforce.x > 0.8 && */expansion.nunchuk.gforce.y > 0.44) {
+				if(/*expansion.nunchuk.gforce.x > 0.8 && */expansion.nunchuk.gforce.y > 0.35) {
 					Key_Event(K_SHAKE, true);
 				} else {
 					Key_Event(K_SHAKE, false);
