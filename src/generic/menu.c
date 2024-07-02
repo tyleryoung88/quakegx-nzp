@@ -639,7 +639,7 @@ void M_Main_Draw (void)
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 8)) - 65, 6, game_build_date, 255, 255, 255, 255, 1.5);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)) - 20, 6, game_build_date, 255, 255, 255, 255, 1.5);
 
 	// Header
 	Draw_ColoredString(6, 6, "MAIN MENU", 255, 255, 255, 255, 3.5);

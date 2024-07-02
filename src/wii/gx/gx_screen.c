@@ -973,7 +973,7 @@ char *ReturnLoadingtex (void)
             return  "ggnore";
             break;
         case 31:
-			return  "NZ:P is also on PC, Switch, Vita, and PSP!";
+			return  "NZ:P is also on PC, Switch, Vita, 3DS, and PSP!";
             break;
         case 32:
             return  "Submerge your device in water for godmode!";
@@ -1078,7 +1078,7 @@ char *ReturnLoadingtex (void)
 			return "testing some think.";
 			break;
 		case 66:
-			return "fnaf is older than gay marriage in the us";
+			return "fnaf is older than gay marriage in the US";
 			break;
 		case 67:
 			return "i want that twink Obliterated";
@@ -1090,7 +1090,7 @@ char *ReturnLoadingtex (void)
 			return "nice";
 			break;
 		case 70:
-			return "He's FUCKING annoying";
+			return "He's FRIKING annoying";
 			break;
 		case 71:
 			return "yeah pog female bikers";
@@ -1102,7 +1102,7 @@ char *ReturnLoadingtex (void)
 			return  "Play some Custom Maps!";
 			break;
 		case 74:
-			return  "Real OGs play on WiiU :P";
+			return  "Real OGs play on Wii c:";
 			break;
 		case 75:
 			return  "Adding this tip improved framerate by 39%!";

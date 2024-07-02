@@ -280,13 +280,13 @@ void HUD_EndScreen (void)
 
 	l = scoreboardlines;
 
-	Draw_ColoredString((vid.width - 9*8)/2, 40, "GAME OVER", 255, 0, 0, 255, 1.5);
+	Draw_ColoredString((vid.width - 9*12)/2, 40, "GAME OVER", 255, 0, 0, 255, 1.5);
 
 	sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
-	Draw_String ((vid.width - strlen (str)*8)/2, 52, str);
+	Draw_String ((vid.width - strlen (str)*12)/2, 52, str);
 
 	sprintf (str,"Name           Kills     Points");
-	x = (vid.width - strlen (str)*8)/2;
+	x = (vid.width - strlen (str)*12)/2;
 
 	Draw_String (x, 68, str);
 	y = 0;
@@ -300,10 +300,10 @@ void HUD_EndScreen (void)
 		Draw_String (x, 78 + y, s->name);
 
 		d = strlen (va("%i",s->kills));
-		Draw_String (x + (20 - d)*8, 78 + y, va("%i",s->kills));
+		Draw_String (x + (20 - d)*12, 78 + y, va("%i",s->kills));
 
 		d = strlen (va("%i",s->points));
-		Draw_String (x + (31 - d)*8, 78 + y, va("%i",s->points));
+		Draw_String (x + (31 - d)*12, 78 + y, va("%i",s->points));
 		y += 10;
 	}
 
@@ -566,7 +566,7 @@ void HUD_MaxAmmo(void)
 	maxammoy -= cl.time * 0.003;
 	maxammoopac -= 5;
 
-	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1.5);
+	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")*12/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1.5);
 
 	if (maxammoopac <= 0) {
 		domaxammo = false;
@@ -1172,13 +1172,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic((vid.width/2) - 27, 450, x2pic, 26, 26);
-		Draw_StretchPic((vid.width/2) + 3, 450, instapic, 26, 26);
+		Draw_StretchPic((vid.width/2) - 27, 435, x2pic, 36, 36);
+		Draw_StretchPic((vid.width/2) + 3, 435, instapic, 36, 36);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic((vid.width/2) - 13, 450, x2pic, 26, 26);
+			Draw_StretchPic((vid.width/2) - 13, 435, x2pic, 36, 36);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic ((vid.width/2) - 13, 450, instapic, 28, 28);
+			Draw_StretchPic ((vid.width/2) + 26, 435, instapic, 36, 36);
 	}
 
 }
@@ -1339,13 +1339,13 @@ void HUD_AmmoString (void)
 		int x;
 
 		if (0 < cl.stats[STAT_AMMO] && cl.stats[STAT_CURRENTMAG] >= 0) {
-			x = (vid.width - strlen("Reload")*8)/2;
+			x = (vid.width - strlen("Reload")*12)/2;
 			Draw_ColoredString (x, 340, "Reload", 255, 255, 255, 255, 1.6);
 		} else if (0 < cl.stats[STAT_CURRENTMAG]) {
-			x = (vid.width - strlen("LOW AMMO")*8)/2;
+			x = (vid.width - strlen("LOW AMMO")*12)/2;
 			Draw_ColoredString (x, 340, "LOW AMMO", 255, 255, 0, 255, 1.6);
 		} else {
-			x = (vid.width - strlen("NO AMMO")*8)/2;
+			x = (vid.width - strlen("NO AMMO")*12)/2;
 			Draw_ColoredString (x, 340, "NO AMMO", 255, 0, 0, 255, 1.6);
 		}
 	}
@@ -1397,7 +1397,7 @@ void HUD_Weapon (void)
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	x_value = 520 - l*8;
+	x_value = 520 - l*12;
 	Draw_ColoredString (x_value, y_value + l, str, 255, 255, 255, 255, 1.5);
 }
 
@@ -1416,8 +1416,8 @@ void HUD_BettyPrompt (void)
 	strcpy(str2, "place a Bouncing Betty\n");
 
 	int x, x2;
-	x = (vid.width - strlen(str)*8)/2;
-	x2 = (vid.width - strlen(str2)*8)/2;
+	x = (vid.width - strlen(str)*12)/2;
+	x2 = (vid.width - strlen(str2)*12)/2;
 
 	Draw_String(x, 60, str);
 	Draw_String(x2, 72, str2);
@@ -1437,7 +1437,7 @@ void HUD_PlayerName (void)
 	if (nameprint_time - sv.time < 1)
 		alpha = (int)((nameprint_time - sv.time)*255);
 
-	Draw_ColoredString(30, 130, player_name, 255, 255, 255, alpha, 1.5);
+	Draw_ColoredString(30, 230, player_name, 255, 255, 255, alpha, 1.5);
 }
 
 /*
