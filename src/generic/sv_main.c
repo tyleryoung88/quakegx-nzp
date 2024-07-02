@@ -1298,7 +1298,10 @@ int W_fopen (void)
 	//Con_DPrintf("Loading waypoint file %s\n", va("%s/maps/%s.way",com_gamedir, sv.name));
 
 	Sys_FileOpenRead (va("%s/maps/%s.way",com_gamedir, sv.name), &h);
-	return h;
+	if (h > 0)
+		return h;
+	else 
+		return -1;
 }
 
 int W_fopenbeta(void)
@@ -1306,7 +1309,10 @@ int W_fopenbeta(void)
 	int h = 0;
 
 	Sys_FileOpenRead (va("%s/data/%s",com_gamedir, sv.name), &h);
-	return h;
+	if (h > 0)
+		return h;
+	else 
+		return -1;
 }
 
 void W_fclose (int h)
@@ -1498,6 +1504,7 @@ void Load_Waypoint ()
 	{
 		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
 		Load_Waypoint_NZPBETA();
+		Z_Free (w_string_temp);
 		return;
 	}
 	for (i = 0; i < MAX_WAYPOINTS; i++)
