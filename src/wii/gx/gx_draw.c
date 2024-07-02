@@ -149,16 +149,10 @@ qpic_t	*Draw_CachePic (char *path)
 			if (!dat)
 			{
 				Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
-				return NULL;
+				return 0;
 			}
 		}
 		SwapPic (dat);
-
-		// HACK HACK HACK --- we need to keep the bytes for
-		// the translatable player picture just for the menu
-		// configuration dialog
-		if (!strcmp (path, "gfx/menuplyr.lmp"))
-			memcpy (menuplyr_pixels, dat->data, dat->width*dat->height);
 
 		pic->pic.width = dat->width;
 		pic->pic.height = dat->height;
@@ -173,7 +167,7 @@ qpic_t	*Draw_CachePic (char *path)
 
 		return &pic->pic;
 	}
-	return NULL;
+	return 0;
 }
 
 /*
