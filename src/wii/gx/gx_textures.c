@@ -139,6 +139,14 @@ void GX_SetMinMag (int minfilt, int magfilt)
 	};
 }
 
+void GX_SetMaxAniso (int aniso)
+{
+	if(gltextures[currenttexture0].data != NULL)
+	{
+		GX_InitTexObjMaxAniso(&gltextures[currenttexture0].gx_tex, aniso);
+	};
+}
+
 void QGX_ZMode(qboolean state)
 {
 	if (state)

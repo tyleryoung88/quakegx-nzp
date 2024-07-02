@@ -381,7 +381,7 @@ void IN_Commands (void)
 	WPAD_GForce(WPAD_CHAN_0, &gforce); //Shake to reload
 
 	//On screen keyboard
-	if (wiimote_connected && (wpad_keys & WPAD_BUTTON_MINUS))
+	if (wiimote_connected && (wpad_keys & WPAD_BUTTON_MINUS) && key_dest == key_console)
 	{
 		// ELUTODO: we are using the previous frame wiimote position... FIX IT
 		in_osk = 1;

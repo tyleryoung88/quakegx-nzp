@@ -124,7 +124,7 @@ qpic_t	*Draw_CachePic (char *path)
 // load the pic from disk
 //
 	//Con_Printf ("Attempting to load: %s\n", str);
-	index = loadtextureimage (str, 0, 0, true, false, true);
+	index = loadtextureimage (str, 0, 0, true, true, true);
 	if(index > 0)
 	{
 		pic->pic.width  = gltextures[index].width;
@@ -140,17 +140,13 @@ qpic_t	*Draw_CachePic (char *path)
 
 		return &pic->pic;
 	} else {
-
+		
+		//strcat (str, ".lmp");
 		dat = (qpic_t *)COM_LoadTempFile (str);
 		if (!dat)
 		{
-			strcat (str, ".lmp");
-			dat = (qpic_t *)COM_LoadTempFile (str);
-			if (!dat)
-			{
-				Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
-				return 0;
-			}
+			Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
+			return 0;
 		}
 		SwapPic (dat);
 
@@ -487,7 +483,9 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	
 	GL_Bind0 (gl->texnum);
-	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
+	
+	GX_SetMinMag (GX_NEAR, GX_NEAR);
+	//GX_SetMaxAniso(GX_MAX_ANISOTROPY);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
 	GX_Position3f32(x, y, 0.0f);

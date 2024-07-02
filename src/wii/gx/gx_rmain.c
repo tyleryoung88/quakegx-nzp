@@ -163,7 +163,7 @@ void R_RotateForEntity (entity_t *e, unsigned char scale)
 	c_guMtxRotAxisRad(temp, &axis0, DegToRad(e->angles[2]));
 	c_guMtxConcat(model, temp, model);
 	
-	if (scale != ENTSCALE_DEFAULT && scale != 0) {
+	if (scale != ENTSCALE_DEFAULT) {
 		float scalefactor = ENTSCALE_DECODE(scale);
 		
 		c_guMtxScale (temp, scalefactor, scalefactor, scalefactor);
@@ -1080,7 +1080,8 @@ void R_DrawAliasModel (entity_t *e)
 		//ambientlight = shadelight = 192;
 
 	c_guMtxIdentity(model);
-	R_RotateForEntity (e, ENTSCALE_DEFAULT);
+	//if (e == &cl.viewent || e == &cl.viewent2)
+		R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
 	if (!strcmp (clmodel->name, "progs/eyes.mdl") && gl_doubleeyes.value) {
 		c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));

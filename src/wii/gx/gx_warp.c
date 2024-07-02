@@ -654,19 +654,21 @@ void R_DrawSkyBox (void)
 		if (dot < -0.25f) continue;
 		
 		GL_Bind0(skyimage[skytexorder[i]]);
-		//GX_SetMinMag (GX_LINEAR, GX_LINEAR); //GX_SetMinMag (GX_NEAR, GX_LINEAR);
-
+		//GX_SetMinMag (GX_LIN_MIP_LIN, GX_LIN_MIP_LIN);
+		//GX_SetMaxAniso(GX_ANISO_2);
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR); 
+	
 		// if direction is not up, cut "down" vector to zero to only render half cube
 		//float upnegfact = i == 4 ? 1.0f : 0.0f;
 		float upnegfact = 1.0f;
-		float skyboxtexsize = 256.f;
+		float skyboxtexsize = 128.0f;
 		// move ever so slightly less towards forward to make edges overlap a bit, just to not have shimmering pixels between sky edges
-		float forwardfact = 0.99f;
+		float forwardfact = 0.98f;
 
 		GX_Begin (GX_QUADS, GX_VTXFMT0, 4);
 
 		sky_vertices[0].s = 0.5f / skyboxtexsize;
-		sky_vertices[0].t = (skyboxtexsize - .5f) / skyboxtexsize;
+		sky_vertices[0].t = (skyboxtexsize - 0.5f) / skyboxtexsize;
 		sky_vertices[0].x = r_origin[0] + (forwardfact * skynormals[i][0] - skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
 		sky_vertices[0].y = r_origin[1] + (forwardfact * skynormals[i][1] - skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
 		sky_vertices[0].z = r_origin[2] + (forwardfact * skynormals[i][2] - skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;
@@ -693,7 +695,7 @@ void R_DrawSkyBox (void)
 		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
 		GX_TexCoord2f32 (sky_vertices[1].s, sky_vertices[1].t);
 
-		sky_vertices[2].s = (skyboxtexsize - .5f) / skyboxtexsize;
+		sky_vertices[2].s = (skyboxtexsize - 0.5f) / skyboxtexsize;
 		sky_vertices[2].t = 0.5f / skyboxtexsize;
 		sky_vertices[2].x = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] + skyup[i][0]) * skydepth;
 		sky_vertices[2].y = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] + skyup[i][1]) * skydepth;
@@ -707,8 +709,8 @@ void R_DrawSkyBox (void)
 		GX_Color4u8(0xff, 0xff, 0xff, 0xff);
 		GX_TexCoord2f32 (sky_vertices[2].s, sky_vertices[2].t);
 
-		sky_vertices[3].s = (skyboxtexsize - .5f) / skyboxtexsize;
-		sky_vertices[3].t = (skyboxtexsize - .5f) / skyboxtexsize;
+		sky_vertices[3].s = (skyboxtexsize - 0.5f) / skyboxtexsize;
+		sky_vertices[3].t = (skyboxtexsize - 0.5f) / skyboxtexsize;
 		sky_vertices[3].x = r_origin[0] + (forwardfact * skynormals[i][0] + skyrt[i][0] - skyup[i][0] * upnegfact) * skydepth;
 		sky_vertices[3].y = r_origin[1] + (forwardfact * skynormals[i][1] + skyrt[i][1] - skyup[i][1] * upnegfact) * skydepth;
 		sky_vertices[3].z = r_origin[2] + (forwardfact * skynormals[i][2] + skyrt[i][2] - skyup[i][2] * upnegfact) * skydepth;

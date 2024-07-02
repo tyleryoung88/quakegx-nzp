@@ -315,6 +315,7 @@ void Fog_Init (void);
 void Fog_SetupState (void);
 
 void GX_SetMinMag (int minfilt, int magfilt);
+void GX_SetMaxAniso (int aniso);
 
 void GL_ClearTextureCache(void);
 
