@@ -747,7 +747,7 @@ void IN_Commands (void)
 
 extern bool croshhairmoving;
 extern float crosshair_opacity;
-
+float centerdrift_offset_yaw, centerdrift_offset_pitch;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
@@ -843,7 +843,6 @@ void IN_Move (usercmd_t *cmd)
 	//non-linear sensitivity based on how
 	//far the IR pointer is from the 
 	//center of the screen.
-	float centerdrift_offset_yaw, centerdrift_offset_pitch;
 	centerdrift_offset_yaw = fabsf(x2); //yaw
 	centerdrift_offset_pitch = fabsf(y2); //pitch
 	

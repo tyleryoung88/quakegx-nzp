@@ -598,6 +598,8 @@ static float OldYawTheta;
 static float OldPitchTheta;
 
 int lock_viewmodel; 
+extern float centerdrift_offset_yaw;
+extern float centerdrift_offset_pitch;
 
 static vec3_t cADSOfs;
 void CalcGunAngle (void)
@@ -659,8 +661,8 @@ void CalcGunAngle (void)
 		if (!cls.demoplayback && !in_osk)
 		{
 			// ELUTODO: Some small gimbal lock issues
-			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - cl_crossx.value/scr_vrect.width * IR_YAWRANGE;
-			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
+			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw*1.2));
+			cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1.2f));
 			
 			if (cl_weapon_inrollangle.value) {
 				if (cl.stats[STAT_ZOOM] == 0) {	
