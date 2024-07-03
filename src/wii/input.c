@@ -894,28 +894,45 @@ void IN_Move (usercmd_t *cmd)
 	// TODO: Use yawspeed and pitchspeed
 
 	// Adjust the yaw.
-	const float turn_rate = sensitivity.value * 40.0f;
+	const float turn_rate = sensitivity.value * 50.0f;
+	
+	float speed = 1;
+	
+	// cut look speed in half when facing enemy, unless mag is empty
+	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0)
+		speed = 0.1;
+	else
+		speed = 1;
+		
+	// additionally, slice look speed when ADS/scopes
+	if (cl.stats[STAT_ZOOM] == 1)
+		speed = 0.5;
+	else if (cl.stats[STAT_ZOOM] == 2)
+		speed = 0.25;
+	else
+		speed = 1;
+	
 	if (in_speed.state & 1)
 	{
 		if (cl_forwardspeed > 200)
-			cl.viewangles[YAW] -= turn_rate * yaw_rate * host_frametime / cl_anglespeedkey.value;
+			cl.viewangles[YAW] -= (turn_rate * yaw_rate * host_frametime) * speed;
 		else
-			cl.viewangles[YAW] -= turn_rate * yaw_rate * host_frametime * cl_anglespeedkey.value;
+			cl.viewangles[YAW] -= (turn_rate * yaw_rate * host_frametime) * speed;
 	}
 	else
-		cl.viewangles[YAW] -= turn_rate * yaw_rate * host_frametime;
+		cl.viewangles[YAW] -= (turn_rate * yaw_rate * host_frametime) * speed;
 
 	// How fast to pitch?
 	float pitch_offset;
 	if (in_speed.state & 1)
 	{
 		if (cl_forwardspeed > 200)
-			pitch_offset = turn_rate * pitch_rate * host_frametime / cl_anglespeedkey.value;
+			pitch_offset = (turn_rate * pitch_rate * host_frametime) * speed;
 		else
-			pitch_offset = turn_rate * pitch_rate * host_frametime * cl_anglespeedkey.value;
+			pitch_offset = (turn_rate * pitch_rate * host_frametime) * speed;
 	}
 	else
-		pitch_offset = turn_rate * pitch_rate * host_frametime;
+		pitch_offset = (turn_rate * pitch_rate * host_frametime) * speed;
 
 	// Do the pitch.
 	const bool	invert_pitch = m_pitch.value < 0;

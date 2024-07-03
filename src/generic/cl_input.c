@@ -249,9 +249,7 @@ cvar_t	cl_movespeedkey = {"cl_movespeedkey","1.5"};
 cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
-cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
-
-cvar_t	in_aimassist = {"in_aimassist", "0", true};
+cvar_t	in_aimassist = {"in_aimassist", "1", true};
 
 //Shpuld - Porting over lower sens for lower fov
 extern cvar_t scr_fov;
@@ -268,10 +266,7 @@ void CL_AdjustAngles (void)
 	float	speed;
 	float	up, down;
 	
-	if (in_speed.state & 1)
-		speed = host_frametime * cl_anglespeedkey.value;
-	else
-		speed = host_frametime;
+	speed = host_frametime;
 	
 	speed = speed * scr_fov.value/90;
 
@@ -515,7 +510,6 @@ void CL_SendMove (usercmd_t *cmd)
 	
 	cl.cmd = *cmd;
 	
-/*	
 	//==== Aim Assist Code ====
 	if((cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2) && ((in_aimassist.value) || (cl.perks & 64)))
 	{
@@ -528,7 +522,7 @@ void CL_SendMove (usercmd_t *cmd)
 	else {
 		zoom_snap = 0;
 	}
-*/	
+
 	zoom_snap = 0;
 	//==== Sniper Scope Swaying ====
 	if(cl.stats[STAT_ZOOM] == 2 && !(cl.perks & 64))

@@ -403,7 +403,7 @@ void HUD_Points (void)
 		Draw_StretchPic (x, y, sb_moneyback, 96, 24);
 		xplus = strlen(va("%i", current_points))*8;
 
-		Draw_String (((64 - xplus)/2) + 24, y + 5, va("%i", current_points));
+		Draw_ColoredString (((64 - xplus)/2) + 24, y + 5, va("%i", current_points), 255, 255, 255, 255, 1.5);
 
 		if (old_points != f)
 		{
@@ -1309,9 +1309,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("%i", cl.stats[STAT_CURRENTMAG]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 1) >= cl.stats[STAT_CURRENTMAG]) {
-		Draw_ColoredString((520-(reslen*12)) - strlen(magstring)*12, 452, magstring, 255, 0, 0, 255, 1.5);
+		Draw_ColoredString((565-(reslen*12)) - strlen(magstring)*12, 452, magstring, 255, 0, 0, 255, 1.5);
 	} else {
-		Draw_ColoredString((520-(reslen*12)) - strlen(magstring)*12, 452, magstring, 255, 255, 255, 255, 1.5);
+		Draw_ColoredString((565-(reslen*12)) - strlen(magstring)*12, 452, magstring, 255, 255, 255, 255, 1.5);
 	}
 
 	//
@@ -1319,9 +1319,9 @@ void HUD_Ammo (void)
 	//
 	magstring = va("/%i", cl.stats[STAT_AMMO]);
 	if (GetLowAmmo(cl.stats[STAT_ACTIVEWEAPON], 0) >= cl.stats[STAT_AMMO]) {
-		Draw_ColoredString(520 - strlen(magstring)*12, 452, magstring, 255, 0, 0, 255, 1.5);
+		Draw_ColoredString(565 - strlen(magstring)*12, 452, magstring, 255, 0, 0, 255, 1.5);
 	} else {
-		Draw_ColoredString(520 - strlen(magstring)*12, 452, magstring, 255, 255, 255, 255, 1.5);
+		Draw_ColoredString(565 - strlen(magstring)*12, 452, magstring, 255, 255, 255, 255, 1.5);
 	}
 }
 
@@ -1363,21 +1363,21 @@ HUD_Grenades
 void HUD_Grenades (void)
 {
 
-	Draw_StretchPic (560, 430, fragpic, 36, 36);
+	Draw_StretchPic (565, 430, fragpic, 36, 36);
 	if (cl.stats[STAT_GRENADES] & UI_FRAG)
 	{
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (578, 452, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1.5);
+			Draw_ColoredString (585, 452, va ("%i",cl.stats[STAT_PRIGRENADES]), 255, 0, 0, 255, 1.5);
 		else
-			Draw_String (578, 452, va ("%i",cl.stats[STAT_PRIGRENADES]));
+			Draw_String (585, 452, va ("%i",cl.stats[STAT_PRIGRENADES]));
 	}
 	if (cl.stats[STAT_GRENADES] & UI_BETTY)
 	{
-		Draw_StretchPic (560, 430, bettypic, 36, 36);
+		Draw_StretchPic (600, 430, bettypic, 36, 36);
 		if (cl.stats[STAT_PRIGRENADES] <= 0)
-			Draw_ColoredString (578, 452, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1.5);
+			Draw_ColoredString (620, 452, va ("%i",cl.stats[STAT_SECGRENADES]), 255, 0, 0, 255, 1.5);
 		else
-			Draw_String (578, 452, va ("%i",cl.stats[STAT_SECGRENADES]));
+			Draw_String (620, 452, va ("%i",cl.stats[STAT_SECGRENADES]));
 	}
 
 }
@@ -1392,13 +1392,13 @@ void HUD_Weapon (void)
 	char str[32];
 	float l;
 	x_value = vid.width;
-	y_value = 422;
+	y_value = 430;
 
 	strcpy(str, pr_strings+sv_player->v.Weapon_Name);
 	l = strlen(str);
 
-	x_value = 520 - l*12;
-	Draw_ColoredString (x_value, y_value + l, str, 255, 255, 255, 255, 1.5);
+	x_value = 565 - l*12;
+	Draw_ColoredString (x_value, y_value, str, 255, 255, 255, 255, 1.5);
 }
 
 /*
@@ -1412,7 +1412,7 @@ void HUD_BettyPrompt (void)
 	char str[32];
 	char str2[32];
 
-	strcpy(str, va("Tap SWAP then press %s to\n", GetGrenadeButtonL()));
+	strcpy(str, va("Tap %s to\n", GetGrenadeButtonL()));
 	strcpy(str2, "place a Bouncing Betty\n");
 
 	int x, x2;

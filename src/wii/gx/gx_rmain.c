@@ -1021,7 +1021,7 @@ void R_DrawAliasModel (entity_t *e)
 	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 	
 	if (e == &cl.viewent || e == &cl.viewent2) {
-		VectorScale(lightcolor, 100.0f, lightcolor);
+		VectorScale(lightcolor, 200.0f, lightcolor);
 	}
 	
 	an = e->angles[1]/180*M_PI;
