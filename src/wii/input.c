@@ -839,7 +839,14 @@ void IN_Move (usercmd_t *cmd)
 
 	last_irx = wiimote_ir_x;
 	last_iry = wiimote_ir_y;
-
+	
+	//non-linear sensitivity based on how
+	//far the IR pointer is from the 
+	//center of the screen.
+	float centerdrift_offset_yaw, centerdrift_offset_pitch;
+	centerdrift_offset_yaw = fabsf(x2); //yaw
+	centerdrift_offset_pitch = fabsf(y2); //pitch
+	
 	// Apply the dead zone.
 	apply_dead_zone(&x1, &y1, dead_zone);
 	apply_dead_zone(&x2, &y2, dead_zone);
@@ -900,7 +907,7 @@ void IN_Move (usercmd_t *cmd)
 	
 	// cut look speed in half when facing enemy, unless mag is empty
 	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0)
-		speed = 0.1;
+		speed = 0.5;
 	else
 		speed = 1;
 		
@@ -912,27 +919,14 @@ void IN_Move (usercmd_t *cmd)
 	else
 		speed = 1;
 	
-	if (in_speed.state & 1)
-	{
-		if (cl_forwardspeed > 200)
-			cl.viewangles[YAW] -= (turn_rate * yaw_rate * host_frametime) * speed;
-		else
-			cl.viewangles[YAW] -= (turn_rate * yaw_rate * host_frametime) * speed;
-	}
-	else
-		cl.viewangles[YAW] -= (turn_rate * yaw_rate * host_frametime) * speed;
-
+	// How fast to yaw?
+	float yaw_offset;
+	yaw_offset = ((turn_rate * yaw_rate * host_frametime) * speed) * centerdrift_offset_yaw;
+	cl.viewangles[YAW] -= yaw_offset;
+	
 	// How fast to pitch?
 	float pitch_offset;
-	if (in_speed.state & 1)
-	{
-		if (cl_forwardspeed > 200)
-			pitch_offset = (turn_rate * pitch_rate * host_frametime) * speed;
-		else
-			pitch_offset = (turn_rate * pitch_rate * host_frametime) * speed;
-	}
-	else
-		pitch_offset = (turn_rate * pitch_rate * host_frametime) * speed;
+	pitch_offset = ((turn_rate * pitch_rate * host_frametime) * speed) * centerdrift_offset_pitch;
 
 	// Do the pitch.
 	const bool	invert_pitch = m_pitch.value < 0;
@@ -946,15 +940,15 @@ void IN_Move (usercmd_t *cmd)
 	}
 
 	// Don't look too far up or down.
-	if (cl.viewangles[PITCH] > 80.0f)
+	if (cl.viewangles[PITCH] > 60.0f)
 	{
-		cl.viewangles[PITCH] = 80.0f;
+		cl.viewangles[PITCH] = 60.0f;
 	}
-	else if (cl.viewangles[PITCH] < -60.0f)
+	else if (cl.viewangles[PITCH] < -50.0f)
 	{
-		cl.viewangles[PITCH] = -60.0f;
+		cl.viewangles[PITCH] = -50.0f;
 	}
-
+	
 	if (wiimote_connected && nunchuk_connected && !nunchuk_stick_as_arrows.value)
 	{
 		in_pitchangle = orientation.pitch;
