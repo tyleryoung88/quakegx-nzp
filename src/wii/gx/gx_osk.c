@@ -98,11 +98,12 @@ void DrawTextBox (int x, int y, int width, int lines)
 
 void GX_DrawOSK(void)
 {
+	
 	int i, j;
 	int xstart = OSK_XSTART * ((float)vid.conwidth / glwidth);
 	int ystart = OSK_YSTART * ((float)vid.conheight / glheight);
 
-	DrawTextBox(xstart, ystart, osk_num_col * (osk_col_size / osk_charsize), osk_num_lines * (osk_line_size / osk_charsize));
+	//DrawTextBox(xstart, ystart, osk_num_col * (osk_col_size / osk_charsize), osk_num_lines * (osk_line_size / osk_charsize));
 
 	for (i = 0; i < osk_num_lines; i++)
 		for (j = 0; j < osk_num_col; j++)
@@ -132,4 +133,5 @@ void GX_DrawOSK(void)
 		OSK_PrintWhite(xstart + 5 * osk_col_size, ystart + 5 * osk_line_size, "Spacebar");
 
 	Draw_Character ((osk_coords[0] + osk_col_size - 24) * ((float)vid.width / glwidth), (osk_coords[1] + osk_line_size - 24) * ((float)vid.height / glheight), '\\' + 128);
+	
 }

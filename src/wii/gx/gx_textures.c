@@ -27,7 +27,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <gccore.h>
 #include <malloc.h>
-#include "gxutils.h"
 
 // ELUTODO: GL_Upload32 and GL_Update32 could use some optimizations
 // ELUTODO: mipmap and texture filters
@@ -241,7 +240,7 @@ static	unsigned	trans[640*480];
 GL_Upload32
 ===============
 */
-void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
+void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha, qboolean flipRGBA)
 {
 	int			i, x, y, s;
 	u8			*pos;
@@ -290,49 +289,103 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	if ((int)destination->data & 31)
 		Sys_Error ("GL_Upload32: destination->data&31");
 
-	pos = (u8 *)destination->data;
-	for (y = 0; y < scaled_height; y += 4)
-	{
-		u8* row1 = (u8 *)&(scaled[scaled_width * (y + 0)]);
-		u8* row2 = (u8 *)&(scaled[scaled_width * (y + 1)]);
-		u8* row3 = (u8 *)&(scaled[scaled_width * (y + 2)]);
-		u8* row4 = (u8 *)&(scaled[scaled_width * (y + 3)]);
-
-		for (x = 0; x < scaled_width; x += 4)
+	// sB: barfoo34 kindly pointed out that this appears to be 
+	// expecting ARGB, when it actually expects ABGR
+	// thus causing my texture profiling confusion.
+	// So now I am reordering this to store the textures
+	// as RGBA in order to restore compatability.
+	
+	if (flipRGBA) {
+		pos = (u8 *)destination->data;
+		for (y = 0; y < scaled_height; y += 4)
 		{
-			u8 AR[32];
-			u8 GB[32];
+			u8* row1 = (u8 *)&(scaled[scaled_width * (y + 0)]);
+			u8* row2 = (u8 *)&(scaled[scaled_width * (y + 1)]);
+			u8* row3 = (u8 *)&(scaled[scaled_width * (y + 2)]);
+			u8* row4 = (u8 *)&(scaled[scaled_width * (y + 3)]);
 
-			for (i = 0; i < 4; i++)
+			for (x = 0; x < scaled_width; x += 4)
 			{
-				u8* ptr1 = &(row1[(x + i) * 4]);
-				u8* ptr2 = &(row2[(x + i) * 4]);
-				u8* ptr3 = &(row3[(x + i) * 4]);
-				u8* ptr4 = &(row4[(x + i) * 4]);
+				u8 AR[32];
+				u8 GB[32];
 
-				AR[(i * 2) +  0] = ptr1[0];
-				AR[(i * 2) +  1] = ptr1[3];
-				AR[(i * 2) +  8] = ptr2[0];
-				AR[(i * 2) +  9] = ptr2[3];
-				AR[(i * 2) + 16] = ptr3[0];
-				AR[(i * 2) + 17] = ptr3[3];
-				AR[(i * 2) + 24] = ptr4[0];
-				AR[(i * 2) + 25] = ptr4[3];
+				for (i = 0; i < 4; i++)
+				{
+					u8* ptr1 = &(row1[(x + i) * 4]);
+					u8* ptr2 = &(row2[(x + i) * 4]);
+					u8* ptr3 = &(row3[(x + i) * 4]);
+					u8* ptr4 = &(row4[(x + i) * 4]);
 
-				GB[(i * 2) +  0] = ptr1[2];
-				GB[(i * 2) +  1] = ptr1[1];
-				GB[(i * 2) +  8] = ptr2[2];
-				GB[(i * 2) +  9] = ptr2[1];
-				GB[(i * 2) + 16] = ptr3[2];
-				GB[(i * 2) + 17] = ptr3[1];
-				GB[(i * 2) + 24] = ptr4[2];
-				GB[(i * 2) + 25] = ptr4[1];
+					AR[(i * 2) +  0] = ptr1[0];
+					AR[(i * 2) +  1] = ptr1[3];
+					AR[(i * 2) +  8] = ptr2[0];
+					AR[(i * 2) +  9] = ptr2[3];
+					AR[(i * 2) + 16] = ptr3[0];
+					AR[(i * 2) + 17] = ptr3[3];
+					AR[(i * 2) + 24] = ptr4[0];
+					AR[(i * 2) + 25] = ptr4[3];
+
+					GB[(i * 2) +  0] = ptr1[2];
+					GB[(i * 2) +  1] = ptr1[1];
+					GB[(i * 2) +  8] = ptr2[2];
+					GB[(i * 2) +  9] = ptr2[1];
+					GB[(i * 2) + 16] = ptr3[2];
+					GB[(i * 2) + 17] = ptr3[1];
+					GB[(i * 2) + 24] = ptr4[2];
+					GB[(i * 2) + 25] = ptr4[1];
+				}
+
+				memcpy(pos, AR, sizeof(AR));
+				pos += sizeof(AR);
+				memcpy(pos, GB, sizeof(GB));
+				pos += sizeof(GB);
 			}
+		}
+	} else {
+		pos = (u8 *)destination->data;
+		for (y = 0; y < scaled_height; y += 4)
+		{
+			u8* row1 = (u8 *)&(scaled[scaled_width * (y + 0)]);
+			u8* row2 = (u8 *)&(scaled[scaled_width * (y + 1)]);
+			u8* row3 = (u8 *)&(scaled[scaled_width * (y + 2)]);
+			u8* row4 = (u8 *)&(scaled[scaled_width * (y + 3)]);
 
-			memcpy(pos, AR, sizeof(AR));
-			pos += sizeof(AR);
-			memcpy(pos, GB, sizeof(GB));
-			pos += sizeof(GB);
+			for (x = 0; x < scaled_width; x += 4)
+			{
+				u8 RG[32];
+				u8 BA[32];
+
+				for (i = 0; i < 4; i++)
+				{
+					u8* ptr1 = &(row1[(x + i) * 4]);
+					u8* ptr2 = &(row2[(x + i) * 4]);
+					u8* ptr3 = &(row3[(x + i) * 4]);
+					u8* ptr4 = &(row4[(x + i) * 4]);
+
+					RG[(i * 2) +  0] = ptr1[3];
+					RG[(i * 2) +  1] = ptr1[0];
+					RG[(i * 2) +  8] = ptr2[3];
+					RG[(i * 2) +  9] = ptr2[0];
+					RG[(i * 2) + 16] = ptr3[3];
+					RG[(i * 2) + 17] = ptr3[0];
+					RG[(i * 2) + 24] = ptr4[3];
+					RG[(i * 2) + 25] = ptr4[0];
+
+					BA[(i * 2) +  0] = ptr1[1];
+					BA[(i * 2) +  1] = ptr1[2];
+					BA[(i * 2) +  8] = ptr2[1];
+					BA[(i * 2) +  9] = ptr2[2];
+					BA[(i * 2) + 16] = ptr3[1];
+					BA[(i * 2) + 17] = ptr3[2];
+					BA[(i * 2) + 24] = ptr4[1];
+					BA[(i * 2) + 25] = ptr4[2];
+				}
+
+				memcpy(pos, RG, sizeof(RG));
+				pos += sizeof(RG);
+				memcpy(pos, BA, sizeof(BA));
+				pos += sizeof(BA);
+			}
 		}
 	}
 
@@ -383,7 +436,7 @@ void GL_Upload8 (gltexture_t *destination, byte *data, int width, int height,  q
 		}
 	}
 
-	GL_Upload32 (destination, trans, width, height, mipmap, alpha);
+	GL_Upload32 (destination, trans, width, height, mipmap, alpha, true);
 }
 
 byte		vid_gamma_table[256];
@@ -479,16 +532,7 @@ reload:
 			GL_Upload8 (glt, data, width, height, mipmap, alpha);
 		}
 		else if (bytesperpixel == 4) {
-#if 0
-			// Baker: this applies our -gamma parameter table
-			//extern	byte	vid_gamma_table[256];
-			for (i = 0; i < s; i++){
-				data[4 * i +2] = vid_gamma_table[data[4 * i+2]];
-				data[4 * i + 1] = vid_gamma_table[data[4 * i + 1]];
-				data[4 * i] = vid_gamma_table[data[4 * i]];
-			}
-#endif 
-			GL_Upload32 (glt, (unsigned*)data, width, height, mipmap, alpha);
+			GL_Upload32 (glt, (unsigned*)data, width, height, mipmap, alpha, false);
 		}
 		else {
 			Sys_Error("GL_LoadTexture: unknown bytesperpixel\n");
@@ -523,11 +567,11 @@ int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data)
 	glt->width = width;
 	glt->height = height;
 	glt->mipmap = false; // ELUTODO
-	glt->type = 0;
+	glt->type = 1;
 	glt->keep = false;
 	glt->used = true;
 
-	GL_Upload32 (glt, (unsigned *)data, width, height, true, false);
+	GL_Upload32 (glt, (unsigned *)data, width, height, true, false, false);
 
 	if (width != glt->scaled_width || height != glt->scaled_height)
 		Sys_Error("GL_LoadLightmapTexture: Tried to scale lightmap\n");
@@ -535,163 +579,6 @@ int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data)
 	numgltextures++;
 
 	return glt->texnum;
-}
-
-/*
-===============
-GL_Update32
-===============
-*/
-void GL_Update32 (gltexture_t *destination, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha)
-{
-	int			i, x, y, s;
-	u8			*pos;
-	int			scaled_width, scaled_height;
-
-	for (scaled_width = 1 << 5 ; scaled_width < width ; scaled_width<<=1)
-		;
-	for (scaled_height = 1 << 5 ; scaled_height < height ; scaled_height<<=1)
-		;
-
-	if (scaled_width > gl_max_size.value)
-		scaled_width = gl_max_size.value;
-	if (scaled_height > gl_max_size.value)
-		scaled_height = gl_max_size.value;
-
-	// ELUTODO: gl_max_size should be multiple of 32?
-	// ELUTODO: mipmaps
-
-	if (scaled_width * scaled_height > sizeof(scaled)/4)
-		Sys_Error ("GL_Update32: too big");
-
-	// ELUTODO samples = alpha ? GX_TF_RGBA8 : GX_TF_RGBA8;
-
-	if (scaled_width != width || scaled_height != height)
-	{
-		GL_ResampleTexture (data, width, height, scaled, scaled_width, scaled_height);
-	}
-	else
-	{
-		memcpy(scaled, data, scaled_width * scaled_height * sizeof(unsigned));
-	}
-
-	s = scaled_width * scaled_height;
-	if (s & 31)
-		Sys_Error ("GL_Update32: s&31");
-
-	if ((int)destination->data & 31)
-		Sys_Error ("GL_Update32: destination->data&31");
-
-	pos = (u8 *)destination->data;
-	for (y = 0; y < scaled_height; y += 4)
-	{
-		u8* row1 = (u8 *)&(scaled[scaled_width * (y + 0)]);
-		u8* row2 = (u8 *)&(scaled[scaled_width * (y + 1)]);
-		u8* row3 = (u8 *)&(scaled[scaled_width * (y + 2)]);
-		u8* row4 = (u8 *)&(scaled[scaled_width * (y + 3)]);
-
-		for (x = 0; x < scaled_width; x += 4)
-		{
-			u8 AR[32];
-			u8 GB[32];
-
-			for (i = 0; i < 4; i++)
-			{
-				u8* ptr1 = &(row1[(x + i) * 4]);
-				u8* ptr2 = &(row2[(x + i) * 4]);
-				u8* ptr3 = &(row3[(x + i) * 4]);
-				u8* ptr4 = &(row4[(x + i) * 4]);
-
-				AR[(i * 2) +  0] = ptr1[0];
-				AR[(i * 2) +  1] = ptr1[3];
-				AR[(i * 2) +  8] = ptr2[0];
-				AR[(i * 2) +  9] = ptr2[3];
-				AR[(i * 2) + 16] = ptr3[0];
-				AR[(i * 2) + 17] = ptr3[3];
-				AR[(i * 2) + 24] = ptr4[0];
-				AR[(i * 2) + 25] = ptr4[3];
-
-				GB[(i * 2) +  0] = ptr1[2];
-				GB[(i * 2) +  1] = ptr1[1];
-				GB[(i * 2) +  8] = ptr2[2];
-				GB[(i * 2) +  9] = ptr2[1];
-				GB[(i * 2) + 16] = ptr3[2];
-				GB[(i * 2) + 17] = ptr3[1];
-				GB[(i * 2) + 24] = ptr4[2];
-				GB[(i * 2) + 25] = ptr4[1];
-			}
-
-			memcpy(pos, AR, sizeof(AR));
-			pos += sizeof(AR);
-			memcpy(pos, GB, sizeof(GB));
-			pos += sizeof(GB);
-		}
-	}
-
-	DCFlushRange(destination->data, scaled_width * scaled_height * sizeof(unsigned));
-	//GX_InvalidateTexAll();
-}
-
-/*
-===============
-GL_Update8
-===============
-*/
-void GL_Update8 (gltexture_t *destination, byte *data, int width, int height,  qboolean mipmap, qboolean alpha)
-{
-	int			i, s;
-	qboolean	noalpha;
-	int			p;
-
-	s = width*height;
-	// if there are no transparent pixels, make it a 3 component
-	// texture even if it was specified as otherwise
-	if (alpha)
-	{
-		noalpha = true;
-		for (i=0 ; i<s ; i++)
-		{
-			p = data[i];
-			if (p == 255)
-				noalpha = false;
-			trans[i] = d_8to24table[p];
-		}
-
-		if (alpha && noalpha)
-			alpha = false;
-	}
-	else
-	{
-		if (s&3)
-			Sys_Error ("GL_Update8: s&3");
-		for (i=0 ; i<s ; i+=4)
-		{
-			trans[i] = d_8to24table[data[i]];
-			trans[i+1] = d_8to24table[data[i+1]];
-			trans[i+2] = d_8to24table[data[i+2]];
-			trans[i+3] = d_8to24table[data[i+3]];
-		}
-	}
-
-	GL_Update32 (destination, trans, width, height, mipmap, alpha);
-}
-
-/*
-================
-GL_UpdateTexture
-================
-*/
-void GL_UpdateTexture (int pic_id, char *identifier, int width, int height, byte *data, qboolean mipmap, qboolean alpha)
-{
-	gltexture_t	*glt;
-
-	// see if the texture is allready present
-	glt = &gltextures[pic_id];
-
-	if (strcmp (identifier, glt->identifier) || width != glt->width || height != glt->height || mipmap != glt->mipmap || glt->type != 0 || !glt->used)
-			Sys_Error ("GL_UpdateTexture: cache mismatch");
-
-	GL_Update8 (glt, data, width, height, mipmap, alpha);
 }
 
 const int lightblock_datamap[128*128*4] =
@@ -722,13 +609,13 @@ void GL_UpdateLightmapTextureRegion32 (gltexture_t *destination, unsigned *data,
 		for (x = xoffset; x < realwidth; x++)
 		{
 			pos = (x + y * realwidth) * 4;
-			dest[lightblock_datamap[pos]] = src[pos];
-			dest[lightblock_datamap[pos + 1]] = src[pos + 1];
-			dest[lightblock_datamap[pos + 2]] = src[pos + 2];
-			dest[lightblock_datamap[pos + 3]] = src[pos + 3];
+			dest[lightblock_datamap[pos + 0]] = src[pos + 3];
+			dest[lightblock_datamap[pos + 1]] = src[pos + 2];
+			dest[lightblock_datamap[pos + 2]] = src[pos + 1];
+			dest[lightblock_datamap[pos + 3]] = src[pos + 0];
 		}
 	}
-
+	
 	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * sizeof(unsigned));
 	//GX_InvalidateTexAll();
 }
@@ -746,8 +633,6 @@ void GL_UpdateLightmapTextureRegion (int pic_id, int width, int height, int xoff
 	// see if the texture is allready present
 	destination = &gltextures[pic_id];
 	
-	//Con_Printf("Displaying: %i\n", pic_id);
-
 	GL_UpdateLightmapTextureRegion32 (destination, (unsigned *)data, width, height, xoffset, yoffset, false, true);
 }
 
@@ -880,26 +765,19 @@ LoadPCX
 byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 {
 	pcx_t	*pcx;
-	//pcx_t	*pcxbuf;
 	byte	*palette;
-	//byte	palette[768];
 	byte	*out;
 	byte	*pix, *image_rgba;
 	int		x, y;
 	int		dataByte, runLength;
 	int		count;
-	
+	byte	*pcx_data;
 	byte	*pic;
 
 //
 // parse the PCX file
 //
-	byte *pcx_data;
-	
-	// Figure out the length
-    int handle;
-    int len = COM_OpenFile (filename, &handle);
-	
+
 	// Load the raw data into memory, then store it
     pcx_data = COM_LoadFile(filename, 5);
 
@@ -938,21 +816,9 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	if (matchheight && (pcx->ymax+1) != matchheight)
 		return 0;
 	
-	// seek to palette
-	/*
-	int start;
-	start = ftell (handle);
-	fseek (handle, start + len - 768, SEEK_SET);
-	fread (palette, 1, 768, handle);
-	//fseek (handle, sizeof(pcxbuf) - 4, SEEK_SET);
-	*/
-	
 	palette = malloc(768);
-	memcpy (palette, (byte *)pcx + len - 768, 768);
+	memcpy (palette, (byte *)pcx + com_filesize - 768, 768);
 	
-	//count = (pcx->xmax+1) * (pcx->ymax+1);
-	//image_rgba = (byte*)malloc( count * 4);
-
 	for (y=0 ; y<=pcx->ymax ; y++)
 	{
 		pix = out + 4*y*(pcx->xmax+1);
@@ -970,11 +836,10 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 				runLength = 1;
 
 			while(runLength-- > 0) {
-				//pix[x++] = dataByte;
-				pix[3] = palette[dataByte*3+0];
-				pix[2] = palette[dataByte*3+1];
-				pix[1] = palette[dataByte*3+2];
-				pix[0] = 255;
+				pix[0] = palette[dataByte*3+0];
+				pix[1] = palette[dataByte*3+1];
+				pix[2] = palette[dataByte*3+2];
+				pix[3] = 255;
 				pix += 4;
 				x++;
 				
@@ -987,11 +852,8 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	image_width = pcx->xmax+1;
 	image_height = pcx->ymax+1;
 	
-	//Con_Printf("n:%s w:%i h:%i\n",filename, image_width, image_height);
-	//fclose(handle);
 	free (palette);
 	free (pcx_data);
-	COM_CloseFile(handle);
 	return pic;
 }
 
@@ -1010,7 +872,6 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 {
 	int bpp;
 	int width, height;
-	int i;
 	
 	byte* rgba_data;
 	
@@ -1033,41 +894,6 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
 	image_width = width;
 	image_height = height;
 
-	//still figuring this part out??
-	
-	int pixels = image_width*image_height;
-	
-	if (reverseRGBA == 4) {
-		//Swap the colors the lazy way
-		for (i = 0; i < pixels; i++) {
-		unsigned char tempR = image[i * 4 + 0];
-        unsigned char tempG = image[i * 4 + 1];
-        unsigned char tempB = image[i * 4 + 2];
-        unsigned char tempA = image[i * 4 + 3];
-
-        // Reverse the order: RGBA to ABGR
-        image[i * 4 + 0] = tempA;
-        image[i * 4 + 1] = tempR;
-        image[i * 4 + 2] = tempG;
-        image[i * 4 + 3] = tempB;
-		}
-	} else
-	{
-		//Swap the colors the lazy way
-		for (i = 0; i < pixels; i++) {
-		unsigned char tempR = image[i * 4 + 0];
-        unsigned char tempG = image[i * 4 + 1];
-        unsigned char tempB = image[i * 4 + 2];
-        unsigned char tempA = image[i * 4 + 3];
-
-        // Reverse the order: RGBA to ABGR
-        image[i * 4 + 0] = tempA;
-        image[i * 4 + 1] = tempB;
-        image[i * 4 + 2] = tempG;
-        image[i * 4 + 3] = tempR;
-		}
-	}
-	
 	free(rgba_data);
 
 	return image;
@@ -1100,7 +926,8 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	COM_FOpenFile (name, &f);
 	if (f > 0) {
 		COM_CloseFile (f);
-		//Con_Printf("Trying to load: %s", name);	
+		//Con_Printf("PCX: %s\n", name);
+		GX_SetMinMag (GX_LINEAR, GX_NEAR);		
 		data = LoadPCX (name, matchwidth, matchheight);
 		if (!data)
 			return 0; //Sys_Error ("PCX: can't load %s", name);
@@ -1159,9 +986,10 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	
 	if (data <= 0) { 
+		//Con_Printf("Cannot load image %s\n", filename);
 		return 0;
 	}
-	
+	//Con_Printf("Cannot load image %s\n", filename);
 	return 0;
 }
 

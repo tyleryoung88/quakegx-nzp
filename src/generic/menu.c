@@ -1353,7 +1353,7 @@ void M_MultiPlayer_Draw (void)
 {
 	int		f;
 	qpic_t	*p;
-
+	/*
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
 	p = Draw_CachePic ("gfx/p_multi.lmp");
 	M_DrawPic ( (320-p->width)/2, 4, p);
@@ -1366,6 +1366,7 @@ void M_MultiPlayer_Draw (void)
 	if (tcpipAvailable)
 		return;
 	M_PrintWhite ((320/2) - ((27*8)/2), 148, "No Communications Available");
+	*/
 }
 
 
@@ -1445,6 +1446,7 @@ void M_Menu_Setup_f (void)
 
 void M_Setup_Draw (void)
 {
+	/*
 	qpic_t	*p;
 
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
@@ -1475,6 +1477,7 @@ void M_Setup_Draw (void)
 
 	if (setup_cursor == 1)
 		M_DrawCharacter (168 + 8*strlen(setup_myname), setup_cursor_table [setup_cursor], 10+((int)(realtime*4)&1));
+	*/
 }
 
 
@@ -1640,6 +1643,7 @@ void M_Menu_Net_f (void)
 
 void M_Net_Draw (void)
 {
+	/*
 	int		f;
 	qpic_t	*p;
 
@@ -1688,6 +1692,7 @@ void M_Net_Draw (void)
 
 	f = (int)(host_time * 10)%6;
 	M_DrawTransPic (54, 32 + m_net_cursor * 20,Draw_CachePic( va("gfx/menudot%i.lmp", f+1 ) ) );
+	*/
 }
 
 
@@ -1932,7 +1937,6 @@ void M_Options_Key (int k)
 			break;
 		case 10:
 			M_Menu_Options2_f ();
-			key_dest = key_menu_pause;
 			break;
 		default:
 			M_AdjustSliders (1);
@@ -2064,8 +2068,8 @@ void M_Keys_Draw (void)
 	int		x, y;
 	qpic_t	*p;
 
-	p = Draw_CachePic ("gfx/ttl_cstm.lmp");
-	M_DrawPic ( (320-p->width)/2, 4, p);
+	//p = Draw_CachePic ("gfx/ttl_cstm.lmp");
+	//M_DrawPic ( (320-p->width)/2, 4, p);
 
 	if (bind_grab)
 		M_Print (12, 32, "Press a key or button for this action");
@@ -2259,7 +2263,7 @@ void M_Options2_Draw (void)
 	M_Print (16, 88, "         2D Resolution changes");
 
 // cursor
-	M_DrawCharacter (200, 32 + options2_cursor*8, 12+((int)(realtime*4)&1));
+	M_DrawCharacter (200, 32 + options2_cursor*12, 12+((int)(realtime*4)&1));
 }
 
 
@@ -2269,10 +2273,7 @@ void M_Options2_Key (int k)
 	{
 	case K_ESCAPE:
 	case K_JOY1:
-		if (key_dest == key_menu_pause)
-			M_Paused_Menu_f();
-		else
-			M_Menu_Main_f ();
+		M_Menu_Options_f ();
 		break;
 
 	case K_ENTER:
@@ -2331,7 +2332,7 @@ void M_Menu_Help_f (void)
 
 void M_Help_Draw (void)
 {
-	M_DrawPic (0, 0, Draw_CachePic ( va("gfx/help%i.lmp", help_page)) );
+	//M_DrawPic (0, 0, Draw_CachePic ( va("gfx/help%i.lmp", help_page)) );
 }
 
 
@@ -2478,6 +2479,7 @@ void M_Menu_LanConfig_f (void)
 
 void M_LanConfig_Draw (void)
 {
+	/*
 	qpic_t	*p;
 	int		basex;
 	char	*startJoin;
@@ -2523,6 +2525,7 @@ void M_LanConfig_Draw (void)
 
 	if (*m_return_reason)
 		M_PrintWhite (basex, 148, m_return_reason);
+	*/
 }
 
 
@@ -2815,6 +2818,7 @@ int		gameoptions_cursor;
 
 void M_GameOptions_Draw (void)
 {
+	/*
 	qpic_t	*p;
 	int		x;
 
@@ -2933,6 +2937,7 @@ void M_GameOptions_Draw (void)
 			m_serverInfoMessage = false;
 		}
 	}
+	*/
 }
 
 
@@ -3126,6 +3131,7 @@ void M_Menu_Search_f (void)
 
 void M_Search_Draw (void)
 {
+	/*
 	qpic_t	*p;
 	int x;
 
@@ -3157,6 +3163,7 @@ void M_Search_Draw (void)
 		return;
 
 	M_Menu_LanConfig_f ();
+	*/
 }
 
 
@@ -3184,6 +3191,7 @@ void M_Menu_ServerList_f (void)
 
 void M_ServerList_Draw (void)
 {
+	/*
 	int		n;
 	char	string [64];
 	qpic_t	*p;
@@ -3220,6 +3228,7 @@ void M_ServerList_Draw (void)
 
 	if (*m_return_reason)
 		M_PrintWhite (16, 148, m_return_reason);
+	*/
 }
 
 

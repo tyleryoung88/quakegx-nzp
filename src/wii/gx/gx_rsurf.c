@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // r_surf.c: surface-related refresh code
 
 #include "../../generic/quakedef.h"
-#include "gxutils.h"
 
 int			skytexturenum;
 
@@ -176,9 +175,9 @@ void R_BuildLightMap (msurface_t *surf, byte *dest, int stride)
 		bl = blocklights;
 		for (i=0 ; i<size ; i++)
 		{
-			*bl++ = 254;
-			*bl++ = 254;
-			*bl++ = 254;
+			*bl++ = 255;
+			*bl++ = 255;
+			*bl++ = 255;
 		}
 		// LordHavoc: .lit support end
 		goto store;
@@ -232,22 +231,21 @@ store:
 			t = bl[0] >> 7;
 			if (t > 255)
 				t = 255;
-			dest[3] = t;
+			*dest++ = t;
 
 			t = bl[1] >> 7;
 			if (t > 255)
 				t = 255;
-			dest[2] = t;
+			*dest++ = t;
 
 			t = bl[2] >> 7;
 			if (t > 255)
 				t = 255;
-			dest[1] = t;
-			
-			dest[0] = 0;
+			*dest++ = t;
 			
 			bl += 3;
-			dest += 4;
+			*dest++ = 0;
+			//dest += 4;
 			// LordHavoc: .lit support end
 			/*
 			// LordHavoc: .lit support begin
@@ -380,7 +378,7 @@ void R_DrawSequentialPoly (msurface_t *s)
 
 	if (s->flags & SURF_DRAWTURB)
 	{
-		GL_DisableMultitexture();
+		//GL_DisableMultitexture();
 		GL_Bind0 (s->texinfo->texture->gl_texturenum);
 		EmitWaterPolys (s);
 		return;
@@ -442,7 +440,7 @@ void DrawGXWaterPoly (glpoly_t *p)
 	float	*v;
 	vec3_t	nv;
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 
 	GX_Begin (GX_TRIANGLEFAN, GX_VTXFMT0, p->numverts);
 	v = p->verts[0];
@@ -465,7 +463,7 @@ void DrawGXWaterPolyLightmap (glpoly_t *p)
 	float	*v;
 	vec3_t	nv;
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 
 	GX_Begin (GX_TRIANGLEFAN, GX_VTXFMT0, p->numverts);
 	v = p->verts[0];
@@ -658,7 +656,7 @@ void R_RenderBrushPoly (msurface_t *fa)
 		
 	t = R_TextureAnimation (fa->texinfo->texture);
 	GL_Bind0 (t->gl_texturenum);
-	GX_SetMinMag (GX_NEAR, GX_LINEAR);
+	GX_SetMinMag (GX_LINEAR, GX_NEAR);
 
 	if (fa->flags & SURF_DRAWTURB)
 	{	// warp texture, no lightmaps
@@ -1186,8 +1184,6 @@ void R_DrawWorld (void)
 {
 	entity_t	ent;
 
-	// ELUTODO: z-fighting
-
 	memset (&ent, 0, sizeof(ent));
 	ent.model = cl.worldmodel;
 
@@ -1207,8 +1203,6 @@ void R_DrawWorld (void)
 	R_RecursiveWorldNode (cl.worldmodel->nodes);
 	
 	R_AddStaticBrushModelsToChains (); // shpuld
-	
-	Fog_SetupFrame (); //johnfitz
 
 	DrawTextureChains ();
 	

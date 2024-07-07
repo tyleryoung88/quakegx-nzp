@@ -29,7 +29,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../generic/quakedef.h"
 #include <gccore.h>
-#include "gxutils.h"
 
 byte		*draw_chars;				// 8*8 graphic characters
 qpic_t		*draw_disc;
@@ -69,8 +68,8 @@ typedef struct cachepic_s
 } cachepic_t;
 
 #define	MAX_CACHED_PICS		128
-cachepic_t	menu_cachepics[MAX_CACHED_PICS];
-int			menu_numcachepics;
+cachepic_t	cachepics[MAX_CACHED_PICS];
+int			numcachepics;
 
 byte		menuplyr_pixels[4096];
 
@@ -109,17 +108,16 @@ qpic_t	*Draw_CachePic (char *path)
 	glpic_t		*gl;
 	char		str[128];
 	int			index = 0;
-
+	
 	strcpy (str, path);
-	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
+	for (pic=cachepics, i=0 ; i<numcachepics ; pic++, i++)
 		if (!strcmp (str, pic->name))
 			return &pic->pic;
 
-	if (menu_numcachepics == MAX_CACHED_PICS)
+	if (numcachepics == MAX_CACHED_PICS)
 		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
-	menu_numcachepics++;
+	numcachepics++;
 	strcpy (pic->name, str);
-
 //
 // load the pic from disk
 //
@@ -139,7 +137,12 @@ qpic_t	*Draw_CachePic (char *path)
 		gl->th = 1;
 
 		return &pic->pic;
-	} else {
+	}
+	
+	// sB NZ:P does not use lmps 
+	// might as well not even check
+
+	/*else {
 		
 		//strcat (str, ".lmp");
 		dat = (qpic_t *)COM_LoadTempFile (str);
@@ -148,7 +151,7 @@ qpic_t	*Draw_CachePic (char *path)
 			Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
 			return 0;
 		}
-		SwapPic (dat);
+		//SwapPic (dat);
 
 		pic->pic.width = dat->width;
 		pic->pic.height = dat->height;
@@ -162,7 +165,7 @@ qpic_t	*Draw_CachePic (char *path)
 		gltextures[gl->texnum].islmp = true;
 
 		return &pic->pic;
-	}
+	}*/
 	return 0;
 }
 
@@ -298,7 +301,7 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 
 	GL_Bind0 (char_texture);
 	
-	GX_SetMinMag (GX_NEAR, GX_NEAR);
+	GX_SetMinMag (GX_LINEAR, GX_NEAR);
 
 	//glEnable(GL_BLEND);
 	QGX_Blend(true);
@@ -484,7 +487,7 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 	
 	GL_Bind0 (gl->texnum);
 	
-	GX_SetMinMag (GX_NEAR, GX_NEAR);
+	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	//GX_SetMaxAniso(GX_MAX_ANISOTROPY);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
@@ -671,56 +674,6 @@ void Draw_TransAlphaPic (int x, int y, qpic_t *pic, float alpha)
 	Draw_AlphaPic (x, y, pic, alpha);
 }
 
-
-/*
-=============
-Draw_TransPicTranslate
-
-Only used for the player color selection menu
-=============
-*/
-void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation)
-{
-	int				v, c;
-	byte			trans[64*64];
-	int				p;
-
-	c = pic->width * pic->height;
-
-	for (v = 0; v < c; v++)
-	{
-		p = menuplyr_pixels[v];
-		if (p == 255)
-			trans[v] = p;
-		else
-			trans[v] = translation[p];
-	}
-
-	GL_UpdateTexture (translate_texture, gltextures[translate_texture].identifier, gltextures[translate_texture].width,
-		gltextures[translate_texture].height, trans, gltextures[translate_texture].mipmap, false);
-
-	GL_Bind0 (translate_texture);
-	//GX_SetMinMag (GX_NEAR, GX_NEAR);
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-
-	GX_Position3f32(x, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(0, 0);
-
-	GX_Position3f32(x + pic->width, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(1, 0);
-
-	GX_Position3f32(x + pic->width, y + pic->height, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(1, 1);
-
-	GX_Position3f32(x, y + pic->height, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(0, 1);
-	GX_End();
-}
-
 /*
 ================
 Draw_LoadingFill
@@ -735,7 +688,7 @@ void Draw_LoadingFill(void)
 	int size       	= 16;
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
-    int y          	= vid.height - (size/ 2) - 25;
+    int y          	= vid.height - (size/ 2) - 35;
 	int l;
 	char str[64];
 	char* text;
@@ -854,22 +807,24 @@ Fills a box of pixels with a single color
 void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a)
 {
 	//glDisable (GL_TEXTURE_2D);
+	
+	QGX_Alpha(false);
+	QGX_Blend(true);
 
 	GL_Bind0 (white_texturenum);
 	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	//glEnable (GL_BLEND); //johnfitz -- for alpha
-	QGX_Blend(true);
 	//glDisable (GL_ALPHA_TEST); //johnfitz -- for alpha
-	QGX_Alpha(false);
 	//glColor4f (r/255, g/255, b/255, a/255);
 	//GX_Color4u8(r, g, b, a);
-	/*
-	GX_SetVtxDesc(GX_VA_TEX0, GX_NONE);
-	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
-	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
-	*/
+	//GL_DisableMultitexture();
+	
+	//GX_SetVtxDesc(GX_VA_TEX0, GX_NONE);
+	//GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
+	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	//glBegin (GL_QUADS);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
+	
 	
 	/*
 	glVertex2f (x,y);
@@ -896,16 +851,19 @@ void Draw_Fill (int x, int y, int w, int h, float r, float g, float b, float a)
 
 	//glEnd ();
 	GX_End ();
-	/*
-	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
- 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-	*/
+	
 	//glColor4f (1,1,1,1);
 	//glDisable (GL_BLEND); //johnfitz -- for alpha
 	QGX_Blend(false);
-	//glEnable(GL_ALPHA_TEST); //johnfitz -- for alpha
 	QGX_Alpha(true);
+	//glEnable(GL_ALPHA_TEST); //johnfitz -- for alpha
+	//QGX_Alpha(true);
 	//glEnable (GL_TEXTURE_2D);
+	
+	//GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
+	//GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
+	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+	
 }
 
 /*
@@ -1160,8 +1118,9 @@ void Draw_Crosshair (void)
 		Draw_FillByColor(vid.width/2, 0, 1, 240, 255, 0, 0, 255);
 		Draw_FillByColor(0, vid.height/2, 400, 1, 0, 255, 0, 255);
 	}
-
-	if (cl.stats[STAT_HEALTH] <= 20)
+	
+	// We only want the crosshair to show in-game and while player is alive.
+	if (cl.stats[STAT_HEALTH] < 1)
 		return;
 
 	if (cl.stats[STAT_ZOOM] == 2) {
@@ -1271,11 +1230,11 @@ void Draw_Crosshair (void)
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1.3);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 5, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 5, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1.5);
 	}
 	// Dot crosshair (.)
 	else if (crosshair.value == 3) {
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 8, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1.3);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 5, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 5, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1.5);
 	}
 	// Grenade crosshair
 	else if (crosshair.value == 4) {
@@ -1411,6 +1370,5 @@ void GL_Set2D (void)
 	QGX_Alpha(true);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
-
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 }

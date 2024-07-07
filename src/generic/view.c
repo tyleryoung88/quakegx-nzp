@@ -649,9 +649,9 @@ void CalcGunAngle (void)
 	
 	//=========Strafe-Roll=========
 	//Creating backup
-		CWeaponRot[PITCH] = cl.viewent.angles[PITCH] * -1;
-		CWeaponRot[YAW] = cl.viewent.angles[YAW] * -1;
-		CWeaponRot[ROLL] = cl.viewent.angles[ROLL] * -1;
+	CWeaponRot[PITCH] = cl.viewent.angles[PITCH] * -1;
+	CWeaponRot[YAW] = cl.viewent.angles[YAW] * -1;
+	CWeaponRot[ROLL] = cl.viewent.angles[ROLL] * -1;
 
 	float side;
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
@@ -661,8 +661,8 @@ void CalcGunAngle (void)
 		if (!cls.demoplayback && !in_osk)
 		{
 			// ELUTODO: Some small gimbal lock issues
-			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw*1.2));
-			cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1.2f));
+			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw));
+			cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
 			
 			if (cl_weapon_inrollangle.value) {
 				if (cl.stats[STAT_ZOOM] == 0) {	
@@ -686,10 +686,11 @@ void CalcGunAngle (void)
 			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
 		}
 	}
-
+	/*
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 	cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
 	cl.viewent.angles[YAW] -= v_idlescale.value * sinf(cl.time*v_iyaw_cycle.value) * v_iyaw_level.value;
+	*/
 /*
 	//^^^ Model swaying
 	if(cl.stats[STAT_ZOOM] == 1)
@@ -705,8 +706,8 @@ void CalcGunAngle (void)
 */
 	//BLUBS STOPS HERE
 	
-	OldYawTheta = cl.viewent.angles[YAW];
-	OldPitchTheta = cl.viewent.angles[PITCH];
+	//OldYawTheta = cl.viewent.angles[YAW];
+	//OldPitchTheta = cl.viewent.angles[PITCH];
 	
 	//readd this
 	cl.viewent2.angles[ROLL] = cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value * 2) * v_iroll_level.value;
@@ -715,9 +716,9 @@ void CalcGunAngle (void)
 	
 	
 	//Evaluating total offset
-		CWeaponRot[PITCH] -= cl.viewent.angles[PITCH];
-		CWeaponRot[YAW] += cl.viewent.angles[YAW];
-		CWeaponRot[ROLL] += cl.viewent.angles[ROLL];
+	CWeaponRot[PITCH] -= cl.viewent.angles[PITCH];
+	CWeaponRot[YAW] += cl.viewent.angles[YAW];
+	CWeaponRot[ROLL] += cl.viewent.angles[ROLL];
 }
 
 /*
@@ -879,17 +880,18 @@ void V_CalcRefdef (void)
 // never let it sit exactly on a node line, because a water plane can
 // dissapear when viewed with the eye exactly on it.
 // the server protocol only specifies to 1/16 pixel, so add 1/32 in each axis
-	/*
+	
 	r_refdef.vieworg[0] += 1.0/32;
 	r_refdef.vieworg[1] += 1.0/32;
 	r_refdef.vieworg[2] += 1.0/32;
-	*/
+	
 
 	VectorCopy (cl.viewangles, r_refdef.viewangles);
 	//V_CalcViewRoll ();
 	//V_AddIdle ();
 
 // offsets
+
 	angles[PITCH] = -ent->angles[PITCH];	// because entity pitches are								
 	angles[YAW] = ent->angles[YAW];			//  actually backward
 	angles[ROLL] = ent->angles[ROLL];
@@ -904,6 +906,7 @@ void V_CalcRefdef (void)
 	V_BoundOffsets ();
 		
 // set up gun position
+
 	VectorCopy (cl.viewangles, view->angles);
 	//cl.oldviewangles = cl.viewangles;
 	
@@ -974,7 +977,7 @@ void V_CalcRefdef (void)
 	cADSOfs [0] += (ADSOffset[0] - cADSOfs[0]) * 0.25;
 	cADSOfs [1] += (ADSOffset[1] - cADSOfs[1]) * 0.25;
 	cADSOfs [2] += (ADSOffset[2] - cADSOfs[2]) * 0.25;
-
+	
 	temp_right[0] *= cADSOfs[0];
 	temp_right[1] *= cADSOfs[0];
 	temp_right[2] *= cADSOfs[0];

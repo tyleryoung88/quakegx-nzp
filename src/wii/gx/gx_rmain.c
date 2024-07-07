@@ -263,13 +263,13 @@ void R_DrawSpriteModel (entity_t *e)
 		right = vright;
 	}
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 
     GL_Bind0(frame->gl_texturenum);
-	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
+	//GX_SetMinMag (GX_LINEAR, GX_NEAR);
 	
 	//Fog_DisableGFog ();
-
+	//GX_SetZMode(GX_TRUE, GX_GEQUAL, GX_TRUE);
 	QGX_Alpha(false);
 	QGX_Blend(true);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
@@ -301,7 +301,7 @@ void R_DrawSpriteModel (entity_t *e)
 	GX_End();
 	QGX_Alpha(true);
 	QGX_Blend(false);
-	
+	//GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	//Fog_EnableGFog ();
 }
 
@@ -678,8 +678,8 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	
 	for(int g = 0; g < 3; g++)
 	{
-		if(lightcolor[g] < 8)
-			lightcolor[g] = 8;
+		if(lightcolor[g] < 12)
+			lightcolor[g] = 12;
 		if(lightcolor[g] > 125)
 			lightcolor[g] = 125;
 	}
@@ -688,14 +688,14 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	paliashdr = (aliashdr_t *)Mod_Extradata(clmodel);//e->model
 	c_alias_polys += paliashdr->numtris;
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 	
 	//Shpuld
 	if(r_model_brightness.value)
 	{
-		lightcolor[0] += 10;
-		lightcolor[1] += 10;
-		lightcolor[2] += 10;
+		lightcolor[0] += 32;
+		lightcolor[1] += 32;
+		lightcolor[2] += 32;
 	}
 	
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
@@ -781,6 +781,8 @@ void R_DrawTransparentAliasModel (entity_t *e)
 
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
+	
+	Fog_DisableGFog();
 
 	for(int g = 0; g < 3; g++)
 	{
@@ -837,14 +839,14 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	// draw all the triangles
 	//
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 	
 	//Shpuld
 	if(r_model_brightness.value)
 	{
-		lightcolor[0] += 10;
-		lightcolor[1] += 10;
-		lightcolor[2] += 10;
+		lightcolor[0] += 16;
+		lightcolor[1] += 16;
+		lightcolor[2] += 16;
 	}
 	
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
@@ -874,7 +876,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 		glShadeModel (GL_SMOOTH);
 	*/
 
-	//GX_SetZMode(GX_TRUE, GX_GEQUAL, GX_TRUE);
 	QGX_Alpha(false);
 	QGX_Blend(true);
 
@@ -890,10 +891,10 @@ void R_DrawTransparentAliasModel (entity_t *e)
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 	
-	//QGX_Blend(false);
-	//GX_SetZMode(GX_TRUE, GX_EQUAL, GX_TRUE);
 	QGX_Blend(false);
 	QGX_Alpha(true);
+	
+	Fog_EnableGFog();
 	/*
 	glShadeModel (GL_FLAT);
 	if (gl_affinemodels.value)
@@ -948,18 +949,10 @@ void R_DrawAliasModel (entity_t *e)
 		return;
 
 	specChar = clmodel->name[strlen(clmodel->name) - 5];
-
+	
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
-	
-	for(int g = 0; g < 3; g++)
-	{
-		if(lightcolor[g] < 8)
-			lightcolor[g] = 8;
-		if(lightcolor[g] > 125)
-			lightcolor[g] = 125;
-	}
-	
+
 	//
 	// get lighting information
 	//
@@ -967,11 +960,14 @@ void R_DrawAliasModel (entity_t *e)
 	//ambientlight = shadelight = R_LightPoint (currententity->origin);
 	
 	R_LightPoint (currententity->origin);
+	
+	Fog_DisableGFog();
 	/*
 	// allways give the gun some light
 	if (e == &cl.viewent && ambientlight < 24)
 		ambientlight = shadelight = 24;
 	*/
+	
 	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
 	{
 		if (cl_dlights[lnum].die >= cl.time)
@@ -986,13 +982,14 @@ void R_DrawAliasModel (entity_t *e)
 				//ZOID models should be affected by dlights as well
 				shadelight += add;
 			}
-			*/
+			*/	
 			if (add > 0)
 			{
 				lightcolor[0] += add * cl_dlights[lnum].color[0];
 				lightcolor[1] += add * cl_dlights[lnum].color[1];
 				lightcolor[2] += add * cl_dlights[lnum].color[2];
 			}
+			
 		}
 	}
 	/*
@@ -1002,9 +999,19 @@ void R_DrawAliasModel (entity_t *e)
 	if (ambientlight + shadelight > 192)
 		shadelight = 192 - ambientlight;
 	*/
+	
+	for(int g = 0; g < 3; g++)
+	{
+		if(lightcolor[g] < 48)
+			lightcolor[g] = 48;
+		if(lightcolor[g] > 215)
+			lightcolor[g] = 215;
+	}
+	
 	// ZOID: never allow players to go totally black
+	/*
 	i = currententity - cl_entities;
-	if (i >= 1 && i<=cl.maxclients/* && !strcmp (currententity->model->name, "progs/player.mdl")*/)
+	if (i >= 1 && i<=cl.maxclients && !strcmp (currententity->model->name, "progs/player.mdl"))
 	{
 		if (lightcolor[0] < 8)
 			lightcolor[0] = 8;
@@ -1013,8 +1020,17 @@ void R_DrawAliasModel (entity_t *e)
 		if (lightcolor[2] < 8)
 			lightcolor[2] = 8;
 	}
+	*/
 		//if (ambientlight < 8)
 			//ambientlight = shadelight = 8;
+		
+	//Shpuld
+	if(r_model_brightness.value && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
+	{		
+		lightcolor[0] += 32;
+		lightcolor[1] += 32;
+		lightcolor[2] += 32;
+	}
 	
 	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 	//shadelight = shadelight / 200.0;
@@ -1025,8 +1041,8 @@ void R_DrawAliasModel (entity_t *e)
 	}
 	
 	an = e->angles[1]/180*M_PI;
-	shadevector[0] = cos(-an);
-	shadevector[1] = sin(-an);
+	shadevector[0] = cosf(-an);
+	shadevector[1] = sinf(-an);
 	shadevector[2] = 1;
 	VectorNormalize (shadevector);
 
@@ -1050,7 +1066,7 @@ void R_DrawAliasModel (entity_t *e)
 	// draw all the triangles
 	//
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 	
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
 	if (add > 0.0f && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
@@ -1060,17 +1076,9 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[2] += add / 3.0f;
 	}
 	
-	//Shpuld
-	if(r_model_brightness.value && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
-	{		
-		lightcolor[0] += 20;
-		lightcolor[1] += 20;
-		lightcolor[2] += 20;
-	}
-	
 	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
 	{
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = 216;
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
 	}
 	
 	// HACK HACK HACK -- no fullbright colors, so make torches full light
@@ -1081,46 +1089,36 @@ void R_DrawAliasModel (entity_t *e)
 
 	c_guMtxIdentity(model);
 	//if (e == &cl.viewent || e == &cl.viewent2)
-		R_RotateForEntity (e, ENTSCALE_DEFAULT);
+	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
-	if (!strcmp (clmodel->name, "progs/eyes.mdl") && gl_doubleeyes.value) {
-		c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2] - (22 + 8));
+	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
+		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
+		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
+			scale *= ENTSCALE_DECODE(e->scale);
+		//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+		//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
+		c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 		c_guMtxConcat(model, temp, model);
-// double size of eyes, since they are really hard to see in gl
-		c_guMtxScale (temp, paliashdr->scale[0]*2, paliashdr->scale[1]*2, paliashdr->scale[2]*2);
+		c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
 		c_guMtxConcat(model, temp, model);
 	} else {
-		
-		// Special handling of view model to keep FOV from altering look.  Pretty good.  Not perfect but rather close.
-		if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
-			float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
-			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
-				scale *= ENTSCALE_DECODE(e->scale);
-			//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-			//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
-			c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-			c_guMtxConcat(model, temp, model);
-			c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
-			c_guMtxConcat(model, temp, model);
-		} else {
-			float scale = 1.0f;
-			if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
-				scale *= ENTSCALE_DECODE(e->scale);	
-			//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
-			//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
-			c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2] * scale);
-			c_guMtxConcat(model, temp, model);
-			c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2] * scale);
-			c_guMtxConcat(model, temp, model);
-		}
-		
-		/*
-		c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+		float scale = 1.0f;
+		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
+			scale *= ENTSCALE_DECODE(e->scale);	
+		//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
+		//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
+		c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
 		c_guMtxConcat(model, temp, model);
-		c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+		c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
 		c_guMtxConcat(model, temp, model);
-		*/
 	}
+	
+	/*
+	c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	c_guMtxConcat(model, temp, model);
+	c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+	c_guMtxConcat(model, temp, model);
+	*/
 
 	c_guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
@@ -1131,24 +1129,19 @@ void R_DrawAliasModel (entity_t *e)
 		{
 			case 0:
 				GL_Bind0(zombie_skins[0]);
-				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			case 1:
 				GL_Bind0(zombie_skins[1]);
-				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			case 2:
 				GL_Bind0(zombie_skins[2]);
-				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			case 3:
 				GL_Bind0(zombie_skins[3]);
-				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 			default: //out of bounds? assuming 0
 				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
 				GL_Bind0(zombie_skins[0]);
-				//GX_SetMinMag (GX_NEAR, GX_LINEAR);
 				break;
 		}
 	}
@@ -1191,6 +1184,8 @@ void R_DrawAliasModel (entity_t *e)
 		if(e->z_rarm)
 			R_DrawZombieLimb(e,3);
 	}	
+	
+	Fog_EnableGFog();
 
 /* ELUTODO
 	glShadeModel (GL_FLAT);
@@ -1337,7 +1332,7 @@ void R_DrawView2Model (void)
 	currententity = &cl.viewent2;
 	if (!currententity->model)
 		return;
-
+/*
 	j = R_LightPoint (currententity->origin);
 
 	if (j < 24)
@@ -1364,7 +1359,7 @@ void R_DrawView2Model (void)
 
 	ambient[0] = ambient[1] = ambient[2] = ambient[3] = (float)ambientlight / 128;
 	diffuse[0] = diffuse[1] = diffuse[2] = diffuse[3] = (float)shadelight / 128;
-
+*/
 	// hack the depth range to prevent view model from poking into walls
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 0.3f);
 	R_DrawAliasModel (currententity);
@@ -1404,6 +1399,7 @@ void R_DrawViewModel (void)
 	currententity = &cl.viewent;
 	if (!currententity->model)
 		return;
+	
 /*
 	j = R_LightPoint (currententity->origin);
 
@@ -1533,7 +1529,7 @@ void R_PolyBlend (void)
 	
 	Mtx temp;
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 
 	QGX_Alpha(false);
 	QGX_Blend(true);
@@ -1574,6 +1570,8 @@ void R_PolyBlend (void)
 	// ELUTODO: check if v_blend gets bigger than 1.0f
 	if (v_blend[3])
 	{
+		Con_Printf("polyblending");
+		
 		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
 		GX_Position3f32(10.0f, 100.0f, 100.0f);
@@ -1598,6 +1596,8 @@ void R_PolyBlend (void)
 	// ELUTODO quick hack
 	if (v_gamma.value != 1.0f)
 	{
+		Con_Printf("polyblending");
+		
 		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
 		GX_Position3f32(10.0f, 100.0f, 100.0f);
@@ -1627,7 +1627,7 @@ void R_PolyBlend (void)
 	
 	GX_SetVtxDesc(GX_VA_TEX0, GX_DIRECT);
  	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
-	//GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 	QGX_Blend(false);
 	QGX_Alpha(true);
 }
@@ -1795,6 +1795,8 @@ void R_SetupGL (void)
 	GX_InitFogAdjTable	(table, r_refdef.vrect.width, perspective);
 	
 	GX_SetFogRangeAdj(GX_ENABLE, screenaspect, table);
+	
+	Fog_EnableGFog ();
 
 	// ELUTODOglGetFloatv (GL_MODELVIEW_MATRIX, r_world_matrix);
 
@@ -1836,7 +1838,7 @@ void R_RenderScene (void)
 	// for the entities, we load the matrices separately
 	R_DrawEntitiesOnList ();
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	R_DrawParticles ();

@@ -60,48 +60,88 @@ DYNAMIC LIGHTS
 */
 
 /*
-=============
-R_MarkLights
-=============
+=============================================================================
+
+DYNAMIC LIGHTS
+
+=============================================================================
 */
 void R_MarkLights (dlight_t *light, int bit, mnode_t *node)
 {
 	mplane_t	*splitplane;
-	float		dist;
+	float		dist, l, maxdist;
 	msurface_t	*surf;
-	int			i;
-	
+	int		i, j, s, t, sidebit;
+	vec3_t		impact;
+
+loc0:
 	if (node->contents < 0)
 		return;
 
 	splitplane = node->plane;
-	dist = DotProduct (light->origin, splitplane->normal) - splitplane->dist;
-	
+//	dist = PlaneDiff(light->origin, splitplane);
+
+	if (splitplane->type < 3)
+		dist = light->origin[splitplane->type] - splitplane->dist;
+	else
+		dist = DotProduct (light->origin, splitplane->normal) - splitplane->dist;
+
 	if (dist > light->radius)
 	{
-		R_MarkLights (light, bit, node->children[0]);
-		return;
+		node = node->children[0];
+		goto loc0;
 	}
 	if (dist < -light->radius)
 	{
-		R_MarkLights (light, bit, node->children[1]);
-		return;
+		node = node->children[1];
+		goto loc0;
 	}
-		
+
+	maxdist = light->radius * light->radius;
 // mark the polygons
 	surf = cl.worldmodel->surfaces + node->firstsurface;
 	for (i=0 ; i<node->numsurfaces ; i++, surf++)
 	{
-		if (surf->dlightframe != r_dlightframecount)
-		{
-			surf->dlightbits = 0;
-			surf->dlightframe = r_dlightframecount;
-		}
-		surf->dlightbits |= bit;
-	}
+		dist = DotProduct (light->origin, surf->plane->normal) - surf->plane->dist;		// JT030305 - fix light bleed through
+		if (dist >= 0)
+			sidebit = 0;
+		else
+			sidebit = SURF_PLANEBACK;
 
-	R_MarkLights (light, bit, node->children[0]);
-	R_MarkLights (light, bit, node->children[1]);
+		if ( (surf->flags & SURF_PLANEBACK) != sidebit )				//Discoloda
+			continue;								//Discoloda
+
+		for (j=0 ; j<3 ; j++)
+			impact[j] = light->origin[j] - surf->plane->normal[j]*dist;
+
+		// clamp center of light to corner and check brightness
+		l = DotProduct(impact, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3] - surf->texturemins[0];
+		s = l + 0.5;
+		s = bound(0, s, surf->extents[0]);
+		s = l - s;
+		l = DotProduct(impact, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3] - surf->texturemins[1];
+		t = l + 0.5;
+		t = bound(0, t, surf->extents[1]);
+		t = l - t;
+
+		// compare to minimum light
+		if ((s*s + t*t + dist*dist) < maxdist)
+		{
+			if (surf->dlightframe != r_dlightframecount)	// not dynamic until now
+			{
+				surf->dlightbits = bit;
+				surf->dlightframe = r_dlightframecount;
+			}
+			else	// already dynamic
+			{
+				surf->dlightbits |= bit;
+			}
+		}
+	}
+	if (node->children[0]->contents >= 0)
+		R_MarkLights (light, bit, node->children[0]);
+	if (node->children[1]->contents >= 0)
+		R_MarkLights (light, bit, node->children[1]);
 }
 
 
@@ -127,8 +167,6 @@ void R_PushDlights (void)
 	}
 }
 
-
-
 /*
 =============================================================================
 
@@ -139,13 +177,9 @@ LIGHT SAMPLING
 
 mplane_t		*lightplane;
 vec3_t			lightspot;
-vec3_t			lightcolor; //johnfitz -- lit support via lordhavoc
 
-/*
-=============
-RecursiveLightPoint -- johnfitz -- replaced entire function for lit support via lordhavoc
-=============
-*/
+// LordHavoc: .lit support begin
+// LordHavoc: original code replaced entirely
 int RecursiveLightPoint (vec3_t color, mnode_t *node, vec3_t start, vec3_t end)
 {
 	float		front, back, frac;
@@ -197,11 +231,8 @@ loc0:
 			if (surf->flags & SURF_DRAWTILED)
 				continue;	// no lightmaps
 
-		// ericw -- added double casts to force 64-bit precision.
-		// Without them the zombie at the start of jam3_ericw.bsp was
-		// incorrectly being lit up in SSE builds.
-			ds = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3]);
-			dt = (int) ((double) DoublePrecisionDotProduct (mid, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3]);
+			ds = (int) ((float) DotProduct (mid, surf->texinfo->vecs[0]) + surf->texinfo->vecs[0][3]);
+			dt = (int) ((float) DotProduct (mid, surf->texinfo->vecs[1]) + surf->texinfo->vecs[1][3]);
 
 			if (ds < surf->texturemins[0] || dt < surf->texturemins[1])
 				continue;
@@ -232,9 +263,9 @@ loc0:
 					lightmap += ((surf->extents[0]>>4)+1) * ((surf->extents[1]>>4)+1)*3; // LordHavoc: *3 for colored lighting
 				}
 
-				color[2] += (float) ((int) ((((((((r11-r10) * dsfrac) >> 4) + r10)-((((r01-r00) * dsfrac) >> 4) + r00)) * dtfrac) >> 4) + ((((r01-r00) * dsfrac) >> 4) + r00)));
+				color[0] += (float) ((int) ((((((((r11-r10) * dsfrac) >> 4) + r10)-((((r01-r00) * dsfrac) >> 4) + r00)) * dtfrac) >> 4) + ((((r01-r00) * dsfrac) >> 4) + r00)));
 				color[1] += (float) ((int) ((((((((g11-g10) * dsfrac) >> 4) + g10)-((((g01-g00) * dsfrac) >> 4) + g00)) * dtfrac) >> 4) + ((((g01-g00) * dsfrac) >> 4) + g00)));
-				color[0] += (float) ((int) ((((((((b11-b10) * dsfrac) >> 4) + b10)-((((b01-b00) * dsfrac) >> 4) + b00)) * dtfrac) >> 4) + ((((b01-b00) * dsfrac) >> 4) + b00)));
+				color[2] += (float) ((int) ((((((((b11-b10) * dsfrac) >> 4) + b10)-((((b01-b00) * dsfrac) >> 4) + b00)) * dtfrac) >> 4) + ((((b01-b00) * dsfrac) >> 4) + b00)));
 			}
 			return true; // success
 		}
@@ -244,16 +275,12 @@ loc0:
 	}
 }
 
-/*
-=============
-R_LightPoint -- johnfitz -- replaced entire function for lit support via lordhavoc
-=============
-*/
+vec3_t lightcolor; // LordHavoc: used by model rendering
 int R_LightPoint (vec3_t p)
 {
 	vec3_t		end;
 
-	if (!cl.worldmodel->lightdata)
+	if (r_fullbright.value || !cl.worldmodel->lightdata)
 	{
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
 		return 255;
@@ -261,9 +288,10 @@ int R_LightPoint (vec3_t p)
 
 	end[0] = p[0];
 	end[1] = p[1];
-	end[2] = p[2] - 8192; //johnfitz -- was 2048
+	end[2] = p[2] - 2048;
 
 	lightcolor[0] = lightcolor[1] = lightcolor[2] = 0;
 	RecursiveLightPoint (lightcolor, cl.worldmodel->nodes, p, end);
 	return ((lightcolor[0] + lightcolor[1] + lightcolor[2]) * (1.0f / 3.0f));
 }
+// LordHavoc: .lit support end

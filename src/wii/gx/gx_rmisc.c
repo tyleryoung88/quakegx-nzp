@@ -225,6 +225,7 @@ Translates a skin texture by the per-player color lookup
 */
 void R_TranslatePlayerSkin (int playernum)
 {
+	/*
 	int		top, bottom;
 	byte	translate[256];
 	unsigned	translate32[256];
@@ -238,7 +239,7 @@ void R_TranslatePlayerSkin (int playernum)
 	byte		*inrow;
 	unsigned	frac, fracstep;
 
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 
 	//top = cl.scores[playernum].colors & 0xf0;
 	//bottom = (cl.scores[playernum].colors &15)<<4;
@@ -320,6 +321,7 @@ void R_TranslatePlayerSkin (int playernum)
 	}
 
 	GL_Update32 (&gltextures[playertextures[playernum]], pixels, scaled_width, scaled_height, true, true);
+	*/
 }
 
 
@@ -350,6 +352,8 @@ void R_NewMap (void)
 	
 	Sky_NewMap (); //johnfitz -- skybox in worldspawn
 	Fog_NewMap (); // johnfitz -- global fog in worldspawn
+	
+	//Fog_EnableGFog ();
 
 	// identify sky texture
 	skytexturenum = -1;

@@ -82,11 +82,11 @@ float		scr_conlines;		// lines of console to display
 
 float		oldscreensize, oldfov;
 cvar_t		scr_viewsize = {"viewsize","100", true};
-cvar_t		scr_fov = {"fov","90"};	// 10 - 170
+cvar_t		scr_fov = {"fov","70"};	// 10 - 170
 cvar_t 		scr_fov_viewmodel = {"r_viewmodel_fov","70"};
 cvar_t		scr_conspeed = {"scr_conspeed","300"};
 cvar_t		scr_centertime = {"scr_centertime","2"};
-cvar_t		scr_showram = {"showram","1"};
+cvar_t		scr_showram = {"showram","0"};
 cvar_t		scr_showturtle = {"showturtle","0"};
 cvar_t		scr_showpause = {"showpause","1"};
 cvar_t		scr_printspeed = {"scr_printspeed","8"};
@@ -295,7 +295,7 @@ qpic_t *GetButtonIcon (char *buttonname)
 				return b_left;
 			else if (!strcmp(Key_KeynumToString(j), "PADRIGHT"))
 				return b_right;
-			else if (!strcmp(Key_KeynumToString(j), "MINUS"))
+			else if (!strcmp(Key_KeynumToString(j), "impulse 33"))
 				return b_minus;
 			else if (!strcmp(Key_KeynumToString(j), "PLUS"))
 				return b_plus;
@@ -332,7 +332,7 @@ char *GetUseButtonL ()
 			continue;
 		if (!strncmp (b, "+use", l) )
 		{
-			if (!strcmp(Key_KeynumToString(j), "MINUS") ||
+			if (!strcmp(Key_KeynumToString(j), "JOY17") ||
 				!strcmp(Key_KeynumToString(j), "ABUTTON") ||
 				!strcmp(Key_KeynumToString(j), "BBUTTON") ||
 				!strcmp(Key_KeynumToString(j), "HOME"))
@@ -349,16 +349,16 @@ char *GetGrenadeButtonL ()
 	int		j;
 	int		l;
 	char	*b;
-	l = strlen("+grenade");
+	l = strlen("impulse 33");
 
 	for (j=0 ; j<256 ; j++)
 	{
 		b = keybindings[j];
 		if (!b)
 			continue;
-		if (!strncmp (b, "+grenade", l) )
+		if (!strncmp (b, "impulse 33", l) )
 		{
-			if (!strcmp(Key_KeynumToString(j), "MINUS") ||
+			if (!strcmp(Key_KeynumToString(j), "JOY17") ||
 				!strcmp(Key_KeynumToString(j), "ABUTTON") ||
 				!strcmp(Key_KeynumToString(j), "BBUTTON") ||
 				!strcmp(Key_KeynumToString(j), "HOME"))
@@ -776,10 +776,11 @@ void SCR_DrawPause (void)
 
 	if (!cl.paused)
 		return;
-
+	/*
 	pic = Draw_CachePic ("gfx/pause.lmp");
 	Draw_Pic ( (vid.conwidth - pic->width)/2, 
 		(vid.conheight - 48 - pic->height)/2, pic);
+	*/
 }
 
 /*
@@ -833,10 +834,11 @@ void SCR_DrawLoading (void)
 
 	if (!scr_drawloading)
 		return;
-		
+	/*	
 	pic = Draw_CachePic ("gfx/loading.lmp");
 	Draw_Pic ( (vid.conwidth - pic->width)/2, 
 		(vid.conheight - 48 - pic->height)/2, pic);
+	*/
 }
 
 /*

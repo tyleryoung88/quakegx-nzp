@@ -878,6 +878,7 @@ void Mod_LoadFaces (lump_t *l)
 	// lighting info
 		for (i=0 ; i<MAXLIGHTMAPS ; i++)
 			out->styles[i] = in->styles[i];
+		
 		if (loadmodel->bspversion == HL_BSPVERSION)		//Diabolickal HLBSP
 			i = LittleLong(in->lightofs)/3;
 		else
@@ -1629,7 +1630,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	//
 	// General texture override stuff.
 	//
-
+	/*
 	// Mustang & Sally // v_biatch
 	if (strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_left.mdl") == 0 ||
 	strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_right.mdl") == 0) {
@@ -1646,7 +1647,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
 	}
-	
+	*/
 #if 1
 	for (i=0 ; i<numskins ; i++)
 	{

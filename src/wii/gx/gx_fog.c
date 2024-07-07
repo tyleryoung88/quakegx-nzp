@@ -30,6 +30,7 @@ float old_blue;
 float fade_time; //duration of fade
 float fade_done; //time when fade will be done
 
+extern Mtx44 perspective;
 GXColor BLACK = {0, 0, 0, 0};
 
 /*
@@ -50,11 +51,11 @@ void Fog_Update (float start, float end, float red, float green, float blue, flo
 			float f;
 
 			f = (fade_done - cl.time) / fade_time;
-			old_start = f * old_start + (1.0 - f) * fog_start;
-			old_end = f * old_end + (1.0 - f) * fog_end;
-			old_red = f * old_red + (1.0 - f) * fog_red;
-			old_green = f * old_green + (1.0 - f) * fog_green;
-			old_blue = f * old_blue + (1.0 - f) * fog_blue;
+			old_start = f * old_start + (255.0 - f) * fog_start;
+			old_end = f * old_end + (255.0 - f) * fog_end;
+			old_red = f * old_red + (255.0 - f) * fog_red;
+			old_green = f * old_green + (255.0 - f) * fog_green;
+			old_blue = f * old_blue + (255.0 - f) * fog_blue;
 		}
 		else
 		{
@@ -86,12 +87,14 @@ void Fog_ParseServerMessage (void)
 {
 	float start, end, red, green, blue, time;
 
-	start = MSG_ReadByte() / 255.0;
-	end = MSG_ReadByte() / 255.0;
-	red = MSG_ReadByte() / 255.0;
-	green = MSG_ReadByte() / 255.0;
-	blue = MSG_ReadByte() / 255.0;
-	time = MSG_ReadShort() / 100.0;
+	start = MSG_ReadByte();
+	end = MSG_ReadByte();
+	red = MSG_ReadByte();
+	green = MSG_ReadByte();
+	blue = MSG_ReadByte();
+	time = MSG_ReadShort();
+	
+	Con_Printf("updating fog values");
 
 	Fog_Update (start, end, red, green, blue, time);
 }
@@ -236,72 +239,25 @@ void Fog_ParseWorldspawn (void)
 	}
 }
 
-/*
-=============
-Fog_GetColor
-
-calculates fog color for this frame, taking into account fade times
-=============
-*/
-GXColor FogColor = {108, 122, 137, 255};
-
-/*
-=============
-Fog_SetupFrame
-
-called at the beginning of each frame
-=============
-*/
-void Fog_SetupFrame (void)
+/* Deduce the projection type (perspective vs orthogonal) and the values of the
+ * near and far clipping plane from the projection matrix.
+ * Note that the formulas for computing "near" and "far" are only valid for
+ * matrices created by opengx or by the gu* family of GX functions. OpenGL
+ * books use different formulas.
+ */
+static void get_projection_info(float *near, float *far)
 {
-	/*
-	glFogfv(GL_FOG_COLOR, Fog_GetColor());
-	glFogf(GL_FOG_DENSITY, 0.2f);
-	glFogf(GL_FOG_START, fog_start);
-	glFogf(GL_FOG_END, fog_end);
-	*/
-	
-	//Wii documentation sucks hard.
-	
-	GX_SetFog(GX_FOG_EXP, 10, 300, 0.0f, 1.0f, FogColor);		
-}
+    float A, B;
 
-/*
-=============
-Fog_GetStart
-returns current start of fog
-=============
-*/
-float Fog_GetStart (void)
-{
-	float f;
+    A = perspective[2][2];
+    B = perspective[3][2];
 
-	if (fade_done > cl.time)
-	{
-		f = (fade_done - cl.time) / fade_time;
-		return f * old_start + (1.0 - f) * fog_start;
-	}
-	else
-		return fog_start;
-}
-
-/*
-=============
-Fog_GetEnd
-returns current end of fog
-=============
-*/
-float Fog_GetEnd (void)
-{
-	float f;
-
-	if (fade_done > cl.time)
-	{
-		f = (fade_done - cl.time) / fade_time;
-		return f * old_start + (1.0 - f) * fog_end;
-	}
-	else
-		return fog_end;
+    if (perspective[3][3] == 0) {
+        *near = B / (A - 1.0);
+    } else {
+        *near = (B + 1.0) / A;
+    }
+    *far = B / A;
 }
 
 /*
@@ -313,7 +269,16 @@ called before drawing stuff that should be fogged
 */
 void Fog_EnableGFog (void)
 {
-	GX_SetFog(GX_FOG_EXP, 10, 300, 0.0f, 1.0f, FogColor);		
+	float near, far;
+	float end;
+	GXColor FogColor = {fog_red, fog_green, fog_blue, 255};
+	
+	get_projection_info (&near, &far);
+	
+	end = fog_end/3;
+		
+	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, fog_red, fog_blue, fog_green);
+	GX_SetFog(GX_FOG_EXP2, 10, end, near, far, FogColor);
 }
 
 /*
@@ -325,14 +290,8 @@ called after drawing stuff that should be fogged
 */
 void Fog_DisableGFog (void)
 {
-	GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.1F, 1.0F, BLACK);
+	GX_SetFog(GX_FOG_NONE, 0.0F, 0.0F, 0.0F, 0.0F, BLACK);
 }
-
-//==============================================================================
-//
-//  VOLUMETRIC FOG
-//
-//==============================================================================
 
 //==============================================================================
 //
@@ -365,14 +324,14 @@ void Fog_Init (void)
 	Cmd_AddCommand ("fog",Fog_FogCommand_f);
 
 	//set up global fog
-	fog_start = 300;
-	fog_end = 4000;
-	fog_red = 0.5;
-	fog_green = 0.5;
-	fog_blue = 0.5;
+	fog_start = 0;
+	fog_end = 650;
+	fog_red = 108;
+	fog_green = 132;
+	fog_blue = 147;
 	fade_time = 1;
 	fade_time = 1;
 
 	//glFogi(GL_FOG_MODE, GL_LINEAR);
-	GX_SetFog(GX_FOG_LIN, 0.0F, 1.0F, 0.1F, 1.0F, BLACK);	
+	//GX_SetFog(GX_FOG_LIN, 0.0F, 1.0F, 0.1F, 1.0F, BLACK);	
 }

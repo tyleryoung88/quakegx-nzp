@@ -62,7 +62,7 @@ GXRModeObj	*rmode			= 0;
 
 int want_to_reset = 0;
 int want_to_shutdown = 0;
-int texture_memory = 32;
+//int texture_memory = 32;
 double time_wpad_off = 0;
 double current_time = 0;
 int rumble_on = 0;
@@ -78,7 +78,7 @@ void shutdown_system(void)
 }
 
 // Set up the heap.
-static size_t	heap_size	= 19 * 1024 * 1024;
+static size_t	heap_size	= 21 * 1024 * 1024;
 static char		*heap;
 
 inline void *align32 (void *p)
@@ -138,7 +138,7 @@ static void init()
 	wiimote_ir_res_x = rmode->fbWidth;
 	wiimote_ir_res_y = rmode->xfbHeight;
 }
-
+/*
 static void check_pak_file_exists()
 {
 	int handle = -1;
@@ -166,12 +166,13 @@ static void check_pak_file_exists()
 		Sys_FileClose(handle);
 	}
 }
-
+*/
 // ELUTODO: ugly and beyond quake's limits, I think
 int parms_number = 0;
 char parms[1024];
 char *parms_ptr = parms;
 char *parms_array[64];
+/*
 static void add_parm(const char *parm)
 {
 	if (strlen(parm) + ((u32)parms_ptr - (u32)parms) > 1023)
@@ -192,12 +193,12 @@ void push_back(char *name, int index)
 	memset(mods_names[index],0,len+1);
 	strcpy(mods_names[index], name);
 }
-
+*/
 int cstring_cmp(const void *p1, const void *p2)
 {
 	return strcmp(*(char * const *)p1, *(char * const *)p2);
 }
-
+/*
 void frontend(void)
 {
 
@@ -221,7 +222,7 @@ void frontend(void)
 	fatdir = opendir(QUAKE_WII_BASEDIR);
 	if (!fatdir)
 		Sys_Error("Error opening %s for read.\n", QUAKE_WII_BASEDIR);
-/*
+
 	while ((dir = readdir(fatdir)) != NULL)
 	{
 		sprintf(filename, "%s/%s", QUAKE_WII_BASEDIR,dir->d_name);
@@ -238,7 +239,7 @@ void frontend(void)
 	closedir(fatdir);
 
 	if (mod_index>2) qsort(mods_names+1, mod_index-1, sizeof(char *), cstring_cmp);
-*/
+
 	while (1)
 	{
 		PAD_ScanPads();
@@ -377,7 +378,7 @@ void frontend(void)
 		add_parm(temp_num);
 	}
 }
-
+*/
 static void* main_thread_function(void* dummy)
 {
 	u32 level, real_heap_size;
@@ -425,6 +426,8 @@ static void* main_thread_function(void* dummy)
 	Cbuf_AddText("connect 192.168.0.2");
 #endif
 
+	Cbuf_AddText("togglemenu\n");
+
 	SYS_SetResetCallback(reset_system);
 	SYS_SetPowerCallback(shutdown_system);
 
@@ -470,7 +473,7 @@ qboolean isDedicated = false;
 
 int main(int argc, char* argv[])
 {
-	void *qstack = malloc(4 * 1024 * 1024); // ELUTODO: clean code to prevent needing a stack this huge
+	void *qstack = malloc(2 * 1024 * 1024); // ELUTODO: clean code to prevent needing a stack this huge
 
 #if USBGECKO_DEBUG
 	DEBUG_Init(GDBSTUB_DEVICE_USB, 1); // Slot B
@@ -492,7 +495,7 @@ int main(int argc, char* argv[])
 
 	// Start the main thread.
 	lwp_t thread;
-	LWP_CreateThread(&thread, &main_thread_function, 0, qstack, 4 * 1024 * 1024, 64);
+	LWP_CreateThread(&thread, &main_thread_function, 0, qstack, 2 * 1024 * 1024, 64);
 
 	// Wait for it to finish.
 	void* result;

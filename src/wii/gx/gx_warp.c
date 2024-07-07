@@ -21,7 +21,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // gl_warp.c -- sky and water polygons
 
 #include "../../generic/quakedef.h"
-#include "gxutils.h"
 
 extern	model_t	*loadmodel;
 
@@ -287,7 +286,7 @@ will have them chained together.
 */
 void EmitBothSkyLayers (msurface_t *fa)
 {
-	GL_DisableMultitexture();
+	//GL_DisableMultitexture();
 
 	GL_Bind0 (solidskytexture);
 	//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
@@ -656,7 +655,7 @@ void R_DrawSkyBox (void)
 		GL_Bind0(skyimage[skytexorder[i]]);
 		//GX_SetMinMag (GX_LIN_MIP_LIN, GX_LIN_MIP_LIN);
 		//GX_SetMaxAniso(GX_ANISO_2);
-		GX_SetMinMag (GX_LINEAR, GX_LINEAR); 
+		//GX_SetMinMag (GX_LINEAR, GX_LINEAR); 
 	
 		// if direction is not up, cut "down" vector to zero to only render half cube
 		//float upnegfact = i == 4 ? 1.0f : 0.0f;

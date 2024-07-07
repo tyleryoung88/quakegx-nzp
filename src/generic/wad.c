@@ -93,8 +93,8 @@ void W_LoadWadFile (char *filename)
 		lump_p->filepos = LittleLong(lump_p->filepos);
 		lump_p->size = LittleLong(lump_p->size);
 		W_CleanupName (lump_p->name, lump_p->name);
-		if (lump_p->type == TYP_QPIC)
-			SwapPic ( (qpic_t *)(wad_base + lump_p->filepos));
+		//if (lump_p->type == TYP_QPIC)
+			//SwapPic ( (qpic_t *)(wad_base + lump_p->filepos));
 	}
 }
 
@@ -246,8 +246,7 @@ loaded:
 //converts paletted to rgba 
 //stole this from dquakeplus, modified for Wii... thanks Ivy
 static byte *ConvertWad3ToRGBA(miptex_t *tex) {
-	int i, p, image_size;
-	byte *pal;
+	int image_size;
 
 	if (!tex->offsets[0])
 		Sys_Error("ConvertWad3ToRGBA: tex->offsets[0] == 0");
@@ -257,18 +256,23 @@ static byte *ConvertWad3ToRGBA(miptex_t *tex) {
 	byte* wadData = ((byte*)tex) + tex->offsets[0];
 	byte* palette = ((byte*)tex) + tex->offsets[3] + (tex->width>>3)*(tex->height>>3) + 2;
 	
-	for (i = 0; i < image_size; i++) {
-		byte colorIndex = wadData[i];
+	// Convert WAD3 data to RGBA format
+    for (int i = 0; i < image_size; i++) {
+        byte colorIndex = wadData[i];
+		
 		if (tex->name[0] == '{' && colorIndex == 255) {
          ((int *) rgbaData)[i] = 0;
 		} else {
-			//reversed on BE
-			rgbaData[i * 4 + 0] = 255;
-			rgbaData[i * 4 + 1] = palette[colorIndex * 3 + 2];
-			rgbaData[i * 4 + 2] = palette[colorIndex * 3 + 1];
-			rgbaData[i * 4 + 3] = palette[colorIndex * 3 + 0];
-		}
-	}
+        rgbaData[i * 4]     = palette[colorIndex * 3 + 0];
+        rgbaData[i * 4 + 1] = palette[colorIndex * 3 + 1];
+        rgbaData[i * 4 + 2] = palette[colorIndex * 3 + 2];
+        rgbaData[i * 4 + 3] = 255; // Set alpha to opaque
+		}/*
+		if (rgbaData[i * 4] == 0 && rgbaData[i * 4 + 1] == 0 && rgbaData[i * 4 + 2] == 255) {
+			rgbaData[i * 4] = rgbaData[i * 4 + 1] = rgbaData[i * 4 + 2] = 128;
+			rgbaData[i * 4 + 3] = 0;
+		}*/
+    }
 	
 	return rgbaData;
 }
