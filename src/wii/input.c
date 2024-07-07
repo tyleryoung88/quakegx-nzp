@@ -795,10 +795,10 @@ void IN_Move (usercmd_t *cmd)
 
 		x2 = clamp((float)wiimote_ir_x / (pointer.vres[0] / 2.0f) - 1.0f, -1.0f, 1.0f);
 		// Move the cross position
-		Cvar_SetValue("cl_crossx", scr_vrect.width / 2 * x2);
+		Cvar_SetValue("cl_crossx", /*scr_vrect.width*/vid.width / 2 * x2);
 
 		y2 = clamp((float)wiimote_ir_y / (pointer.vres[1] / 2.0f) - 1.0f, -1.0f, 1.0f);
-		Cvar_SetValue("cl_crossy", scr_vrect.height / 2 * y2);
+		Cvar_SetValue("cl_crossy", /*scr_vrect.height*/(vid.height - (vid_tvborder.value * 400))/ 2 * y2);
 		}
 		
 // Movement management of 2 classic controller sticks (x1/y1) and (y1/y2) if the cc is connected

@@ -1513,6 +1513,7 @@ void SCR_BringDownConsole (void)
 
 void SCR_TileClear (void)
 {
+	/*
 	// ELUTODO: this thing WAS NOT updated to remove the vid.width/height vid.conwidth/conheight mess, but in the current state, it's impossible to need this, as it's impossible to size down too much of the screen and tiles are only used to cover unused status bar areas (or maybe tv overscan adjusting triggers this)
 	if (r_refdef.vrect.x > 0) {
 		// left
@@ -1534,6 +1535,7 @@ void SCR_TileClear (void)
 			vid.height - sb_lines - 
 			(r_refdef.vrect.height + r_refdef.vrect.y));
 	}
+	*/
 }
 
 int GetWeaponZoomAmmount (void)

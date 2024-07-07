@@ -351,7 +351,6 @@ void HUD_Points (void)
 	int				i, k, l;
 	int				x, y, f, xplus;
 	scoreboard_t	*s;
-	char str[12];
 
 // scores
 	HUD_Sortpoints ();
@@ -360,7 +359,7 @@ void HUD_Points (void)
 	l = scoreboardlines;
 
     x = 15;
-    y = 308;
+    y = 310;
 	for (i=0 ; i<l ; i++)
 	{
 		k = pointsort[i];
@@ -401,9 +400,9 @@ void HUD_Points (void)
 			}
 		}
 		Draw_StretchPic (x, y, sb_moneyback, 96, 24);
-		xplus = strlen(va("%i", current_points))*8;
+		xplus = strlen(va("%i", current_points))*12;
 
-		Draw_ColoredString (((64 - xplus)/2) + 24, y + 5, va("%i", current_points), 255, 255, 255, 255, 1.5);
+		Draw_ColoredString (((64 - xplus)/2) + 15 + x, y + 5, va("%i", current_points), 255, 255, 255, 255, 1.5);
 
 		if (old_points != f)
 		{
@@ -1421,7 +1420,7 @@ void HUD_BettyPrompt (void)
 
 	Draw_String(x, 60, str);
 	Draw_String(x2, 72, str2);
-	Draw_Pic (x + 20*8 - 4, 56, GetButtonIcon("+grenade"));
+	Draw_Pic (x + 20*12 - 18, 56, GetButtonIcon("JOY17"));
 
 }
 
@@ -1437,7 +1436,7 @@ void HUD_PlayerName (void)
 	if (nameprint_time - sv.time < 1)
 		alpha = (int)((nameprint_time - sv.time)*255);
 
-	Draw_ColoredString(30, 230, player_name, 255, 255, 255, alpha, 1.5);
+	Draw_ColoredString(118, 315, player_name, 255, 255, 255, alpha, 1.4);
 }
 
 /*
