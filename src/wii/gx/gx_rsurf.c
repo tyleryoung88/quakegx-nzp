@@ -244,7 +244,7 @@ store:
 			*dest++ = t;
 			
 			bl += 3;
-			*dest++ = 0;
+			*dest++ = 255;
 			//dest += 4;
 			// LordHavoc: .lit support end
 			/*

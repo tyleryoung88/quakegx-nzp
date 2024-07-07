@@ -608,6 +608,10 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 	}
 
 // draw the input prompt, user text, and cursor if desired
+	// ELUTODO: place correctly in the if_else structures above
+	if (in_osk)
+		GX_DrawOSK();
+
 	if (drawinput)
 		Con_DrawInput ();
 }

@@ -1370,5 +1370,5 @@ void GL_Set2D (void)
 	QGX_Alpha(true);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
-	//GL_DisableMultitexture();
+	GL_DisableMultitexture();
 }

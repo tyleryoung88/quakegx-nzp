@@ -890,7 +890,7 @@ void Host_Init (quakeparms_t *parms)
 	Host_InitVCR (parms);
 	COM_Init (parms->basedir);
 	Host_InitLocal ();
-	W_LoadWadFile ("gfx.wad");
+	//W_LoadWadFile ("gfx.wad");
 	Key_Init ();
 	Con_Init ();	
 	M_Init ();	
@@ -899,7 +899,7 @@ void Host_Init (quakeparms_t *parms)
 	NET_Init ();
 	SV_Init ();
 
-	Con_Printf ("Quake-Wii, by id Software, PeterM, EluanCM, Izhido, and Piko\n");
+	Con_Printf ("Quake-Wii, by id Software, PeterM, EluanCM, Izhido, Piko, and sB\n");
 	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));
 	

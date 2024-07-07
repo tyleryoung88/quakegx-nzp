@@ -1002,8 +1002,8 @@ void R_DrawAliasModel (entity_t *e)
 	
 	for(int g = 0; g < 3; g++)
 	{
-		if(lightcolor[g] < 48)
-			lightcolor[g] = 48;
+		if(lightcolor[g] < 16)
+			lightcolor[g] = 16;
 		if(lightcolor[g] > 215)
 			lightcolor[g] = 215;
 	}
@@ -1034,11 +1034,7 @@ void R_DrawAliasModel (entity_t *e)
 	
 	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 	//shadelight = shadelight / 200.0;
-	VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
-	
-	if (e == &cl.viewent || e == &cl.viewent2) {
-		VectorScale(lightcolor, 200.0f, lightcolor);
-	}
+	//VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 	
 	an = e->angles[1]/180*M_PI;
 	shadevector[0] = cosf(-an);
@@ -1067,7 +1063,7 @@ void R_DrawAliasModel (entity_t *e)
 	//
 
 	//GL_DisableMultitexture();
-	
+	/*
 	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
 	if (add > 0.0f && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
 	{	
@@ -1075,7 +1071,7 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[1] += add / 3.0f;
 		lightcolor[2] += add / 3.0f;
 	}
-	
+	*/
 	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
 	{
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;

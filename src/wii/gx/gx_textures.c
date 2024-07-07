@@ -174,7 +174,8 @@ void QGX_Blend(qboolean state)
 void QGX_BlendMap(qboolean state)
 {
 	if (state)
-		GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_SRCCLR, GX_LO_CLEAR);
+		GX_SetBlendMode(GX_BM_BLEND, GX_BL_DSTCLR, GX_BL_SRCCLR, GX_LO_CLEAR);
+		//GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_SRCCLR, GX_LO_CLEAR);
 	else
 		GX_SetBlendMode(GX_BM_NONE,GX_BL_ONE,GX_BL_ZERO,GX_LO_COPY);
 }

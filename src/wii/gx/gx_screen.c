@@ -1741,6 +1741,8 @@ void SCR_UpdateScreen (void)
 	SCR_SetUpToDrawConsole ();
 	
 	V_RenderView ();
+	
+	Fog_DisableGFog ();
 
 	GL_Set2D ();
 	
@@ -1772,10 +1774,6 @@ void SCR_UpdateScreen (void)
 	}
 	
 	Draw_LoadingFill();
-
-	// ELUTODO: place correctly in the if_else structures above
-	if (in_osk)
-		GX_DrawOSK();
 	
 	V_UpdatePalette ();
 
