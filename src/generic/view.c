@@ -745,8 +745,8 @@ void V_BoundOffsets (void)
 		r_refdef.vieworg[1] = ent->origin[1] + 14;
 	if (r_refdef.vieworg[2] < ent->origin[2] - 22)
 		r_refdef.vieworg[2] = ent->origin[2] - 22;
-	else if (r_refdef.vieworg[2] > ent->origin[2] + 30)
-		r_refdef.vieworg[2] = ent->origin[2] + 30;
+	else if (r_refdef.vieworg[2] > ent->origin[2] + 32)
+		r_refdef.vieworg[2] = ent->origin[2] + 32;
 }
 
 /*
@@ -812,7 +812,7 @@ void V_CalcIntermissionRefdef (void)
 // allways idle in intermission
 	old = v_idlescale.value;
 	v_idlescale.value = 1;
-	//V_AddIdle ();
+	V_AddIdle ();
 	v_idlescale.value = old;
 }
 
@@ -888,7 +888,7 @@ void V_CalcRefdef (void)
 
 	VectorCopy (cl.viewangles, r_refdef.viewangles);
 	//V_CalcViewRoll ();
-	//V_AddIdle ();
+	V_AddIdle ();
 
 // offsets
 
@@ -916,7 +916,7 @@ void V_CalcRefdef (void)
 	view->angles[YAW] = view->angles[YAW] + cl.gun_kick[YAW];
 	VectorCopy (ent->origin, view->origin);
 	view->origin[2] += cl.viewheight;
-	view->origin[2] -= 2; //sB doing something//
+	//view->origin[2] -= 2; //sB doing something//
 	
 	//Storing base location, later to calculate total offset
 		CWeaponOffset[0]= view->origin[0] * -1;
@@ -1036,11 +1036,6 @@ void V_CalcRefdef (void)
 	r_refdef.viewangles[YAW] = angledelta(r_refdef.viewangles[YAW] + (vbob[0] * 0.1));
 	r_refdef.viewangles[PITCH] = angledelta(r_refdef.viewangles[PITCH] + (vbob[1] * 0.1));
 	r_refdef.viewangles[ROLL] = anglemod(r_refdef.viewangles[ROLL] + (vbob[2] * 0.07));
-
-	// ELUTODO: are these the best values?
-	//if (scr_viewsize.value == 110)
-		//view->origin[2] += 2;
-	//else if (scr_viewsize.value == 100)
 		
 	//Here we finally set CWeaponOffset by the total weapon model offset, used for mzfl which uses CWeaponOffset variable.
 		CWeaponOffset[0] += view->origin[0];

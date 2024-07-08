@@ -1084,7 +1084,6 @@ void R_DrawAliasModel (entity_t *e)
 		//ambientlight = shadelight = 192;
 
 	c_guMtxIdentity(model);
-	//if (e == &cl.viewent || e == &cl.viewent2)
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
 	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
@@ -1328,34 +1327,7 @@ void R_DrawView2Model (void)
 	currententity = &cl.viewent2;
 	if (!currententity->model)
 		return;
-/*
-	j = R_LightPoint (currententity->origin);
 
-	if (j < 24)
-		j = 24;		// allways give some light on gun
-	ambientlight = j;
-	shadelight = j;
-
-// add dynamic lights		
-	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	{
-		dl = &cl_dlights[lnum];
-		if (!dl->radius)
-			continue;
-		if (!dl->radius)
-			continue;
-		if (dl->die < cl.time)
-			continue;
-
-		VectorSubtract (currententity->origin, dl->origin, dist);
-		add = dl->radius - Length(dist);
-		if (add > 0)
-			ambientlight += add;
-	}
-
-	ambient[0] = ambient[1] = ambient[2] = ambient[3] = (float)ambientlight / 128;
-	diffuse[0] = diffuse[1] = diffuse[2] = diffuse[3] = (float)shadelight / 128;
-*/
 	// hack the depth range to prevent view model from poking into walls
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 0.3f);
 	R_DrawAliasModel (currententity);
@@ -1396,34 +1368,6 @@ void R_DrawViewModel (void)
 	if (!currententity->model)
 		return;
 	
-/*
-	j = R_LightPoint (currententity->origin);
-
-	if (j < 24)
-		j = 24;		// allways give some light on gun
-	ambientlight = j;
-	shadelight = j;
-
-// add dynamic lights		
-	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	{
-		dl = &cl_dlights[lnum];
-		if (!dl->radius)
-			continue;
-		if (!dl->radius)
-			continue;
-		if (dl->die < cl.time)
-			continue;
-
-		VectorSubtract (currententity->origin, dl->origin, dist);
-		add = dl->radius - Length(dist);
-		if (add > 0)
-			ambientlight += add;
-	}
-
-	ambient[0] = ambient[1] = ambient[2] = ambient[3] = (float)ambientlight / 128;
-	diffuse[0] = diffuse[1] = diffuse[2] = diffuse[3] = (float)shadelight / 128;
-*/
 	// hack the depth range to prevent view model from poking into walls
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 0.3f);
 	R_DrawAliasModel (currententity);

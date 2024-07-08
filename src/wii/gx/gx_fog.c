@@ -278,7 +278,7 @@ void Fog_EnableGFog (void)
 	end = fog_end/3;
 		
 	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, fog_red, fog_blue, fog_green);
-	GX_SetFog(GX_FOG_EXP2, 10, end, near, far, FogColor);
+	GX_SetFog(GX_FOG_EXP2, 0.0F, end, near, far, FogColor);
 }
 
 /*
