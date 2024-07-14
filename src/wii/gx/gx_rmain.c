@@ -105,7 +105,7 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0"};
-cvar_t  r_model_brightness  = { "r_model_brightness", "0", true};   // Toggle high brightness model lighting
+cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
 cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "0",true};
 
 //johnfitz -- struct for passing lerp information to drawing functions
@@ -994,14 +994,6 @@ void R_DrawAliasModel (entity_t *e)
 		shadelight = 192 - ambientlight;
 	*/
 	
-	for(int g = 0; g < 3; g++)
-	{
-		if(lightcolor[g] < 16)
-			lightcolor[g] = 16;
-		if(lightcolor[g] > 215)
-			lightcolor[g] = 215;
-	}
-	
 	// ZOID: never allow players to go totally black
 	/*
 	i = currententity - cl_entities;
@@ -1017,16 +1009,8 @@ void R_DrawAliasModel (entity_t *e)
 	*/
 		//if (ambientlight < 8)
 			//ambientlight = shadelight = 8;
-		
-	//Shpuld
-	if(r_model_brightness.value && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
-	{		
-		lightcolor[0] += 16;
-		lightcolor[1] += 16;
-		lightcolor[2] += 16;
-	}
 	
-	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
+	//shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 	//shadelight = shadelight / 200.0;
 	//VectorScale(lightcolor, 1.0f / 200.0f, lightcolor);
 	
@@ -1069,6 +1053,29 @@ void R_DrawAliasModel (entity_t *e)
 	if(specChar == '!' || (e->effects & EF_FULLBRIGHT))
 	{
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
+	}
+	
+	//Shpuld
+	if(r_model_brightness.value && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
+	{		
+		lightcolor[0] += 32;
+		lightcolor[1] += 32;
+		lightcolor[2] += 32;
+	}
+	
+	if (e == &cl.viewent || e == &cl.viewent2)
+	{
+		lightcolor[0] += 32;
+		lightcolor[1] += 32;
+		lightcolor[2] += 32;
+	}
+	
+	for(int g = 0; g < 3; g++)
+	{
+		if(lightcolor[g] < 16)
+			lightcolor[g] = 16;
+		if(lightcolor[g] > 128)
+			lightcolor[g] = 128;
 	}
 	
 	// HACK HACK HACK -- no fullbright colors, so make torches full light
@@ -1724,9 +1731,9 @@ void R_SetupGL (void)
 	guMtxTrans(temp, -r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
 	guMtxConcat(view, temp, view);
 	
-	//GX_InitFogAdjTable	(table, r_refdef.vrect.width, perspective);
+	GX_InitFogAdjTable	(table, r_refdef.vrect.width, perspective);
 	
-	//GX_SetFogRangeAdj(GX_ENABLE, screenaspect, table);
+	GX_SetFogRangeAdj(GX_ENABLE, screenaspect, table);
 	
 	Fog_EnableGFog ();
 

@@ -274,12 +274,22 @@ void Fog_EnableGFog (void)
 	float end;
 	GXColor FogColor = {fog_red*3, fog_green*3, fog_blue*3, 255}; //alpha what>?
 	
+	if (fog_red > 215)
+		fog_red = 215;
+	if (fog_green > 215)
+		fog_green = 215;
+	if (fog_blue > 215)
+		fog_blue = 215;
+	
 	get_projection_info (&near, &far);
 	
-	end = fog_end/3;
+	end = fog_end/2.3;
+	
+	if (end < 300)
+		end = 300;
 		
 	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, fog_red*3, fog_blue*3, fog_green*3);
-	GX_SetFog(/*GX_FOG_EXP2*/ GX_FOG_LIN, 0.0F, end, near, far, FogColor);
+	GX_SetFog(GX_FOG_EXP2 /*GX_FOG_LIN*/, 0.0F, end, near, far, FogColor);
 }
 
 /*
