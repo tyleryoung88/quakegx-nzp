@@ -33,8 +33,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
 
-int		texels;
-
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int			numgltextures;
 
@@ -48,7 +46,7 @@ void R_InitTextureHeap (void)
 
 	_CPU_ISR_Disable(level);
 	texture_heap_ptr = SYS_GetArena2Lo();
-	texture_heap_size = 30 * 1024 * 1024;
+	texture_heap_size = 21 * 1024 * 1024;
 	if ((u32)texture_heap_ptr + texture_heap_size > (u32)SYS_GetArena2Hi())
 	{
 		_CPU_ISR_Restore(level);
@@ -74,15 +72,17 @@ R_InitTextures
 */
 void	R_InitTextures (void)
 {
+	/*
 	int		x,y, m;
 	byte	*dest;
+	*/
 
 	R_InitTextureHeap();
 
 	Cvar_RegisterVariable (&gl_max_size);
 
 	numgltextures = 0;
-
+	/*
 // create a simple checkerboard texture for the default
 	r_notexture_mip = Hunk_AllocName (sizeof(texture_t) + 16*16+8*8+4*4+2*2, "notexture");
 	
@@ -104,6 +104,7 @@ void	R_InitTextures (void)
 					*dest++ = 0xff;
 			}
 	}	
+	*/
 }
 
 void GL_Bind0 (int texnum)
@@ -262,21 +263,17 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
 		Sys_Error ("GL_Upload32: too big");
-
-	// ELUTODO samples = alpha ? GX_TF_RGBA8 : GX_TF_RGBA8;
-
-	texels += scaled_width * scaled_height;
-
+	
 	if (scaled_width != width || scaled_height != height)
 	{
 		GL_ResampleTexture (data, width, height, scaled, scaled_width, scaled_height);
 	}
 	else
 	{
-		memcpy(scaled, data, scaled_width * scaled_height * sizeof(unsigned));
+		memcpy(scaled, data, scaled_width * scaled_height * sizeof(data));
 	}
 
-	destination->data = __lwp_heap_allocate(&texture_heap, scaled_width * scaled_height * sizeof(unsigned));
+	destination->data = __lwp_heap_allocate(&texture_heap, scaled_width * scaled_height * sizeof(data));
 	if (!destination->data)
 		Sys_Error("GL_Upload32: Out of memory.");
 
@@ -392,7 +389,7 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 
 	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
 
-	DCFlushRange(destination->data, scaled_width * scaled_height * sizeof(unsigned));
+	DCFlushRange(destination->data, scaled_width * scaled_height * sizeof(data));
 }
 
 /*
@@ -521,6 +518,10 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 
 reload:
 	strcpy (glt->identifier, identifier);
+	
+	gltextures[glt->texnum].checksum = lhcsum;
+	gltextures[glt->texnum].lhcsum = lhcsum;
+	
 	glt->texnum = i;
 	glt->width = width;
 	glt->height = height;
@@ -933,7 +934,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		if (!data)
 			return 0; //Sys_Error ("PCX: can't load %s", name);
 		
-		texnum = GL_LoadTexture ("", image_width, image_height, data, false, true, true, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, false, true, true, 4);
 		
 		free(data);
 		return texnum;
@@ -945,7 +946,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
 		//Con_Printf("%s : %i\n", name, texnum);
 		free(data);
 		return texnum;
@@ -957,7 +958,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
 		return texnum;
@@ -968,8 +969,8 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
+		//Con_Printf("Trying to load: %s", name);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
 		return texnum;
@@ -980,7 +981,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, true, keep, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
 		
 		free(data);
 		return texnum;
@@ -1033,7 +1034,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 		if (!data)
 			return 0; //Sys_Error ("PCX: can't load %s", name);
 		
-		texnum = GL_LoadTexture ("", image_width, image_height, data, false, true, true, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, false, true, true, 4);
 		
 		free(data);
 		return texnum;
@@ -1045,7 +1046,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		return texnum;
@@ -1056,8 +1057,8 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		//Con_Printf("Trying to load: %s", name);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		return texnum;
@@ -1069,7 +1070,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		return texnum;
@@ -1080,7 +1081,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
 		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture ("", image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, false, true, 4);
 		
 		free(data);
 		return texnum;

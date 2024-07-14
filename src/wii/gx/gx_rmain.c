@@ -105,7 +105,7 @@ cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0"};
-cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
+cvar_t  r_model_brightness  = { "r_model_brightness", "0", true};   // Toggle high brightness model lighting
 cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "0",true};
 
 //johnfitz -- struct for passing lerp information to drawing functions
@@ -153,21 +153,24 @@ void R_RotateForEntity (entity_t *e, unsigned char scale)
 	Mtx temp;
 
 	// ELUTODO: change back to asm when ALL functions have been corrected
-	c_guMtxTrans(temp, e->origin[0],  e->origin[1],  e->origin[2]);
-	c_guMtxConcat(model, temp, model);
+	
+	// sB changed back to asm. We will see how this plays out 
+	
+	guMtxTrans(temp, e->origin[0],  e->origin[1],  e->origin[2]);
+	guMtxConcat(model, temp, model);
 
-	c_guMtxRotAxisRad(temp, &axis2, DegToRad(e->angles[1]));
-	c_guMtxConcat(model, temp, model);
-	c_guMtxRotAxisRad(temp, &axis1, DegToRad(-e->angles[0]));
-	c_guMtxConcat(model, temp, model);
-	c_guMtxRotAxisRad(temp, &axis0, DegToRad(e->angles[2]));
-	c_guMtxConcat(model, temp, model);
+	guMtxRotAxisRad(temp, &axis2, DegToRad(e->angles[1]));
+	guMtxConcat(model, temp, model);
+	guMtxRotAxisRad(temp, &axis1, DegToRad(-e->angles[0]));
+	guMtxConcat(model, temp, model);
+	guMtxRotAxisRad(temp, &axis0, DegToRad(e->angles[2]));
+	guMtxConcat(model, temp, model);
 	
 	if (scale != ENTSCALE_DEFAULT) {
 		float scalefactor = ENTSCALE_DECODE(scale);
 		
-		c_guMtxScale (temp, scalefactor, scalefactor, scalefactor);
-		c_guMtxConcat(model, temp, model);
+		guMtxScale (temp, scalefactor, scalefactor, scalefactor);
+		guMtxConcat(model, temp, model);
 		//glScalef(scalefactor, scalefactor, scalefactor);
 	}
 }
@@ -198,7 +201,7 @@ mspriteframe_t *R_GetSpriteFrame (entity_t *currententity)
 
 	if ((frame >= psprite->numframes) || (frame < 0))
 	{
-		Con_Printf ("R_DrawSprite: no such frame %d\n", frame);
+		//Con_Printf ("R_DrawSprite: no such frame %d\n", frame);
 		frame = 0;
 	}
 
@@ -707,19 +710,19 @@ void R_DrawZombieLimb (entity_t *e, int which)
 	}
 
 	//glPushMatrix ();
-	c_guMtxIdentity(model);
+	guMtxIdentity(model);
 	R_RotateForEntity (e, e->scale);
 	//R_RotateForEntity (e);
 
 	//glTranslatef (paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 	//glScalef (paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
 	
-	c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-	c_guMtxConcat(model, temp, model);
-	c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
-	c_guMtxConcat(model, temp, model);
+	guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	guMtxConcat(model, temp, model);
+	guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+	guMtxConcat(model, temp, model);
 	
-	c_guMtxConcat(view,model,modelview);
+	guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0); //(modelview, GX_PNMTX0)
 /*
 	if (gl_smoothmodels.value)
@@ -782,8 +785,33 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	VectorCopy (currententity->origin, r_entorigin);
 	VectorSubtract (r_origin, r_entorigin, modelorg);
 	
-	Fog_DisableGFog();
+	QGX_Blend(true);
+	QGX_Alpha(false);
+	
+	R_LightPoint (currententity->origin);
 
+	// //
+	// // get lighting information
+	// //
+	/*
+	for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
+	{
+		if (cl_dlights[lnum].die >= cl.time)
+		{
+			VectorSubtract (currententity->origin,
+							cl_dlights[lnum].origin,
+							dist);
+			add = cl_dlights[lnum].radius - Length(dist);
+			if (add > 0)
+			{
+				lightcolor[0] += add * cl_dlights[lnum].color[0];
+				lightcolor[1] += add * cl_dlights[lnum].color[1];
+				lightcolor[2] += add * cl_dlights[lnum].color[2];
+			}
+			
+		}
+	}
+	*/
 	for(int g = 0; g < 3; g++)
 	{
 		if(lightcolor[g] < 8)
@@ -792,34 +820,13 @@ void R_DrawTransparentAliasModel (entity_t *e)
 			lightcolor[g] = 125;
 	}
 
-	// //
-	// // get lighting information
-	// //
-
-	// ambientlight = shadelight = R_LightPoint (currententity->origin);
-	// for (lnum=0 ; lnum<MAX_DLIGHTS ; lnum++)
-	// {
-	// 	if (cl_dlights[lnum].die >= cl.time)
-	// 	{
-	// 		VectorSubtract (currententity->origin,
-	// 						cl_dlights[lnum].origin,
-	// 						dist);
-	// 		add = cl_dlights[lnum].radius - Length(dist);
-
-	// 		if (add > 0) {
-	// 			ambientlight += add;
-	// 			//ZOID models should be affected by dlights as well
-	// 			shadelight += add;
-	// 		}
-	// 	}
-	// }
-
 	// clamp lighting so it doesn't overbright as much
+	/*
 	if (ambientlight > 128)
 		ambientlight = 128;
 	if (ambientlight + shadelight > 192)
 		shadelight = 192 - ambientlight;
-
+	*/
 	// shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
 	// shadelight = shadelight / 200.0;
 	
@@ -842,30 +849,23 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	//GL_DisableMultitexture();
 	
 	//Shpuld
+	/*
 	if(r_model_brightness.value)
 	{
 		lightcolor[0] += 16;
 		lightcolor[1] += 16;
 		lightcolor[2] += 16;
 	}
-	
-	add = 72.0f - (lightcolor[0] + lightcolor[1] + lightcolor[2]);
-	if (add > 0.0f)
-	{
-		lightcolor[0] += add / 3.0f;
-		lightcolor[1] += add / 3.0f;
-		lightcolor[2] += add / 3.0f;
-	}
-
-    c_guMtxIdentity(model);
+	*/
+    guMtxIdentity(model);
 	R_RotateForEntity (e, e->scale);
 
-	c_guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-	c_guMtxConcat(model, temp, model);
-	c_guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
-	c_guMtxConcat(model, temp, model);
+	guMtxTrans (temp, paliashdr->scale_origin[0], paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+	guMtxConcat(model, temp, model);
+	guMtxScale (temp, paliashdr->scale[0], paliashdr->scale[1], paliashdr->scale[2]);
+	guMtxConcat(model, temp, model);
 	
-	c_guMtxConcat(view,model,modelview);
+	guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 
 	anim = (int)(cl.time*10) & 3;
@@ -875,9 +875,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);
 	*/
-
-	QGX_Alpha(false);
-	QGX_Blend(true);
 
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 
@@ -893,8 +890,6 @@ void R_DrawTransparentAliasModel (entity_t *e)
 	
 	QGX_Blend(false);
 	QGX_Alpha(true);
-	
-	Fog_EnableGFog();
 	/*
 	glShadeModel (GL_FLAT);
 	if (gl_affinemodels.value)
@@ -960,8 +955,7 @@ void R_DrawAliasModel (entity_t *e)
 	//ambientlight = shadelight = R_LightPoint (currententity->origin);
 	
 	R_LightPoint (currententity->origin);
-	
-	Fog_DisableGFog();
+
 	/*
 	// allways give the gun some light
 	if (e == &cl.viewent && ambientlight < 24)
@@ -1027,9 +1021,9 @@ void R_DrawAliasModel (entity_t *e)
 	//Shpuld
 	if(r_model_brightness.value && specChar != '!' && !(e->effects & EF_FULLBRIGHT))
 	{		
-		lightcolor[0] += 32;
-		lightcolor[1] += 32;
-		lightcolor[2] += 32;
+		lightcolor[0] += 16;
+		lightcolor[1] += 16;
+		lightcolor[2] += 16;
 	}
 	
 	shadedots = r_avertexnormal_dots[((int)(e->angles[1] * (SHADEDOT_QUANT / 360.0))) & (SHADEDOT_QUANT - 1)];
@@ -1050,7 +1044,7 @@ void R_DrawAliasModel (entity_t *e)
 	{
 		if(clmodel->name[12] == 'c')
 			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zcfull.mdl"));
-		else
+		else 
 			paliashdr = (aliashdr_t *) Mod_Extradata(Mod_FindName("models/ai/zfull.mdl"));
 	}
 	else
@@ -1083,7 +1077,7 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
 		//ambientlight = shadelight = 192;
 
-	c_guMtxIdentity(model);
+	guMtxIdentity(model);
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
 	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
@@ -1092,20 +1086,20 @@ void R_DrawAliasModel (entity_t *e)
 			scale *= ENTSCALE_DECODE(e->scale);
 		//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 		//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
-		c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
-		c_guMtxConcat(model, temp, model);
-		c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
-		c_guMtxConcat(model, temp, model);
+		guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
+		guMtxConcat(model, temp, model);
+		guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
+		guMtxConcat(model, temp, model);
 	} else {
 		float scale = 1.0f;
-		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
+		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0)
 			scale *= ENTSCALE_DECODE(e->scale);	
 		//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
 		//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
-		c_guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
-		c_guMtxConcat(model, temp, model);
-		c_guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
-		c_guMtxConcat(model, temp, model);
+		guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
+		guMtxConcat(model, temp, model);
+		guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
+		guMtxConcat(model, temp, model);
 	}
 	
 	/*
@@ -1179,8 +1173,6 @@ void R_DrawAliasModel (entity_t *e)
 		if(e->z_rarm)
 			R_DrawZombieLimb(e,3);
 	}	
-	
-	Fog_EnableGFog();
 
 /* ELUTODO
 	glShadeModel (GL_FLAT);
@@ -1220,7 +1212,7 @@ void R_DrawEntitiesOnList (void)
 	int zHackCount = 0;
 	doZHack = 0;
 	char specChar;
-
+	
 	// draw sprites seperately, because of alpha blending
 	for (i=0 ; i<cl_numvisedicts ; i++)
 	{
@@ -1482,11 +1474,11 @@ void R_PolyBlend (void)
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORDNULL, GX_TEXMAP_NULL, GX_COLOR0A0);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
 
-	c_guMtxIdentity(view);
-	c_guMtxRotAxisRad(temp, &axis0, DegToRad(-90.0f));		// put Z going up
-	c_guMtxConcat(view, temp, view);
-	c_guMtxRotAxisRad(temp, &axis2, DegToRad(90.0f));		// put Z going up
-	c_guMtxConcat(view, temp, view);
+	guMtxIdentity(view);
+	guMtxRotAxisRad(temp, &axis0, DegToRad(-90.0f));		// put Z going up
+	guMtxConcat(view, temp, view);
+	guMtxRotAxisRad(temp, &axis2, DegToRad(90.0f));		// put Z going up
+	guMtxConcat(view, temp, view);
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	
 	//GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
@@ -1699,12 +1691,12 @@ void R_SetupGL (void)
 	{
 		if (mirror_plane->normal[2])
 		{
-			c_guMtxScale (temp, 1, -1, 1);
-			c_guMtxConcat(perspective, temp, perspective);
+			guMtxScale (temp, 1, -1, 1);
+			guMtxConcat(perspective, temp, perspective);
 		}
 		else {
-			c_guMtxScale (temp, -1, 1, 1);
-			c_guMtxConcat(perspective, temp, perspective);
+			guMtxScale (temp, -1, 1, 1);
+			guMtxConcat(perspective, temp, perspective);
 			GX_SetCullMode(GX_CULL_FRONT);
 		}
 	}
@@ -1714,27 +1706,27 @@ void R_SetupGL (void)
 
 	GX_LoadProjectionMtx(perspective, GX_PERSPECTIVE);
 
-	c_guMtxIdentity(view);
+	guMtxIdentity(view);
 
-	c_guMtxRotAxisRad(temp, &axis0, DegToRad(-90.0f));		// put Z going up
-	c_guMtxConcat(view, temp, view);
-	c_guMtxRotAxisRad(temp, &axis2, DegToRad(90.0f));		// put Z going up
-	c_guMtxConcat(view, temp, view);
+	guMtxRotAxisRad(temp, &axis0, DegToRad(-90.0f));		// put Z going up
+	guMtxConcat(view, temp, view);
+	guMtxRotAxisRad(temp, &axis2, DegToRad(90.0f));		// put Z going up
+	guMtxConcat(view, temp, view);
 
-	c_guMtxRotAxisRad(temp, &axis0, DegToRad(-r_refdef.viewangles[2]));
-	c_guMtxConcat(view, temp, view);
-	c_guMtxRotAxisRad(temp, &axis1, DegToRad(-r_refdef.viewangles[0]));
-	c_guMtxConcat(view, temp, view);
-	c_guMtxRotAxisRad(temp, &axis2, DegToRad(-r_refdef.viewangles[1]));
-	c_guMtxConcat(view, temp, view);
+	guMtxRotAxisRad(temp, &axis0, DegToRad(-r_refdef.viewangles[2]));
+	guMtxConcat(view, temp, view);
+	guMtxRotAxisRad(temp, &axis1, DegToRad(-r_refdef.viewangles[0]));
+	guMtxConcat(view, temp, view);
+	guMtxRotAxisRad(temp, &axis2, DegToRad(-r_refdef.viewangles[1]));
+	guMtxConcat(view, temp, view);
 
 
-	c_guMtxTrans(temp, -r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
-	c_guMtxConcat(view, temp, view);
+	guMtxTrans(temp, -r_refdef.vieworg[0],  -r_refdef.vieworg[1],  -r_refdef.vieworg[2]);
+	guMtxConcat(view, temp, view);
 	
-	GX_InitFogAdjTable	(table, r_refdef.vrect.width, perspective);
+	//GX_InitFogAdjTable	(table, r_refdef.vrect.width, perspective);
 	
-	GX_SetFogRangeAdj(GX_ENABLE, screenaspect, table);
+	//GX_SetFogRangeAdj(GX_ENABLE, screenaspect, table);
 	
 	Fog_EnableGFog ();
 

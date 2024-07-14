@@ -249,7 +249,7 @@ cvar_t	cl_movespeedkey = {"cl_movespeedkey","1.5"};
 cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
-cvar_t	in_aimassist = {"in_aimassist", "1", true};
+cvar_t	in_aimassist = {"in_aimassist", "0", true};
 
 //Shpuld - Porting over lower sens for lower fov
 extern cvar_t scr_fov;
@@ -410,7 +410,9 @@ int EN_Find(int num,char *string)
 	}
 	return 0;
 }
-
+qboolean aimsnap = false;
+extern int ir_x, ir_y;
+int zoom_snap;
 void CL_Aim_Snap(void)
 {
 	edict_t *z,*bz,*player;
@@ -419,9 +421,22 @@ void CL_Aim_Snap(void)
 	float bestDist = 10000;
 	vec3_t distVec, zOrg, pOrg;
 	//32 is v_ofs num
-
+	
 	bz = sv.edicts;
-
+	
+	aimsnap = false;
+	// sB add a way to break out of aim snapping 
+	// hacked it in for now
+	// x value on IR pointer is different that vid.width
+	// this could be a reason for some other bugs. need to investivate
+	/*
+	int x_deadzone_neg = 315 - 10; 
+	int x_deadzone_pos = 315 + 10;
+	
+	//Con_Printf("dead:%i dead:%i x:%i y:%i\n", x_deadzone_neg, x_deadzone_pos, ir_x, ir_y);
+	if (ir_y < 50 || ir_y > 380 || ir_x < x_deadzone_neg || ir_x > x_deadzone_pos) // the x axis is more important here. a deadzone of 130 pixels on x axis seems reasonable? 
+		return;
+	*/
 	int vofs = 32;//32 is actual v_ofs num
 	int aimOfs = -10;//30 is top of bbox, 20 is our goal, so -10
 	//Zombie body bbox vert max = 30
@@ -485,7 +500,9 @@ void CL_Aim_Snap(void)
 		if(distVec[0] < -70 || distVec[0] > 80)
 			return;
 
+		aimsnap = true;		
 		VectorCopy(distVec,cl.viewangles);
+		zoom_snap = 1;
 	}
 }
 
@@ -495,7 +512,6 @@ extern cvar_t cl_crossx, cl_crossy;
 CL_SendMove
 ==============
 */
-int zoom_snap;
 float angledelta(float a);
 float deltaPitch,deltaYaw;
 void CL_SendMove (usercmd_t *cmd)
@@ -520,6 +536,7 @@ void CL_SendMove (usercmd_t *cmd)
 		}
 	}
 	else {
+		aimsnap = false;
 		zoom_snap = 0;
 	}
 
@@ -561,9 +578,15 @@ void CL_SendMove (usercmd_t *cmd)
 	 * It's also possible to bypass the client-side PITCH limits. Beware, this may be considered cheating!
 	 */
 	
-	MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
-	MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
-	MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
+	if(aimsnap) {
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height/* * IR_PITCHRANGE*/);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width/* * IR_YAWRANGE*/);
+		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
+	} else {
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
+		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
+	}
 	
 	/*	
 	for (i=0 ; i<3 ; i++)

@@ -600,6 +600,7 @@ static float OldPitchTheta;
 int lock_viewmodel; 
 extern float centerdrift_offset_yaw;
 extern float centerdrift_offset_pitch;
+extern qboolean aimsnap;
 
 static vec3_t cADSOfs;
 void CalcGunAngle (void)
@@ -611,12 +612,12 @@ void CalcGunAngle (void)
 	yaw = r_refdef.viewangles[YAW];
 	pitch = -r_refdef.viewangles[PITCH];
 
-	yaw = angledelta(yaw - r_refdef.viewangles[YAW]) * 0.4f;
+	yaw = angledelta(yaw - r_refdef.viewangles[YAW]) * 0.5f;
 	if (yaw > 10)
 		yaw = 10;
 	if (yaw < -10)
 		yaw = -10;
-	pitch = angledelta(-pitch - r_refdef.viewangles[PITCH]) * 0.4f;
+	pitch = angledelta(-pitch - r_refdef.viewangles[PITCH]) * 0.5f;
 	if (pitch > 10)
 		pitch = 10;
 	if (pitch < -10)
@@ -658,11 +659,12 @@ void CalcGunAngle (void)
 	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5));
 	
 	if (lock_viewmodel != 1) {
-		if (!cls.demoplayback && !in_osk)
+		if (aimsnap == false)
 		{
-			// ELUTODO: Some small gimbal lock issues
 			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw));
 			cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
+			
+			//Con_Printf("YAW:%f PITCH%f\n", cl.viewent.angles[YAW], cl.viewent.angles[PITCH]);
 			
 			if (cl_weapon_inrollangle.value) {
 				if (cl.stats[STAT_ZOOM] == 0) {	

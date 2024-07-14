@@ -883,7 +883,7 @@ void Draw_ConsoleBackground (int lines)
 		Draw_AlphaPic (0, lines - vid.conheight, conback, (float)(1.2 * lines)/y);
 	*/
 	
-	//Draw_Fill(0, 0, vid.width, lines, 120, 40, 40, 175);
+	Draw_Fill(0, 0, vid.width, lines, 0, 0, 0, 85);
 }
 
 /*
@@ -1111,6 +1111,7 @@ extern float crosshair_opacity;
 extern cvar_t cl_crosshair_debug;
 extern qboolean crosshair_pulse_grenade;
 extern cvar_t cl_crossx, cl_crossy;
+extern qboolean aimsnap;
 void Draw_Crosshair (void)
 {	
 
@@ -1128,8 +1129,11 @@ void Draw_Crosshair (void)
 	}
 	
    	if (Hitmark_Time > sv.time) { 
-		Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
-				 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
+		if (aimsnap == true)
+			Draw_ColoredStretchPic (cl_crossx.value - 12/* - hitmark->width*/, cl_crossy.value - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
+		else
+			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
+					 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
 	}
 	
 				 
@@ -1174,7 +1178,10 @@ void Draw_Crosshair (void)
     int crosshair_offset;
 	
 	//Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, 255, 1.4);
-	Draw_FillByColor((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 2, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
+	if (aimsnap == true)
+			Draw_FillByColor(cl_crossx.value - 2, cl_crossy.value - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
+		else
+			Draw_FillByColor((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 2, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 3)
@@ -1360,7 +1367,7 @@ void GL_Set2D (void)
 	guOrtho(perspective,0, vid.conheight, 0, vid.conwidth, ZMIN2D, ZMAX2D);
 	GX_LoadProjectionMtx(perspective, GX_ORTHOGRAPHIC);
 
-	c_guMtxIdentity(modelview);
+	guMtxIdentity(modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 
 	// ELUODO: filtering is making some borders

@@ -18,6 +18,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 #include "quakedef.h"
+#include <wiiuse/wpad.h>
 
 /*
 
@@ -48,11 +49,63 @@ qboolean	keydown[256];
 
 qboolean	keydown[KEY_COUNT];
 
+extern bool nunchuk_connected;
+extern u32 wpad_keys;
+
 typedef struct
 {
 	char		*name;
 	key_id_t	keynum;
 } keyname_t;
+
+// Are we inside the on-screen keyboard?
+int in_osk = 0;
+
+// \0 means not mapped...
+// 5 * 15
+char osk_normal[75] =
+{
+	'\'', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', ']', K_BACKSPACE,
+	0, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 0, '[', K_ENTER, K_ENTER,
+	0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 0, '~', '/', K_ENTER, K_ENTER,
+	0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', ';', K_ENTER, K_ENTER, K_ENTER,
+	0 , 0, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, 0, 0
+};
+
+char osk_shifted[75] =
+{
+	'\"', '!', '@', '#', '$', '%', 0, '&', '*', '(', ')', '_', '+', '}', K_BACKSPACE,
+	0, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 0, '{', K_ENTER, K_ENTER,
+	0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 0, '^', '?', K_ENTER, K_ENTER,
+	0, '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', ':', K_ENTER, K_ENTER, K_ENTER,
+	0 , 0, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, 0, 0
+};
+
+char *osk_set;
+int osk_selected;
+int osk_last_selected;
+int osk_coords[2];
+
+float osk_last_press_time = 0.0f;
+extern cvar_t osk_repeat_delay;
+
+extern int last_irx, last_iry;
+
+static float clampLine(float value, float minimum, float maximum)
+{
+	if (value > maximum)
+	{
+		return maximum;
+	}
+	else if (value < minimum)
+	{
+		return minimum;
+	}
+	else
+	{
+		return value;
+	}
+}
 
 static keyname_t keynames[] =
 {
@@ -167,116 +220,150 @@ void Key_Console (int key)
 {
 	char	*cmd;
 	
-	if (key == K_ENTER)
+	if (key == K_JOY17 || key == K_JOY0)
 	{
-		Cbuf_AddText (key_lines[edit_line]+1);	// skip the >
-		Cbuf_AddText ("\n");
-		Con_Printf ("%s\n",key_lines[edit_line]);
-		edit_line = (edit_line + 1) & 31;
-		history_line = edit_line;
-		key_lines[edit_line][0] = ']';
-		key_linepos = 1;
-		if (cls.state == ca_disconnected)
-			SCR_UpdateScreen ();	// force an update, because the command
-									// may take some time
-		return;
-	}
+	// ELUTODO: we are using the previous frame wiimote position... FIX IT
+		in_osk = 1;
+		int line = (last_iry - OSK_YSTART) / (osk_line_size * (osk_line_size / osk_charsize)) - 1;
+		int col = (last_irx - OSK_XSTART) / (osk_col_size * (osk_col_size / osk_charsize)) - 1;
 
-	if (key == K_TAB)
-	{	// command completion
-		cmd = Cmd_CompleteCommand (key_lines[edit_line]+1);
-		if (!cmd)
-			cmd = Cvar_CompleteVariable (key_lines[edit_line]+1);
-		if (cmd)
+		osk_coords[0] = last_irx;
+		osk_coords[1] = last_iry;
+
+		line = clampLine(line, 0, osk_num_lines);
+		col = clampLine(col, 0, osk_num_col);
+
+		if (nunchuk_connected && (wpad_keys & WPAD_NUNCHUK_BUTTON_Z))
+			osk_set = osk_shifted;
+		else
+			osk_set = osk_normal;
+
+		osk_selected = osk_set[line * osk_num_col + col];
+
+		if ((wpad_keys & WPAD_BUTTON_B) && osk_selected && (Sys_FloatTime() >= osk_last_press_time + osk_repeat_delay.value || osk_selected != osk_last_selected))
 		{
-			Q_strcpy (key_lines[edit_line]+1, cmd);
-			key_linepos = Q_strlen(cmd)+1;
-			key_lines[edit_line][key_linepos] = ' ';
-			key_linepos++;
-			key_lines[edit_line][key_linepos] = 0;
-			return;
+			Key_Event((osk_selected), true);
+			Key_Event((osk_selected), false);
+			osk_last_selected = osk_selected;
+			osk_last_press_time = Sys_FloatTime();
 		}
-	}
+		
+		if (key == K_JOY1)
+			in_osk = 0;
+	} else {
 	
-	if (key == K_BACKSPACE || key == K_LEFTARROW)
-	{
-		if (key_linepos > 1)
-			key_linepos--;
-		return;
-	}
-
-	if (key == K_UPARROW)
-	{
-		do
+		if (key == K_ENTER)
 		{
-			history_line = (history_line - 1) & 31;
-		} while (history_line != edit_line
-				&& !key_lines[history_line][1]);
-		if (history_line == edit_line)
-			history_line = (edit_line+1)&31;
-		Q_strcpy(key_lines[edit_line], key_lines[history_line]);
-		key_linepos = Q_strlen(key_lines[edit_line]);
-		return;
-	}
-
-	if (key == K_DOWNARROW)
-	{
-		if (history_line == edit_line) return;
-		do
-		{
-			history_line = (history_line + 1) & 31;
-		}
-		while (history_line != edit_line
-			&& !key_lines[history_line][1]);
-		if (history_line == edit_line)
-		{
+			Cbuf_AddText (key_lines[edit_line]+1);	// skip the >
+			Cbuf_AddText ("\n");
+			Con_Printf ("%s\n",key_lines[edit_line]);
+			edit_line = (edit_line + 1) & 31;
+			history_line = edit_line;
 			key_lines[edit_line][0] = ']';
 			key_linepos = 1;
+			if (cls.state == ca_disconnected)
+				SCR_UpdateScreen ();	// force an update, because the command
+										// may take some time
+			return;
 		}
-		else
+
+		if (key == K_TAB)
+		{	// command completion
+			cmd = Cmd_CompleteCommand (key_lines[edit_line]+1);
+			if (!cmd)
+				cmd = Cvar_CompleteVariable (key_lines[edit_line]+1);
+			if (cmd)
+			{
+				Q_strcpy (key_lines[edit_line]+1, cmd);
+				key_linepos = Q_strlen(cmd)+1;
+				key_lines[edit_line][key_linepos] = ' ';
+				key_linepos++;
+				key_lines[edit_line][key_linepos] = 0;
+				return;
+			}
+		}
+		
+		if (key == K_BACKSPACE || key == K_LEFTARROW)
 		{
+			if (key_linepos > 1)
+				key_linepos--;
+			return;
+		}
+
+		if (key == K_UPARROW)
+		{
+			do
+			{
+				history_line = (history_line - 1) & 31;
+			} while (history_line != edit_line
+					&& !key_lines[history_line][1]);
+			if (history_line == edit_line)
+				history_line = (edit_line+1)&31;
 			Q_strcpy(key_lines[edit_line], key_lines[history_line]);
 			key_linepos = Q_strlen(key_lines[edit_line]);
+			return;
 		}
-		return;
-	}
 
-	if (key == K_PGUP || key==K_MWHEELUP)
-	{
-		con_backscroll += 2;
-		if (con_backscroll > con_totallines - (vid.conheight>>3) - 1)
+		if (key == K_DOWNARROW)
+		{
+			if (history_line == edit_line) return;
+			do
+			{
+				history_line = (history_line + 1) & 31;
+			}
+			while (history_line != edit_line
+				&& !key_lines[history_line][1]);
+			if (history_line == edit_line)
+			{
+				key_lines[edit_line][0] = ']';
+				key_linepos = 1;
+			}
+			else
+			{
+				Q_strcpy(key_lines[edit_line], key_lines[history_line]);
+				key_linepos = Q_strlen(key_lines[edit_line]);
+			}
+			return;
+		}
+
+		if (key == K_PGUP || key==K_MWHEELUP)
+		{
+			con_backscroll += 2;
+			if (con_backscroll > con_totallines - (vid.conheight>>3) - 1)
+				con_backscroll = con_totallines - (vid.conheight>>3) - 1;
+			return;
+		}
+
+		if (key == K_PGDN || key==K_MWHEELDOWN)
+		{
+			con_backscroll -= 2;
+			if (con_backscroll < 0)
+				con_backscroll = 0;
+			return;
+		}
+
+		if (key == K_HOME)
+		{
 			con_backscroll = con_totallines - (vid.conheight>>3) - 1;
-		return;
-	}
+			return;
+		}
 
-	if (key == K_PGDN || key==K_MWHEELDOWN)
-	{
-		con_backscroll -= 2;
-		if (con_backscroll < 0)
+		if (key == K_END)
+		{
 			con_backscroll = 0;
-		return;
-	}
-
-	if (key == K_HOME)
-	{
-		con_backscroll = con_totallines - (vid.conheight>>3) - 1;
-		return;
-	}
-
-	if (key == K_END)
-	{
-		con_backscroll = 0;
-		return;
-	}
-	
-	if (key < 32 || key > 127)
-		return;	// non printable
+			return;
+		}
 		
-	if (key_linepos < MAXCMDLINE-1)
-	{
-		key_lines[edit_line][key_linepos] = key;
-		key_linepos++;
-		key_lines[edit_line][key_linepos] = 0;
+		if (key < 32 || key > 127)
+			return;	// non printable
+			
+		if (key_linepos < MAXCMDLINE-1)
+		{
+			key_lines[edit_line][key_linepos] = key;
+			key_linepos++;
+			key_lines[edit_line][key_linepos] = 0;
+		}
+	
 	}
 
 }

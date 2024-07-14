@@ -483,7 +483,7 @@ void Con_DrawInput (void)
 	int		i;
 	char	*text;
 
-	if (key_dest != key_console && !con_forcedup)
+	if (key_dest != key_console)
 		return;		// don't draw anything
 
 	text = key_lines[edit_line];
@@ -577,6 +577,7 @@ Draws the console with the solid background
 The typing input line at the bottom should only be drawn if typing is allowed
 ================
 */
+extern int in_osk;
 void Con_DrawConsole (int lines, qboolean drawinput)
 {
 	int				i, x, y;
@@ -606,12 +607,11 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 		for (x=0 ; x<con_linewidth ; x++)
 			Draw_Character ( (x+1)<<3, y, text[x]);
 	}
-
-// draw the input prompt, user text, and cursor if desired
-	// ELUTODO: place correctly in the if_else structures above
-	if (in_osk)
+	
+	if (in_osk == 1)
 		GX_DrawOSK();
 
+// draw the input prompt, user text, and cursor if desired
 	if (drawinput)
 		Con_DrawInput ();
 }

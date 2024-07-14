@@ -181,6 +181,7 @@ void HUD_NewMap (void)
 	current_points = 500;
 	point_change_interval = 0;
 	point_change_interval_neg = 0;
+	bettyprompt_time = 0;
 
 	round_center_x = (vid.width - sb_round[0]->width) /2;
 	round_center_y = (vid.height - sb_round[0]->height) /2;

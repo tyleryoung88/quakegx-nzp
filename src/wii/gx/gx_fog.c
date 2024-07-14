@@ -31,7 +31,7 @@ float fade_time; //duration of fade
 float fade_done; //time when fade will be done
 
 extern Mtx44 perspective;
-GXColor BLACK = {0, 0, 0, 0};
+GXColor BLACK = {0, 0, 0, 255};
 
 /*
 =============
@@ -94,7 +94,7 @@ void Fog_ParseServerMessage (void)
 	blue = MSG_ReadByte();
 	time = MSG_ReadShort();
 	
-	Con_Printf("updating fog values");
+	//Con_Printf("updating fog values");
 
 	Fog_Update (start, end, red, green, blue, time);
 }
@@ -267,18 +267,19 @@ Fog_EnableGFog
 called before drawing stuff that should be fogged
 =============
 */
+GXColor color = {50, 10, 10, 255};
 void Fog_EnableGFog (void)
 {
 	float near, far;
 	float end;
-	GXColor FogColor = {fog_red, fog_green, fog_blue, 255};
+	GXColor FogColor = {fog_red*3, fog_green*3, fog_blue*3, 255}; //alpha what>?
 	
 	get_projection_info (&near, &far);
 	
 	end = fog_end/3;
 		
-	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, fog_red, fog_blue, fog_green);
-	GX_SetFog(GX_FOG_EXP2, 0.0F, end, near, far, FogColor);
+	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, fog_red*3, fog_blue*3, fog_green*3);
+	GX_SetFog(/*GX_FOG_EXP2*/ GX_FOG_LIN, 0.0F, end, near, far, FogColor);
 }
 
 /*
@@ -290,7 +291,7 @@ called after drawing stuff that should be fogged
 */
 void Fog_DisableGFog (void)
 {
-	GX_SetFog(GX_FOG_NONE, 0.0F, 0.0F, 0.0F, 0.0F, BLACK);
+	GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.0F, 1.0F, BLACK);
 }
 
 //==============================================================================

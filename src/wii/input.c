@@ -65,36 +65,6 @@ float in_pitchangle;
 float in_yawangle;
 float in_rollangle;
 
-// Are we inside the on-screen keyboard? (ELUTODO: refactor)
-int in_osk = 0;
-
-// \0 means not mapped...
-// 5 * 15
-char osk_normal[75] =
-{
-	'\'', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', ']', K_BACKSPACE,
-	0, 'q', 'w', 'e', 'r', 't', 'y', 'u', 'i', 'o', 'p', 0, '[', K_ENTER, K_ENTER,
-	0, 'a', 's', 'd', 'f', 'g', 'h', 'j', 'k', 'l', 0, '~', '/', K_ENTER, K_ENTER,
-	0, '\\', 'z', 'x', 'c', 'v', 'b', 'n', 'm', ',', '.', ';', K_ENTER, K_ENTER, K_ENTER,
-	0 , 0, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, 0, 0
-};
-
-char osk_shifted[75] =
-{
-	'\"', '!', '@', '#', '$', '%', 0, '&', '*', '(', ')', '_', '+', '}', K_BACKSPACE,
-	0, 'Q', 'W', 'E', 'R', 'T', 'Y', 'U', 'I', 'O', 'P', 0, '{', K_ENTER, K_ENTER,
-	0, 'A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 0, '^', '?', K_ENTER, K_ENTER,
-	0, '|', 'Z', 'X', 'C', 'V', 'B', 'N', 'M', '<', '>', ':', K_ENTER, K_ENTER, K_ENTER,
-	0 , 0, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, K_SPACE, 0, 0
-};
-
-char *osk_set;
-int osk_selected;
-int osk_last_selected;
-int osk_coords[2];
-
-float osk_last_press_time = 0.0f;
-
 #include <ogc/pad.h>
 #include <wiiuse/wpad.h>
 #include <wiikeyboard/keyboard.h>
@@ -149,8 +119,7 @@ static float clamp(float value, float minimum, float maximum)
 
 static void apply_dead_zone(float* x, float* y, float dead_zone)
 {
-	// Either stick out of the dead zone?
-	if ((fabsf(*x) >= dead_zone) || (fabsf(*y) >= dead_zone))
+	if ((fabsf(*x) >= dead_zone) || (fabsf(*y) >= dead_zone)/* || cl.stats[STAT_ZOOM == 1] || cl.stats[STAT_ZOOM == 2]*/)
 	{
 		// Nothing to do.
 	}
@@ -258,8 +227,6 @@ void IN_Init (void)
 
 	last_irx = -1;
 	last_iry = -1;
-
-	in_osk = 0;
 
 	in_pitchangle = .0f;
 	in_yawangle = .0f;
@@ -380,9 +347,6 @@ void IN_Commands (void)
 	WPAD_Expansion(WPAD_CHAN_0, &expansion);
 	WPAD_GForce(WPAD_CHAN_0, &gforce); //Shake to reload
 
-	// TODO: go back to the old method with buton mappings. The code was a lot cleaner that way
-	in_osk = 0;
-	
 //Send the wireless classic controller buttons events
 	if(classic_connected)
 	{
@@ -533,36 +497,8 @@ void IN_Commands (void)
 		
 		if ((wpad_previous_keys & WPAD_BUTTON_MINUS) != (wpad_keys & WPAD_BUTTON_MINUS))
 		{
-			if (key_dest == key_console) {
-					// ELUTODO: we are using the previous frame wiimote position... FIX IT
-				in_osk = 1;
-				int line = (last_iry - OSK_YSTART) / (osk_line_size * (osk_line_size / osk_charsize)) - 1;
-				int col = (last_irx - OSK_XSTART) / (osk_col_size * (osk_col_size / osk_charsize)) - 1;
-
-				osk_coords[0] = last_irx;
-				osk_coords[1] = last_iry;
-
-				line = clamp(line, 0, osk_num_lines);
-				col = clamp(col, 0, osk_num_col);
-
-				if (nunchuk_connected && (wpad_keys & WPAD_NUNCHUK_BUTTON_Z))
-					osk_set = osk_shifted;
-				else
-					osk_set = osk_normal;
-
-				osk_selected = osk_set[line * osk_num_col + col];
-
-				if ((wpad_keys & WPAD_BUTTON_B) && osk_selected && (Sys_FloatTime() >= osk_last_press_time + osk_repeat_delay.value || osk_selected != osk_last_selected))
-				{
-					Key_Event((osk_selected), true);
-					Key_Event((osk_selected), false);
-					osk_last_selected = osk_selected;
-					osk_last_press_time = Sys_FloatTime();
-				}
-			} else {
-				// Send a press event.
-				Key_Event(K_JOY17, ((wpad_keys & WPAD_BUTTON_MINUS) == WPAD_BUTTON_MINUS));
-			}
+			// Send a press event.
+			Key_Event(K_JOY17, ((wpad_keys & WPAD_BUTTON_MINUS) == WPAD_BUTTON_MINUS));
 		}
 		
 //Send nunchunk button events
@@ -749,6 +685,9 @@ void IN_Commands (void)
 extern bool croshhairmoving;
 extern float crosshair_opacity;
 float centerdrift_offset_yaw, centerdrift_offset_pitch;
+extern qboolean aimsnap;
+extern int zoom_snap;
+int ir_x, ir_y;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
@@ -763,6 +702,8 @@ void IN_Move (usercmd_t *cmd)
 	// In "pointer" variable there are the IR values
 	int last_wiimote_ir_x = pointer.x;
 	int last_wiimote_ir_y = pointer.y;
+	ir_x = pointer.x;
+	ir_y = pointer.y;
 	int wiimote_ir_x = 0, wiimote_ir_y = 0;
 
 
@@ -786,20 +727,25 @@ void IN_Move (usercmd_t *cmd)
 	}
 // Movement management of nunchuk stick (x1/y1) and of IR (x2/y2) if the nunchuk is connected
 	if(nunchuk_connected && !nunchuk_stick_as_arrows.value)
-		{
+	{
 		const s8 nunchuk_stick_x = WPAD_StickX(0);
 		const s8 nunchuk_stick_y = WPAD_StickY(0);
 
 		x1 = clamp(((float)nunchuk_stick_x / 128.0f) * 1.5, -1.0f, 1.0f);
 		y1 = clamp(((float)nunchuk_stick_y / (128.0f)) * 1.5, -1.0f, 1.0f);
-
+			
 		x2 = clamp((float)wiimote_ir_x / (pointer.vres[0] / 2.0f) - 1.0f, -1.0f, 1.0f);
-		// Move the cross position
-		Cvar_SetValue("cl_crossx", /*scr_vrect.width*/vid.width / 2 * x2);
-
 		y2 = clamp((float)wiimote_ir_y / (pointer.vres[1] / 2.0f) - 1.0f, -1.0f, 1.0f);
-		Cvar_SetValue("cl_crossy", /*scr_vrect.height*/(vid.height - (vid_tvborder.value * 400))/ 2 * y2);
+		// Move the cross position
+		if (aimsnap == true) {
+			Cvar_SetValue("cl_crossx", scr_vrect.width/2);
+			Cvar_SetValue("cl_crossy", scr_vrect.height/2);
+			zoom_snap = 1;
+		} else {
+			Cvar_SetValue("cl_crossx", scr_vrect.width/ 2 * x2);
+			Cvar_SetValue("cl_crossy", scr_vrect.height/2 * y2);
 		}
+	}
 		
 // Movement management of 2 classic controller sticks (x1/y1) and (y1/y2) if the cc is connected
 
@@ -844,8 +790,15 @@ void IN_Move (usercmd_t *cmd)
 	//non-linear sensitivity based on how
 	//far the IR pointer is from the 
 	//center of the screen.
-	centerdrift_offset_yaw = fabsf(x2); //yaw
-	centerdrift_offset_pitch = fabsf(y2); //pitch
+	
+	/*
+	if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2) {
+		centerdrift_offset_yaw = 1; //yaw
+		centerdrift_offset_pitch = 1; //pitch
+	} else {*/
+		centerdrift_offset_yaw = fabsf(x2); //yaw
+		centerdrift_offset_pitch = fabsf(y2); //pitch
+	//}
 	
 	// Apply the dead zone.
 	apply_dead_zone(&x1, &y1, dead_zone);

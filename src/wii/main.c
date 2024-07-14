@@ -77,10 +77,6 @@ void shutdown_system(void)
 	want_to_shutdown = 1;
 }
 
-// Set up the heap.
-static size_t	heap_size	= 21 * 1024 * 1024;
-static char		*heap;
-
 inline void *align32 (void *p)
 {
 	return (void*)((((int)p + 31)) & 0xffffffe0);
@@ -379,28 +375,14 @@ void frontend(void)
 	}
 }
 */
+// Set up the heap.
+static size_t	heap_size	= 30 * 1024 * 1024;
+static char		*heap;
+static u32		real_heap_size;
 static void* main_thread_function(void* dummy)
 {
-	u32 level, real_heap_size;
-
 	// hope the parms are all set by now
 	COM_InitArgv(parms_number, parms_array);
-
-	_CPU_ISR_Disable(level);
-	heap = (char *)align32(SYS_GetArena2Lo());
-	real_heap_size = heap_size - ((u32)heap - (u32)SYS_GetArena2Lo());
-	if ((u32)heap + real_heap_size > (u32)SYS_GetArena2Hi())
-	{
-		_CPU_ISR_Restore(level);
-		Sys_Error("heap + real_heap_size > (u32)SYS_GetArena2Hi()");
-	}	
-	else
-	{
-		SYS_SetArena2Lo(heap + real_heap_size);
-		_CPU_ISR_Restore(level);
-	}
-
-	VIDEO_SetBlack(true);
 
 	// Initialise the Host module.
 	quakeparms_t parms;
@@ -473,6 +455,7 @@ qboolean isDedicated = false;
 
 int main(int argc, char* argv[])
 {
+	u32 level;
 	void *qstack = malloc(2 * 1024 * 1024); // ELUTODO: clean code to prevent needing a stack this huge
 
 #if USBGECKO_DEBUG
@@ -486,12 +469,27 @@ int main(int argc, char* argv[])
 	_break();
 #endif
 
-
 	// Initialize.
 	init();
 	//check_pak_file_exists();
 
 	//frontend();
+	
+	VIDEO_SetBlack(true);
+	
+	_CPU_ISR_Disable(level);
+	heap = (char *)align32(SYS_GetArena2Lo());
+	real_heap_size = heap_size - ((u32)heap - (u32)SYS_GetArena2Lo());
+	if ((u32)heap + real_heap_size > (u32)SYS_GetArena2Hi())
+	{
+		_CPU_ISR_Restore(level);
+		Sys_Error("heap + real_heap_size > (u32)SYS_GetArena2Hi()");
+	}	
+	else
+	{
+		SYS_SetArena2Lo(heap + real_heap_size);
+		_CPU_ISR_Restore(level);
+	}
 
 	// Start the main thread.
 	lwp_t thread;

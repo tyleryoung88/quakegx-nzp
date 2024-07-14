@@ -1156,13 +1156,12 @@ void SCR_DrawLoadScreen (void)
 		}
 
 		if (load_screen_exists == true)
-			//Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
 			Draw_StretchPic(0, 0, lscreen, vid.width, vid.height);
 		else
 			Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
 
 		Draw_FillByColor(0, 0, 640, 48, 0, 0, 0, 175);
-		Draw_FillByColor(0, 470, 640, 48, 0, 0, 0, 175);
+		Draw_FillByColor(0, 432, 640, 48, 0, 0, 0, 175);
 
 		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 3);
 	}
@@ -1175,10 +1174,10 @@ void SCR_DrawLoadScreen (void)
 	}
 
 	if (key_dest == key_game) {
-		Draw_ColoredString((vid.width - loadingtextwidth)/2, 465, lodinglinetext, 255, 255, 255, 255, 1.5);
+		Draw_ColoredString((vid.width - loadingtextwidth)/2, 460, lodinglinetext, 255, 255, 255, 255, 1.5);
 
 		if (strcmp(lodinglinetext, "Please help me find the meaning of   . Thanks.") == 0) {
-			Draw_Pic(120, 200, awoo);
+			Draw_StretchPic(120, 420, awoo, 24, 24);
 		}
 	}
 }

@@ -1760,11 +1760,12 @@ again:
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	11
+#define	OPTIONS_ITEMS	12
 
 #define	SLIDER_RANGE	10
 
 extern cvar_t	nunchuk_stick_as_arrows;
+extern cvar_t	cl_weapon_inrollangle;
 int		options_cursor;
 
 void M_Menu_Options_f (void)
@@ -1821,21 +1822,24 @@ void M_AdjustSliders (int dir)
 		Cvar_SetValue ("volume", volume.value);
 		break;
 
-	case 8:	// allways run
-		if (cl_forwardspeed > 200)
-		{
-			//Cvar_SetValue ("cl_forwardspeed", 200);
-			//Cvar_SetValue ("cl_backspeed", 200);
-		}
-		else
-		{
-			//Cvar_SetValue ("cl_forwardspeed", 400);
-			//Cvar_SetValue ("cl_backspeed", 400);
-		}
-		break;
-
-	case 9:	// Nunchuk stick as arrows
+	case 8:	// Nunchuk stick as arrows
 		Cvar_SetValue ("nunchuk_stick_as_arrows", !nunchuk_stick_as_arrows.value);
+		break;
+		
+	case 9:	// Aim assist
+		Cvar_SetValue ("in_aimassist", !in_aimassist.value);
+		break;
+	
+	case 10:	// weapon roll by input
+		Cvar_SetValue ("cl_weapon_inrollangle", !cl_weapon_inrollangle.value);
+		break;
+	case 11:	// tv border
+		vid_tvborder.value += dir * 0.005f;
+		if (vid_tvborder.value < 0)
+			vid_tvborder.value = 0;
+		if (vid_tvborder.value > 0.2)
+			vid_tvborder.value = 0.2;
+		Cvar_SetValue ("vid_tvborder", vid_tvborder.value);
 		break;
 	}
 }
@@ -1865,9 +1869,9 @@ void M_DrawCheckbox (int x, int y, int on)
 		M_DrawCharacter (x, y, 129);
 #endif
 	if (on)
-		M_Print (x, y, "on");
+		M_Print (x, y, "ON");
 	else
-		M_Print (x, y, "off");
+		M_Print (x, y, "OFF");
 }
 
 void M_Options_Draw (void)
@@ -1901,13 +1905,18 @@ void M_Options_Draw (void)
 	r = volume.value;
 	M_DrawSlider (220, 88, r);
 
-	M_Print (16, 96, "        Run by Default");
-	//M_DrawCheckbox (220, 96, cl_forwardspeed.value > 200);
+	M_Print (16, 96,"     NK stick as arrows");
+	M_DrawCheckbox (215, 96, nunchuk_stick_as_arrows.value);
+	
+	M_Print (16, 104,"     Aim assist toggle");
+	M_DrawCheckbox (215, 104, in_aimassist.value);
 
-	M_Print (16, 104,"    NK stick as arrows");
-	M_DrawCheckbox (220, 104, nunchuk_stick_as_arrows.value);
+	M_Print (16, 112, "           Weapon Roll");
+	M_DrawCheckbox (215, 112, cl_weapon_inrollangle.value);
 
-	M_Print (16, 112, "          More Options");
+	M_Print (16, 120, "           TV Overscan");
+	r = vid_tvborder.value / 0.2f;
+	M_DrawSlider (220, 120, r);
 
 // cursor
 	M_DrawCharacter (200, 32 + options_cursor*8, 12+((int)(realtime*4)&1));
@@ -1934,9 +1943,6 @@ void M_Options_Key (int k)
 			break;
 		case 2:
 			Cbuf_AddText ("exec default.cfg\n");
-			break;
-		case 10:
-			M_Menu_Options2_f ();
 			break;
 		default:
 			M_AdjustSliders (1);
@@ -1981,25 +1987,19 @@ void M_Options_Key (int k)
 
 char *bindnames[][2] =
 {
-{"+attack", 		"attack"},
-{"+switch", 		"change weapon"},
-{"+reload",			"reload"},
-{"+jump", 			"jump / swim up"},
-{"+forward", 		"walk forward"},
-{"+back", 			"backpedal"},
-{"+left", 			"turn left"},
-{"+right", 			"turn right"},
-{"impulse 23", 		"sprint"},
-{"+moveleft", 		"step left"},
-{"+moveright", 		"step right"},
-{"+strafe", 		"sidestep"},
-{"+lookup", 		"look up"},
-{"+lookdown", 		"look down"},
-{"+aim", 			"aim down sight"},
-{"+knife", 			"knife"},
-{"+grenade", 		"grenade"},
-{"+moveup",			"swim up"},
-{"+movedown",		"swim down"}
+{"+attack", 		"Attack"},
+{"+switch", 		"Change Weapon"},
+{"+reload",			"Reload"},
+{"impulse 23", 		"Sprint"},
+{"+aim", 			"Aim Down Sight"},
+{"+knife", 			"Knife"},
+{"+grenade", 		"Grenade"},
+{"+jump", 			"Jump"},
+{"impulse 33", 		"Place Betty"},
+{"+forward", 		"Walk Forward"},
+{"+back", 			"Walk Backward"},
+{"+moveleft", 		"Step Left"},
+{"+moveright", 		"Step Right"},
 };
 
 #define	NUMCOMMANDS	(sizeof(bindnames)/sizeof(bindnames[0]))
@@ -2173,142 +2173,6 @@ void M_Keys_Key (int k)
 	case K_DEL:				// delete bindings
 		//S_LocalSound ("misc/menu2.wav");
 		M_UnbindCommand (bindnames[keys_cursor][0]);
-		break;
-	}
-}
-
-//=============================================================================
-/* OPTIONS2 MENU */
-
-#define	OPTIONS2_ITEMS	5
-
-int		options2_cursor;
-
-void M_Menu_Options2_f (void)
-{
-	key_dest = key_menu;
-	m_state = m_options2;
-	m_entersound = true;
-}
-
-// ELUTODO: aspect ratio
-extern cvar_t	vid_conmode;
-extern cvar_t	sbar_alpha;
-extern cvar_t	cl_weapon_inrollangle;
-extern cvar_t	crosshair;
-
-void M_AdjustSliders2 (int dir)
-{
-	//S_LocalSound ("misc/menu3.wav");
-
-	switch (options2_cursor)
-	{
-	case 0:	// sbar transparency
-		sbar_alpha.value += (float)dir * 0.1f;
-		if (sbar_alpha.value < .0f)
-			sbar_alpha.value = .0f;
-		if (sbar_alpha.value > 1.0f)
-			sbar_alpha.value = 1.0f;
-		Cvar_SetValue ("sbar_alpha", sbar_alpha.value);
-		break;
-	case 1:	// 2D res
-		vid_conmode.value += dir;
-		if (vid_conmode.value < 0)
-			vid_conmode.value = 0;
-		if (vid_conmode.value > 4)
-			vid_conmode.value = 4;
-		Cvar_SetValue ("vid_conmode", vid_conmode.value);
-		vid.recalc_refdef = 1;
-		break;
-	case 2:	// crosshair
-		Cvar_SetValue ("crosshair", 1);
-		break;
-	case 3:	// weapon roll by input
-		Cvar_SetValue ("cl_weapon_inrollangle", !cl_weapon_inrollangle.value);
-		break;
-	case 4:	// tv border
-		vid_tvborder.value += dir * 0.005f;
-		if (vid_tvborder.value < 0)
-			vid_tvborder.value = 0;
-		if (vid_tvborder.value > 0.2)
-			vid_tvborder.value = 0.2;
-		Cvar_SetValue ("vid_tvborder", vid_tvborder.value);
-		break;
-	}
-}
-
-void M_Options2_Draw (void)
-{
-	float		r;
-
-	M_Print (16, 32, "      Status Bar Alpha");
-	r = sbar_alpha.value;
-	M_DrawSlider (220, 32, r);
-
-	M_Print (16, 40, "         2D Resolution");
-	r = vid_conmode.value / 4.0f;
-	M_DrawSlider (220, 40, r);
-
-	M_Print (16, 48, "        Show Crosshair");
-	M_DrawCheckbox (220, 48, crosshair.value);
-
-	M_Print (16, 56, "           Weapon Roll");
-	M_DrawCheckbox (220, 56, cl_weapon_inrollangle.value);
-
-	M_Print (16, 64, "           TV Overscan");
-	r = vid_tvborder.value / 0.2f;
-	M_DrawSlider (220, 64, r);
-
-	M_Print (16, 80, "       Please report issues with");
-	M_Print (16, 88, "         2D Resolution changes");
-
-// cursor
-	M_DrawCharacter (200, 32 + options2_cursor*12, 12+((int)(realtime*4)&1));
-}
-
-
-void M_Options2_Key (int k)
-{
-	switch (k)
-	{
-	case K_ESCAPE:
-	case K_JOY1:
-		M_Menu_Options_f ();
-		break;
-
-	case K_ENTER:
-	case K_JOY0:
-	case K_JOY9:
-	case K_JOY20:
-		m_entersound = true;
-		switch (options2_cursor)
-		{
-			default:
-				M_AdjustSliders2 (1);
-				break;
-		}
-		return;
-
-	case K_UPARROW:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		options2_cursor--;
-		if (options2_cursor < 0)
-			options2_cursor = OPTIONS2_ITEMS-1;
-		break;
-
-	case K_DOWNARROW:
-		S_LocalSound ("sounds/menu/navigate.wav");
-		options2_cursor++;
-		if (options2_cursor >= OPTIONS2_ITEMS)
-			options2_cursor = 0;
-		break;
-
-	case K_LEFTARROW:
-		M_AdjustSliders2 (-1);
-		break;
-
-	case K_RIGHTARROW:
-		M_AdjustSliders2 (1);
 		break;
 	}
 }
@@ -3417,10 +3281,6 @@ void M_Draw (void)
 	case m_gameoptions:
 		M_GameOptions_Draw ();
 		break;
-		
-	case m_options2:
-		M_Options2_Draw ();
-		break;
 
 	case m_custommaps:
 		M_Menu_CustomMaps_Draw ();
@@ -3491,10 +3351,6 @@ void M_Keydown (int key)
 
 	case m_gameoptions:
 		M_GameOptions_Key (key);
-		return;
-		
-	case m_options2:
-		M_Options2_Key (key);
 		return;
 
 	case m_custommaps:

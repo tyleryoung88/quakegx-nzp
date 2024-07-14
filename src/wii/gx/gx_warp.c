@@ -640,6 +640,7 @@ void R_DrawSkyBox (void)
 	//QGX_Blend(false);
 	//QGX_Alpha(false);
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+	//Fog_DisableGFog ();
 	QGX_ZMode(false);
 	
 	for (i=0 ; i<5 ; i++)
@@ -726,6 +727,7 @@ void R_DrawSkyBox (void)
 	}
 	QGX_ZMode(true);
 	//QGX_Alpha(true);
+	//Fog_EnableGFog ();
 #endif
 }
 

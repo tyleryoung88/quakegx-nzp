@@ -257,6 +257,8 @@ typedef struct
 	
 	qboolean	islmp;
 	
+	int 		checksum;
+	
 	// Diabolicka TGA
 	int			bytesperpixel;
 	int			lhcsum;

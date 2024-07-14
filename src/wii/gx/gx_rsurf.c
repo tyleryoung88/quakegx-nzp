@@ -912,13 +912,13 @@ void R_DrawBrushModel (entity_t *e)
 	}
 
 	
-	c_guMtxIdentity(model);
+	guMtxIdentity(model);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 	R_RotateForEntity (e, e->scale);
 e->angles[0] = -e->angles[0];	// stupid quake bug
 	
 	//sBTODO at somepoint... will require more in depth studying of GX blendmodes 
-	c_guMtxConcat(view,model,modelview);
+	guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
 	// naievil -- fixme
