@@ -760,7 +760,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	if (bits & SU_WEAPONSKIN)
 		MSG_WriteByte (msg, ent->v.weaponskin);
 	if (bits & SU_WEAPON)
-		MSG_WriteByte (msg, SV_ModelIndex(pr_strings+ent->v.weaponmodel));
+		MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weaponmodel));
 
 	if (bits & SU_GRENADES)
 		MSG_WriteLong (msg, ent->v.grenades);
@@ -778,7 +778,7 @@ void SV_WriteClientdataToMessage (edict_t *ent, sizebuf_t *msg)
 	MSG_WriteByte (msg, ent->v.x2_icon);
 	MSG_WriteByte (msg, ent->v.insta_icon);
 	MSG_WriteByte (msg, ent->v.progress_bar);
-	MSG_WriteByte (msg, SV_ModelIndex(pr_strings+ent->v.weapon2model));
+	MSG_WriteShort (msg, SV_ModelIndex(pr_strings+ent->v.weapon2model));
 	MSG_WriteByte (msg, ent->v.weapon2skin);
 	MSG_WriteByte (msg, ent->v.weapon2frame);
 	MSG_WriteByte (msg, ent->v.currentmag2);
@@ -1632,5 +1632,5 @@ void Load_Waypoint ()
 		waypoints[i].dist[7]);
 	}
 	W_fclose(h);
-	Z_Free (w_string_temp);
+	//Z_Free (w_string_temp);
 }

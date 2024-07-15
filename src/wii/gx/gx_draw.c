@@ -166,7 +166,7 @@ qpic_t	*Draw_CachePic (char *path)
 
 		return &pic->pic;
 	}*/
-	return 0;
+	return -1;
 }
 
 /*

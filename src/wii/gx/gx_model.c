@@ -386,7 +386,7 @@ void Mod_LoadTextures (lump_t *l)
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
 		pixels = mt->width*mt->height/64*85;
-		tx = Hunk_AllocName (sizeof(texture_t) +pixels, loadname );
+		tx = Hunk_AllocName (sizeof(texture_t)/* +pixels*/, loadname );
 		loadmodel->textures[i] = tx;
 
 		memcpy (tx->name, mt->name, sizeof(tx->name));
@@ -395,11 +395,11 @@ void Mod_LoadTextures (lump_t *l)
 		for (j=0 ; j<MIPLEVELS ; j++)
 			tx->offsets[j] = mt->offsets[j] + sizeof(texture_t) - sizeof(miptex_t);
 		// the pixels immediately follow the structures
-		memcpy ( tx+1, mt+1, pixels);
+		//memcpy ( tx+1, mt+1, pixels);
 		
 
 		if (loadmodel->bspversion != HL_BSPVERSION && !strncmp(mt->name,"sky",3))	{
-			R_InitSky (tx);
+			R_InitSky (mt);
 		} else {
 			if (loadmodel->bspversion == HL_BSPVERSION) {
 				if (1) {
@@ -1630,7 +1630,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	//
 	// General texture override stuff.
 	//
-	/*
+	
 	// Mustang & Sally // v_biatch
 	if (strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_left.mdl") == 0 ||
 	strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_right.mdl") == 0) {
@@ -1647,7 +1647,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
 	}
-	*/
+	
 #if 1
 	for (i=0 ; i<numskins ; i++)
 	{
@@ -1979,13 +1979,13 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	sprintf(sprite2, "%s.spr_%i", sprite, framenum);
 	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
 
-	if (pspriteframe->gl_texturenum == 0) // did not find a matching TGA...
+	if (pspriteframe->gl_texturenum <= 0) // did not find a matching TGA...
 	{
 		COM_StripExtension(loadmodel->name, sprite);
 		sprintf(sprite2, "%s.spr", sprite, framenum);
 		pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
 		
-		if (pspriteframe->gl_texturenum == 0) {
+		if (pspriteframe->gl_texturenum <= 0) {
 			pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, true, true, 1);
 		}
 	} 

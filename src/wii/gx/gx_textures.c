@@ -922,32 +922,31 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		c++;
 	}
 	
-	//Try PCX
-	
+	//Try PCX	
 	sprintf (name, "%s.pcx", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0) {
 		COM_CloseFile (f);
-		//Con_Printf("PCX: %s\n", name);
-		GX_SetMinMag (GX_LINEAR, GX_NEAR);		
 		data = LoadPCX (name, matchwidth, matchheight);
-		if (!data)
+		if (data == 0) {
+			Con_Printf("PCX: can't load %s\n", name);	
 			return 0; //Sys_Error ("PCX: can't load %s", name);
-		
-		texnum = GL_LoadTexture (basename, image_width, image_height, data, false, true, true, 4);
-		
+		}		
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, false, true, true, 4);		
 		free(data);
 		return texnum;
-	}
-	
+	}	
 	//Try TGA
 	sprintf (name, "%s.tga", basename);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
+		if (data == 0) {
+			Con_Printf("TGA: can't load %s\n", name);	
+			return 0;
+		}
 		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
-		//Con_Printf("%s : %i\n", name, texnum);
 		free(data);
 		return texnum;
 	}
@@ -957,9 +956,11 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
-		
+		if (data == 0) {
+			Con_Printf("PNG: can't load %s\n", name);	
+			return 0;
+		}
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);	
 		free(data);
 		return texnum;
 	}
@@ -969,9 +970,11 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		//Con_Printf("Trying to load: %s", name);
-		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
-		
+		if (data == 0) {
+			Con_Printf("JPEG: can't load %s\n", name);	
+			return 0;
+		}
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);	
 		free(data);
 		return texnum;
 	}
@@ -980,17 +983,15 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		//Con_Printf("Trying to load: %s", name);
+		if (data == 0) {
+			Con_Printf("JPG: can't load %s\n", name);	
+			return 0;
+		}
 		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
-		
 		free(data);
 		return texnum;
 	}
-	
-	if (data <= 0) { 
-		//Con_Printf("Cannot load image %s\n", filename);
-		return 0;
-	}
+
 	//Con_Printf("Cannot load image %s\n", filename);
 	return 0;
 }

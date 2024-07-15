@@ -1770,8 +1770,11 @@ int		options_cursor;
 
 void M_Menu_Options_f (void)
 {
-	key_dest = key_menu;
+	if (key_dest != key_menu_pause)
+		key_dest = key_menu;
+	
 	m_state = m_options;
+	
 	m_entersound = true;
 }
 
@@ -2009,7 +2012,9 @@ int		bind_grab;
 
 void M_Menu_Keys_f (void)
 {
-	key_dest = key_menu;
+	if (key_dest != key_menu_pause)
+		key_dest = key_menu;
+	
 	m_state = m_keys;
 	m_entersound = true;
 }

@@ -51,11 +51,11 @@ void Fog_Update (float start, float end, float red, float green, float blue, flo
 			float f;
 
 			f = (fade_done - cl.time) / fade_time;
-			old_start = f * old_start + (255.0 - f) * fog_start;
-			old_end = f * old_end + (255.0 - f) * fog_end;
-			old_red = f * old_red + (255.0 - f) * fog_red;
-			old_green = f * old_green + (255.0 - f) * fog_green;
-			old_blue = f * old_blue + (255.0 - f) * fog_blue;
+			old_start = f * old_start + (85.0 - f) * fog_start;
+			old_end = f * old_end + (85.0 - f) * fog_end;
+			old_red = f * old_red + (85.0 - f) * fog_red;
+			old_green = f * old_green + (85.0 - f) * fog_green;
+			old_blue = f * old_blue + (85.0 - f) * fog_blue;
 		}
 		else
 		{
@@ -146,33 +146,33 @@ void Fog_FogCommand_f (void)
 	case 4:
 		Fog_Update(fog_start,
 				   fog_end,
-				   CLAMP(0.0, atof(Cmd_Argv(1)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(2)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(3)), 100.0),
+				   CLAMP(0.0, atof(Cmd_Argv(1)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(2)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(3)), 85.0),
 				   0.0);
 		break;
 	case 5: //TEST
 		Fog_Update(fog_start,
 				   fog_end,
-				   CLAMP(0.0, atof(Cmd_Argv(1)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(2)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(3)), 100.0),
+				   CLAMP(0.0, atof(Cmd_Argv(1)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(2)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(3)), 85.0),
 				   atof(Cmd_Argv(4)));
 		break;
 	case 6:
 		Fog_Update(atof(Cmd_Argv(1)),
 				   atof(Cmd_Argv(2)),
-				   CLAMP(0.0, atof(Cmd_Argv(3)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(4)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(5)), 100.0),
+				   CLAMP(0.0, atof(Cmd_Argv(3)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(4)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(5)), 85.0),
 				   0.0);
 		break;
 	case 7:
 		Fog_Update(atof(Cmd_Argv(1)),
 				   atof(Cmd_Argv(2)),
-				   CLAMP(0.0, atof(Cmd_Argv(3)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(4)), 100.0),
-				   CLAMP(0.0, atof(Cmd_Argv(5)), 100.0),
+				   CLAMP(0.0, atof(Cmd_Argv(3)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(4)), 85.0),
+				   CLAMP(0.0, atof(Cmd_Argv(5)), 85.0),
 				   atof(Cmd_Argv(6)));
 		break;
 	}
@@ -267,19 +267,25 @@ Fog_EnableGFog
 called before drawing stuff that should be fogged
 =============
 */
-GXColor color = {50, 10, 10, 255};
+GXColor color = {110, 110, 117, 255};
 void Fog_EnableGFog (void)
 {
 	float near, far;
 	float end;
-	GXColor FogColor = {fog_red*3, fog_green*3, fog_blue*3, 255}; //alpha what>?
+	float r, g, b;
 	
-	if (fog_red > 215)
-		fog_red = 215;
-	if (fog_green > 215)
-		fog_green = 215;
-	if (fog_blue > 215)
-		fog_blue = 215;
+	if (fog_red > 85)
+		fog_red = 85;
+	if (fog_green > 85)
+		fog_green = 85;
+	if (fog_blue > 85)
+		fog_blue = 85;
+	
+	r = fog_red*3;
+	g = fog_green*3;
+	b = fog_blue*3;
+	
+	GXColor FogColor = {r, g, b, 255}; //alpha what>?
 	
 	get_projection_info (&near, &far);
 	
@@ -288,8 +294,11 @@ void Fog_EnableGFog (void)
 	if (end < 300)
 		end = 300;
 		
-	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, fog_red*3, fog_blue*3, fog_green*3);
-	GX_SetFog(GX_FOG_EXP2 /*GX_FOG_LIN*/, 0.0F, end, near, far, FogColor);
+	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, r, g, b);
+	if (r == 0 && g == 0 && b == 0 && end == 300)
+		GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.0F, 1.0F, color);
+	else
+		GX_SetFog(GX_FOG_EXP2 /*GX_FOG_LIN*/, 0.0F, end, near, far, FogColor);
 }
 
 /*
@@ -301,7 +310,7 @@ called after drawing stuff that should be fogged
 */
 void Fog_DisableGFog (void)
 {
-	GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.0F, 1.0F, BLACK);
+	GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.0F, 1.0F, color);
 }
 
 //==============================================================================

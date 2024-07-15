@@ -836,7 +836,7 @@ void CL_ParseClientdata (int bits)
 
 
 	if (bits & SU_WEAPON)
-		i = MSG_ReadByte ();
+		i = MSG_ReadShort ();
 	else
 		i = 0;
 
@@ -913,7 +913,7 @@ void CL_ParseClientdata (int bits)
 	if (cl.progress_bar != i)
 		cl.progress_bar = i;
 
-	i = MSG_ReadByte ();
+	i = MSG_ReadShort ();
 	if (cl.stats[STAT_WEAPON2] != i)
 		cl.stats[STAT_WEAPON2] = i;
 

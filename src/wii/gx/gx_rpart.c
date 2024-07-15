@@ -21,9 +21,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../generic/quakedef.h"
 
-#define MAX_PARTICLES			2048	// default max # of particles at one
+#define MAX_PARTICLES			6144	// default max # of particles at one
 										//  time
-#define ABSOLUTE_MIN_PARTICLES	512		// no fewer than this no matter what's
+#define ABSOLUTE_MIN_PARTICLES	64		// no fewer than this no matter what's
 										//  on the command line
 
 int		ramp1[8] = {0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61};

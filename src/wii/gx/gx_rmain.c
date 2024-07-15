@@ -1062,20 +1062,20 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[1] += 32;
 		lightcolor[2] += 32;
 	}
-	
+	/*
 	if (e == &cl.viewent || e == &cl.viewent2)
 	{
 		lightcolor[0] += 32;
 		lightcolor[1] += 32;
 		lightcolor[2] += 32;
 	}
-	
+	*/
 	for(int g = 0; g < 3; g++)
 	{
-		if(lightcolor[g] < 16)
-			lightcolor[g] = 16;
-		if(lightcolor[g] > 128)
-			lightcolor[g] = 128;
+		if(lightcolor[g] < 32)
+			lightcolor[g] = 32;
+		if(lightcolor[g] > 255)
+			lightcolor[g] = 255;
 	}
 	
 	// HACK HACK HACK -- no fullbright colors, so make torches full light

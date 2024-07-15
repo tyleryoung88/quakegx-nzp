@@ -80,7 +80,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ENTSCALE_DECODE(a)	((float)(a) / ENTSCALE_DEFAULT) // Convert to float for rendering
 
 // defaults for clientinfo messages
-#define	DEFAULT_VIEWHEIGHT	22
+#define	DEFAULT_VIEWHEIGHT	32
 
 
 // game types sent by serverinfo
