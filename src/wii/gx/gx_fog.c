@@ -289,10 +289,10 @@ void Fog_EnableGFog (void)
 	
 	get_projection_info (&near, &far);
 	
-	end = fog_end/2.3;
+	end = fog_end/2.2;
 	
-	if (end < 300)
-		end = 300;
+	if (end < 500)
+		end = 500;
 		
 	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, r, g, b);
 	if (r == 0 && g == 0 && b == 0 && end == 300)
