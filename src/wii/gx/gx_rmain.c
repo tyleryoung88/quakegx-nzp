@@ -1062,14 +1062,17 @@ void R_DrawAliasModel (entity_t *e)
 		lightcolor[1] += 32;
 		lightcolor[2] += 32;
 	}
-	/*
+	
 	if (e == &cl.viewent || e == &cl.viewent2)
 	{
-		lightcolor[0] += 32;
-		lightcolor[1] += 32;
-		lightcolor[2] += 32;
+		if (lightcolor[0] < 64)
+			lightcolor[0] = 64;
+		if (lightcolor[1] < 64)
+			lightcolor[1] = 64;
+		if (lightcolor[2] < 64)
+			lightcolor[2] = 64;
 	}
-	*/
+	
 	for(int g = 0; g < 3; g++)
 	{
 		if(lightcolor[g] < 32)
