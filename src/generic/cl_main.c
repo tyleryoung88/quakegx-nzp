@@ -389,6 +389,18 @@ void CL_DecayLights (void)
 	}
 }
 
+void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type)
+{
+	dlight_t	*dl;
+
+	dl = CL_AllocDlight (key);
+	VectorCopy (origin, dl->origin);
+	dl->radius = radius;
+	dl->die = cl.time + time;
+	dl->type = type;
+
+}
+
 dlighttype_t SetDlightColor (float f, dlighttype_t def, qboolean random)
 {
 	dlighttype_t	colors[NUM_DLIGHTTYPES-4] = {lt_red, lt_blue, lt_redblue, lt_green};

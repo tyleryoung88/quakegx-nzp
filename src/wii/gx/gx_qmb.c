@@ -170,10 +170,9 @@ qboolean OnChange_gl_particle_count (cvar_t *var, char *string)
 
 	QMB_ClearParticles ();		// also re-allocc particles
 
-	return qtrue;
+	return true;
 }
 
-extern cvar_t	cl_gun_offset;
 cvar_t	r_particle_count	= {"r_particle_count", "1024", true};
 cvar_t	r_bounceparticles	= {"r_bounceparticles", "1",true};
 cvar_t	r_decal_blood		= {"r_decal_blood", "1",true};
@@ -182,8 +181,6 @@ cvar_t	r_decal_sparks		= {"r_decal_sparks","1",true};
 cvar_t	r_decal_explosions	= {"r_decal_explosions","1",true};
 
 int	decals_enabled;
-
-void R_CalcBeamVerts (float *vert, vec3_t org1, vec3_t org2, float width);
 
 extern	cvar_t	sv_gravity;
 
@@ -303,7 +300,7 @@ static byte *ColorForParticle (part_type_t type)
 		break;
 
 	default:
-		 //assert (!"ColorForParticle: unexpected type");
+		 Con_Printf ("ColorForParticle: unexpected type");
 		break;
 	}
 
@@ -371,9 +368,10 @@ void QMB_InitParticles (void)
 
 	loading_num_step = loading_num_step + 24;
 	
-	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, true, false, true)))
 	{
 		//Clear_LoadingFill ();
+		Con_Printf ("PARTICLE INIT FAILED");
 		return;
 	}
 
@@ -399,7 +397,7 @@ void QMB_InitParticles (void)
 	
 	max_s = max_t = 128.0;
 
-	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, true, false, true)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -411,7 +409,7 @@ void QMB_InitParticles (void)
 
 	max_s = max_t = 64.0;
 
-	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, true, false, true)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -422,7 +420,7 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, true, false, true)))
 	{
         //Clear_LoadingFill ();
 		return;
@@ -435,7 +433,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	max_s = max_t = 128.0;
 	
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, true, false, true)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -446,7 +444,7 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, true, false, true)))
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -456,7 +454,7 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;	
 	SCR_UpdateScreen ();
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, true, false, true)))
 	{
         //Clear_LoadingFill ();
 		return;
@@ -468,7 +466,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	
 	max_s = max_t = 64.0;
-	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, qfalse, qtrue)))
+	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, true, false, true)))
 	{
         //Clear_LoadingFill ();
 		return;
@@ -481,89 +479,89 @@ void QMB_InitParticles (void)
 
 	QMB_AllocParticles ();
 
-	ADD_PARTICLE_TYPE(p_spark, pd_spark, GL_SRC_ALPHA, GL_ONE, ptex_none, 255, -8, 0, pm_normal, 1.3);
-	ADD_PARTICLE_TYPE(p_gunblast, pd_spark, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_normal, 1.3);
-	ADD_PARTICLE_TYPE(p_sparkray, pd_sparkray, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none,	255, -0, 0, pm_nophysics, 0);
-	ADD_PARTICLE_TYPE(p_fire, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_spark, pd_spark, GX_BL_SRCALPHA, GX_BL_ONE, ptex_none, 255, -8, 0, pm_normal, 1.3);
+	ADD_PARTICLE_TYPE(p_gunblast, pd_spark, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_none, 255, 0, 0, pm_normal, 1.3);
+	ADD_PARTICLE_TYPE(p_sparkray, pd_sparkray, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_none,	255, -0, 0, pm_nophysics, 0);
+	ADD_PARTICLE_TYPE(p_fire, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
 
     loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	ADD_PARTICLE_TYPE(p_fire2,	pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_chunk, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_bounce, 1.475);
-	ADD_PARTICLE_TYPE(p_shockwave, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, 0, -4.85, pm_nophysics, 0);
-	ADD_PARTICLE_TYPE(p_inferno_flame, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic,	153, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_fire2,	pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_smoke, 204, 0, -2.95, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_chunk, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 255, -16, 0, pm_bounce, 1.475);
+	ADD_PARTICLE_TYPE(p_shockwave, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 255, 0, -4.85, pm_nophysics, 0);
+	ADD_PARTICLE_TYPE(p_inferno_flame, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic,	153, 0, 0, pm_static, 0);
 
     loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	ADD_PARTICLE_TYPE(p_inferno_trail, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_trailpart, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 230, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_smoke, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
-	ADD_PARTICLE_TYPE(p_raysmoke, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
-	ADD_PARTICLE_TYPE(p_dpfire, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 144, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_inferno_trail, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_trailpart, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 230, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_smoke, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_raysmoke, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_dpfire, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_dpsmoke, 144, 0, 0, pm_die, 0);
 
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	ADD_PARTICLE_TYPE(p_dpsmoke, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 85, 3, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_dpsmoke, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_dpsmoke, 85, 3, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_dot, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_blood1, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_COLOR, ptex_blood1, 255, -20, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_blood2, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_blood3, 255, -45, 0, pm_normal, 0.018);//disisgonnabethegibchunks
-	ADD_PARTICLE_TYPE(p_blood3, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_blood3, 255, -30, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_dot, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_blood1, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCCLR, ptex_blood1, 255, -20, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_blood2, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_blood3, 255, -45, 0, pm_normal, 0.018);//disisgonnabethegibchunks
+	ADD_PARTICLE_TYPE(p_blood3, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_blood3, 255, -30, 0, pm_normal, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_flame, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 200, 10, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_flame, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 200, 10, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_lavatrail, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_dpsmoke, 255, 3, 0, pm_normal, 0);//R00k
-	ADD_PARTICLE_TYPE(p_glow, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_alphatrail, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 100, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_lavatrail, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_dpsmoke, 255, 3, 0, pm_normal, 0);//R00k
+	ADD_PARTICLE_TYPE(p_glow, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_alphatrail, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 100, 0, 0, pm_static, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_torch_flame, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_flame, 255, 12, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_streak, pd_hide, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, -64, 0, pm_streak, 1.5);
-	ADD_PARTICLE_TYPE(p_streakwave, pd_hide, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_streakwave, 0);
-	ADD_PARTICLE_TYPE(p_streaktrail, pd_beam, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_none, 255, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_torch_flame, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_flame, 255, 12, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_streak, pd_hide, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_none, 255, -64, 0, pm_streak, 1.5);
+	ADD_PARTICLE_TYPE(p_streakwave, pd_hide, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_none, 255, 0, 0, pm_streakwave, 0);
+	ADD_PARTICLE_TYPE(p_streaktrail, pd_beam, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_none, 255, 0, 0, pm_die, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_lightning, 255, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_rain, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_generic, 255, -16, 0, pm_rain, 0);
+	ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_lightning, 255, 0, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_rain, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 255, -16, 0, pm_rain, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
-	//shpuldeditedthis(GI_ONE_MINUS_DST_ALPHA->GL_ONE_MINUS_SRC_ALPHA) (edited one right after this comment)
-	ADD_PARTICLE_TYPE(p_bloodcloud, pd_billboard, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA, ptex_bloodcloud, 255, -2, 0, pm_normal, 0);
+	//shpuldeditedthis(GI_ONE_MINUS_DST_ALPHA->GX_BL_INVSRCALPHA) (edited one right after this comment)
+	ADD_PARTICLE_TYPE(p_bloodcloud, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_bloodcloud, 255, -2, 0, pm_normal, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
 	
 	//old: ADD_PARTICLE_TYPE(p_q3flame, pd_q3flame, GL_SRC_ALPHA, GL_ONE_MINUS_DST_ALPHA, ptex_q3flame, 204, 0, 0, pm_static, -1);
-	ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, GL_SRC_ALPHA, GL_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
+	ADD_PARTICLE_TYPE(p_q3flame, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_q3flame, 180, 0.66, 0, pm_nophysics, 0);
 
 	loading_cur_step++;
-	strcpy(loading_name, "particles");
+	strcpy(loading_name, "Particles");
 	SCR_UpdateScreen ();
 
 	Clear_LoadingFill ();
 
-	qmb_initialized = qtrue;
+	qmb_initialized = true;
 }
 
 #define	INIT_NEW_PARTICLE(_pt, _p, _color, _size, _time)	\
@@ -815,7 +813,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 
 		default:
-			//assert (!"AddParticle: unexpected type");
+			Con_Printf ("AddParticle: unexpected type");
 			break;
 		}
 	}
@@ -877,7 +875,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 		break;
 
 	default:
-		//assert (!"AddParticleTrail: unexpected type");
+		Con_Printf ("AddParticleTrail: unexpected type");
 		break;
 	}
 
@@ -963,7 +961,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 			break;
 
 		default:
-			//assert (!"AddParticleTrail: unexpected type");
+			Con_Printf ("AddParticleTrail: unexpected type");
 			break;
 		}
 
@@ -1160,7 +1158,10 @@ inline static void QMB_UpdateParticles(void)
 									R_SpawnDecal(p->org, normal, tangent, decal_blood2, 12, 0);
 								}
 							}
-*/
+*/							
+							// sBTODO 
+							// Will attempt to fix :)
+							//
 							#if 0// naievil -- fixme
 							if ((pt->id == p_fire || pt->id == p_dpfire) && r_decal_explosions.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_burn, 32, 0);
@@ -1170,7 +1171,7 @@ inline static void QMB_UpdateParticles(void)
 							  R_SpawnDecal (p->org, normal, tangent, decal_blood2, 12, 0);
 						    else if (pt->id == p_q3blood_trail && r_decal_blood.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_q3blood, 48, 0);
-							  #endif
+							 #endif
 
 						}
 					}
@@ -1259,7 +1260,7 @@ inline static void QMB_UpdateParticles(void)
 				break;
 
 			default:
-				//assert (!"QMB_UpdateParticles: unexpected pt->move");
+				Con_Printf ("QMB_UpdateParticles: unexpected pt->move");
 				break;
 			}
 		}
@@ -1303,50 +1304,75 @@ void R_CalcBeamVerts (float *vert, vec3_t org1, vec3_t org2, float width)
 void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *coord) {
 	float            scale;
     vec3_t            up, right, p_downleft, p_upleft, p_downright, p_upright;
-    GLubyte            color[4], *c;
+    //GLubyte            color[4], *c;
+	float             color[4];
 
     VectorScale (vup, 1.5, up);
     VectorScale (vright, 1.5, right);
 
-    glEnable (GL_BLEND);
-    glDepthMask (GL_FALSE);
-    glBegin (GL_QUADS);
+    //glEnable (GL_BLEND);
+	QGX_Alpha(false);
+	QGX_Blend(true);
+    //glDepthMask (GL_FALSE);
+	QGX_ZMode (false);
+	
+	GL_Bind0 (white_texturenum);
+   
+    //glBegin (GL_QUADS);
+    GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
     scale = p->size;
     color[0] = p->color[0];
     color[1] = p->color[1];
     color[2] = p->color[2];
     color[3] = p->color[3];
-    glColor4ubv(color);
+    //glColor4ubv(color);
 
     float subTexLeft = ptex->coords[p->texindex][0];
     float subTexTop = ptex->coords[p->texindex][1];
     float subTexRight = ptex->coords[p->texindex][2];
     float subTexBottom = ptex->coords[p->texindex][3];
 
-    glTexCoord2f(subTexLeft, subTexTop);
-    VectorMA(p->org, -scale * 0.5, up, p_downleft);
+    //glTexCoord2f(subTexLeft, subTexTop);
+	VectorMA(p->org, -scale * 0.5, up, p_downleft);
     VectorMA(p_downleft, -scale * 0.5, right, p_downleft);
-    glVertex3fv (p_downleft);
+	GX_Position3f32(p_downleft[0], p_downleft[1], p_downleft[2]);
+    GX_Color4u8(color[0], color[1], color[2], color[3]);
+	GX_TexCoord2f32(subTexLeft, subTexTop);
+    // glVertex3fv (p_downleft);
 
-    glTexCoord2f(subTexRight, subTexTop);
+   // glTexCoord2f(subTexRight, subTexTop);
     VectorMA (p_downleft, scale, up, p_upleft);
-    glVertex3fv (p_upleft);
-
-    glTexCoord2f(subTexRight, subTexBottom);
+	GX_Position3f32 (p_upleft[0], p_upleft[1], p_upleft[2]);
+	GX_Color4u8(color[0], color[1], color[2], color[3]);
+	GX_TexCoord2f32(subTexRight, subTexTop);
+    //glVertex3fv (p_upleft);
+	
+    //glTexCoord2f(subTexRight, subTexBottom);
     VectorMA (p_upleft, scale, right, p_upright);
-    glVertex3fv (p_upright);
-
-    glTexCoord2f(subTexLeft, subTexBottom);
+	GX_Position3f32 (p_upright[0], p_upright[1], p_upright[2]);
+	GX_Color4u8(color[0], color[1], color[2], color[3]);
+	GX_TexCoord2f32(subTexRight, subTexBottom);
+    //glVertex3fv (p_upright);
+	
+    //glTexCoord2f(subTexLeft, subTexBottom);
     VectorMA (p_downleft, scale, right, p_downright);
-    glVertex3fv (p_downright);
+	GX_Position3f32 (p_downright[0], p_downright[1], p_downright[2]);
+	GX_Color4u8(color[0], color[1], color[2], color[3]);
+	GX_TexCoord2f32(subTexLeft, subTexBottom);
+    //glVertex3fv (p_downright);
 
-    glEnd ();
+    //glEnd ();
+	
+	GX_End ();
 
-
-    glDepthMask (GL_TRUE);
-    glDisable (GL_BLEND);
-    glColor3f(1,1,1);
+    //glDepthMask (GL_TRUE);
+	QGX_ZMode (true);
+	
+	QGX_Blend(false);
+	QGX_Alpha(true);
+    //glDisable (GL_BLEND);
+    //glColor3f(1,1,1);
 }
 
 void QMB_DrawParticles (void)
@@ -1373,10 +1399,12 @@ void QMB_DrawParticles (void)
 	VectorNegate (billboard[2], billboard[0]);
 	VectorNegate (billboard[3], billboard[1]);
 
-   	//glDepthMask (GL_TRUE);
-	glEnable (GL_BLEND);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glShadeModel (GL_SMOOTH);
+   	/*glDepthMask (GL_TRUE);*/
+	//glEnable (GL_BLEND);
+	QGX_Blend (true);
+	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
+	//glShadeModel (GL_SMOOTH);
 
 	for (i = 0 ; i < num_particletypes ; i++)
 	{
@@ -1387,7 +1415,8 @@ void QMB_DrawParticles (void)
 			continue;
 		}
 
-		glBlendFunc (pt->SrcBlend, pt->DstBlend);
+		//glBlendFunc (pt->SrcBlend, pt->DstBlend);
+		QGX_BlendMap (true);
 
 		switch (pt->drawtype)
 		{
@@ -1546,7 +1575,8 @@ void QMB_DrawParticles (void)
 				break;*/
 			case pd_billboard:
 				ptex = &particle_textures[pt->texture];
-				GL_Bind (ptex->texnum);
+				//GL_Bind (ptex->texnum);
+				GL_Bind0 (ptex->texnum);
 				
 				for (p = pt->start ; p ; p = p->next)
 				{
@@ -1562,19 +1592,21 @@ void QMB_DrawParticles (void)
 						}
 					}
 					
-					if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
-						glDepthRange (0, 0.3);
+					// sBTODO Figure out a similar depth setting for GX
+					
+					//if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+						//glDepthRange (0, 0.3);
 					
 					DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);
 					
-					if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
-						glDepthRange(0, 1);
+					//if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+						//glDepthRange(0, 1);
 				}
 				break;
 
 			case pd_billboard_vel:
 				ptex = &particle_textures[pt->texture];
-				GL_Bind (ptex->texnum);
+				GL_Bind0 (ptex->texnum);
 				for (p = pt->start ; p ; p = p->next)
 				{
 					if (particle_time < p->start || particle_time >= p->die)
@@ -1690,16 +1722,18 @@ void QMB_DrawParticles (void)
 					QMB_Q3Teleport (p->org, (float)p->color[3] / 255.0);
 				break;*/
 			default:
-					//assert (!"QMB_DrawParticles: unexpected drawtype");
+					Con_Printf ("QMB_DrawParticles: unexpected drawtype");
 					break;
 		}
 	}
 
-	//glDepthMask (GL_FALSE);
-	glDisable (GL_BLEND);
-	glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-	glShadeModel (GL_SMOOTH);
+	/*glDepthMask (GL_FALSE);*/
+	//glDisable (GL_BLEND);
+	//glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+	QGX_Blend (false);
+	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
+	//glShadeModel (GL_SMOOTH);
 }
 
 void QMB_Shockwave_Splash(vec3_t org, int radius)
@@ -1716,8 +1750,6 @@ void QMB_Shockwave_Splash(vec3_t org, int radius)
 		AddParticle(p_shockwave, org, 1, 2, 0.625f, NULL, angle);
 	}
 }
-
-extern sfx_t		*cl_sfx_thunder;
 
 //R00k: revamped to coincide with classic particle style...
 
@@ -1820,7 +1852,7 @@ __inline static void AddColoredParticle (part_type_t type, vec3_t org, int count
 			break;
 
 		default:
-		//assert (!"AddColoredParticle: unexpected type");
+		Con_Printf ("AddColoredParticle: unexpected type");
 			break;
 		}
 	}

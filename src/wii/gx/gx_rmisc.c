@@ -25,6 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 cvar_t		gl_cshiftpercent = {"gl_cshiftpercent", "100", false};
 
 int zombie_skins[4];
+int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
 
 extern cvar_t r_flatlightstyles;
 
@@ -196,9 +197,25 @@ void R_Init (void)
 
 	Cvar_RegisterVariable (&gl_cshiftpercent);
 	
+	Cvar_RegisterVariable (&r_explosiontype);
+	Cvar_RegisterVariable (&r_laserpoint);
+	Cvar_RegisterVariable (&r_part_explosions);
+	Cvar_RegisterVariable (&r_part_trails);
+	Cvar_RegisterVariable (&r_part_sparks);
+	Cvar_RegisterVariable (&r_part_gunshots);
+	Cvar_RegisterVariable (&r_part_blood);
+	Cvar_RegisterVariable (&r_part_telesplash);
+	Cvar_RegisterVariable (&r_part_blobs);
+	Cvar_RegisterVariable (&r_part_lavasplash);
+	Cvar_RegisterVariable (&r_part_flames);
+	Cvar_RegisterVariable (&r_part_lightning);
+	Cvar_RegisterVariable (&r_part_flies);
 	Cvar_RegisterVariable (&r_part_muzzleflash);
+	Cvar_RegisterVariable (&r_flametype);
 	Cvar_RegisterVariable (&r_skyfog);
 	Cvar_RegisterVariable (&r_model_brightness);
+	
+	Cvar_RegisterVariable (&r_farclip);
 	
 	Cvar_RegisterVariable (&r_flatlightstyles);
 

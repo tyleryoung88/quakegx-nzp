@@ -117,23 +117,32 @@ typedef struct
 	int			surfheight;	// in mipmapped texels
 } drawsurf_t;
 
+typedef	enum
+{
+	pm_classic, pm_qmb, pm_quake3, pm_mixed
+} part_mode_t;
 
 typedef enum {
 	pt_static, pt_grav, pt_slowgrav, pt_fire, pt_explode, pt_explode2, pt_blob, pt_blob2
 } ptype_t;
 
-// !!! if this is changed, it must be changed in d_ifacea.h too !!!
+typedef	byte	col_t[4];
+
 typedef struct particle_s
 {
-// driver-usable fields
-	vec3_t		org;
-	float		color;
-// drivers never touch the following fields
-	struct particle_s	*next;
-	vec3_t		vel;
-	float		ramp;
-	float		die;
-	ptype_t		type;
+	struct	particle_s	*next;
+	vec3_t				org, endorg;
+	col_t				color;
+	float				growth;
+	vec3_t				vel;
+	float 				ramp;
+	ptype_t 			type;
+	float				rotangle;
+	float				rotspeed;
+	float				size;
+	float				start;
+	float				die;
+	byte				hit;
 	byte				texindex;
 	byte				bounces;
 } particle_t;
@@ -192,6 +201,7 @@ extern	cvar_t	r_dynamic;
 extern	cvar_t	r_novis;
 extern  cvar_t 	r_lerpmodels;
 extern  cvar_t 	r_lerpmove;
+extern  cvar_t  r_farclip;
 extern 	cvar_t 	r_skyfog;
 
 extern	cvar_t	gl_clear;
@@ -206,6 +216,30 @@ extern	cvar_t	gl_reporttjunctions;
 extern	cvar_t	gl_nocolors;
 extern	cvar_t	gl_doubleeyes;
 
+extern  cvar_t  r_laserpoint;
+extern  cvar_t  r_particle_count;
+extern  cvar_t	r_part_explosions;
+extern  cvar_t	r_part_trails;
+extern  cvar_t	r_part_sparks;
+extern  cvar_t  r_part_spikes;
+extern  cvar_t	r_part_gunshots;
+extern  cvar_t	r_part_blood;
+extern  cvar_t	r_part_telesplash;
+extern  cvar_t	r_part_blobs;
+extern  cvar_t	r_part_lavasplash;
+extern	cvar_t	r_part_flames;
+extern	cvar_t	r_part_lightning;
+extern	cvar_t	r_part_flies;
+extern	cvar_t	r_bounceparticles;
+extern	cvar_t  r_explosiontype;
+extern  cvar_t	r_part_muzzleflash;
+extern  cvar_t	r_flametype;
+extern  cvar_t	r_bounceparticles;
+extern  cvar_t	r_decal_blood;
+extern  cvar_t	r_decal_bullets;
+extern  cvar_t	r_decal_sparks;
+extern  cvar_t	r_decal_explosions;
+extern  cvar_t  r_coronas;
 extern  cvar_t  r_model_brightness;
 
 extern	cvar_t	gl_max_size;
@@ -282,6 +316,7 @@ int GL_FindTexture (char *identifier);
 void GL_SubdivideSurface (msurface_t *fa);
 void GL_MakeAliasModelDisplayLists (model_t *m, aliashdr_t *hdr);
 int R_LightPoint (vec3_t p);
+void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type);
 void R_DrawBrushModel (entity_t *e);
 void R_AnimateLight (void);
 void V_CalcBlend (void);
@@ -348,3 +383,36 @@ extern void Draw_AlphaTileClear (int x, int y, int w, int h, float alpha);
 extern float in_pitchangle;
 extern float in_yawangle;
 extern float in_rollangle;
+
+// naievil -- fixme: none of these work
+//-----------------------------------------------------
+void QMB_InitParticles (void);
+void QMB_ClearParticles (void);
+void QMB_DrawParticles (void);
+void QMB_Q3TorchFlame (vec3_t org, float size);
+void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count);
+void QMB_RocketTrail (vec3_t start, vec3_t end, trail_type_t type);
+void QMB_BlobExplosion (vec3_t org);
+void QMB_ParticleExplosion (vec3_t org);
+void QMB_LavaSplash (vec3_t org);
+void QMB_TeleportSplash (vec3_t org);
+void QMB_InfernoFlame (vec3_t org);
+void QMB_StaticBubble (entity_t *ent);
+void QMB_ColorMappedExplosion (vec3_t org, int colorStart, int colorLength);
+void QMB_TorchFlame (vec3_t org);
+void QMB_FlameGt (vec3_t org, float size, float time);
+void QMB_BigTorchFlame (vec3_t org);
+void QMB_ShamblerCharge (vec3_t org);
+void QMB_LightningBeam (vec3_t start, vec3_t end);
+//void QMB_GenSparks (vec3_t org, byte col[3], float count, float size, float life);
+void QMB_EntityParticles (entity_t *ent);
+void QMB_MuzzleFlash (vec3_t org);
+void QMB_MuzzleFlashLG (vec3_t org);
+void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha);
+void QMB_Q3Teleport (vec3_t org, float alpha);
+void QMB_Q3TorchFlame (vec3_t org, float size);
+
+void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
+void R_SpawnDecalStatic (vec3_t org, int tex, int size);
+
+extern	qboolean	qmb_initialized;

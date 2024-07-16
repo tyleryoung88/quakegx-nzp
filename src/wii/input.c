@@ -791,14 +791,14 @@ void IN_Move (usercmd_t *cmd)
 	//far the IR pointer is from the 
 	//center of the screen.
 	
-	/*
+	
 	if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2) {
 		centerdrift_offset_yaw = 1; //yaw
 		centerdrift_offset_pitch = 1; //pitch
-	} else {*/
+	} else {
 		centerdrift_offset_yaw = fabsf(x2); //yaw
 		centerdrift_offset_pitch = fabsf(y2); //pitch
-	//}
+	}
 	
 	// Apply the dead zone.
 	apply_dead_zone(&x1, &y1, dead_zone);
@@ -854,7 +854,7 @@ void IN_Move (usercmd_t *cmd)
 	// TODO: Use yawspeed and pitchspeed
 
 	// Adjust the yaw.
-	const float turn_rate = sensitivity.value * 50.0f;
+	const float turn_rate = sensitivity.value * 40.0;
 	
 	float speed = 1;
 	

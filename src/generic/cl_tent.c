@@ -155,12 +155,10 @@ void CL_ParseTEnt (void)
 		pos[1] = MSG_ReadCoord ();
 		pos[2] = MSG_ReadCoord ();
 		//R00k--start
-		/*
 		if (r_decal_bullets.value)
 		{
 			R_SpawnDecalStatic(pos, decal_mark, 8);
 		}
-		*/
 		//R00k--end
 		R_RunParticleEffect (pos, vec3_origin, 0, 20);
 		break;

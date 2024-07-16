@@ -327,6 +327,11 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, int reverseRGBA);
 int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
 
+#define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
+
+int SV_HullPointContents (hull_t *hull, int num, vec3_t p);
+#define TruePointContents(p) SV_HullPointContents(&cl.worldmodel->hulls[0], 0, p)
+
 //ZOMBIE AI STUFF
 #define MAX_WAYPOINTS 256 //max waypoints
 typedef struct
