@@ -66,16 +66,15 @@ R_InitOtherTextures
 */
 void R_InitOtherTextures (void)
 {
-	/*
+	
 	//static decals
-	decal_blood1  = loadtextureimage ("textures/decals/blood_splat01", 0, 0, false, true);
-	decal_blood2  = loadtextureimage ("textures/decals/blood_splat02", 0, 0, false, true);
-	decal_blood3  = loadtextureimage ("textures/decals/blood_splat03", 0, 0, false, true);
-    decal_q3blood = loadtextureimage ("textures/decals/blood_stain", 0, 0, false, true);
-	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, false, true);
-	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, false, true);
-	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, false, true);
-	*/
+	decal_blood1  = loadtextureimage ("textures/decals/blood_splat01", 0, 0, true, false, true);
+	decal_blood2  = loadtextureimage ("textures/decals/blood_splat02", 0, 0, true, false, true);
+	decal_blood3  = loadtextureimage ("textures/decals/blood_splat03", 0, 0, true, false, true);
+    decal_q3blood = loadtextureimage ("textures/decals/blood_stain", 0, 0, true, false, true);
+	decal_burn	  = loadtextureimage ("textures/decals/explo_burn01", 0, 0, true, false, true);
+	decal_mark	  = loadtextureimage ("textures/decals/particle_burn01", 0, 0, true, false, true);
+	decal_glow	  = loadtextureimage ("textures/decals/glow2", 0, 0, true, false, true);
 
 	// external zombie skins
 	
@@ -221,7 +220,7 @@ void R_Init (void)
 
 	R_InitParticles ();
 	R_InitOtherTextures ();
-	R_InitParticleTexture ();
+	//R_InitParticleTexture ();
 	
 	Sky_Init (); //johnfitz
 	Fog_Init (); //johnfitz
@@ -478,6 +477,7 @@ V_UpdatePalette
 */
 void V_UpdatePalette (void)
 {
+	/*
 	int		i, j;
 	qboolean	new;
 	byte	*basepal, *newpal;
@@ -561,4 +561,5 @@ void V_UpdatePalette (void)
 	}
 
 	VID_ShiftPalette (pal);	
+	*/
 }

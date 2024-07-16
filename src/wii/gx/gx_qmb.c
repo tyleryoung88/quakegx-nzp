@@ -300,7 +300,7 @@ static byte *ColorForParticle (part_type_t type)
 		break;
 
 	default:
-		 Con_Printf ("ColorForParticle: unexpected type");
+		 Con_Printf ("ColorForParticle: unexpected type\n");
 		break;
 	}
 
@@ -368,7 +368,8 @@ void QMB_InitParticles (void)
 
 	loading_num_step = loading_num_step + 24;
 	
-	if (!(particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, true, false, true)))
+	particleimage = loadtextureimage("textures/particles/particlefont", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
 		Con_Printf ("PARTICLE INIT FAILED");
@@ -396,8 +397,9 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	
 	max_s = max_t = 128.0;
-
-	if (!(particleimage = loadtextureimage("textures/particles/flame", 0, 0, true, false, true)))
+	
+	particleimage = loadtextureimage("textures/particles/flame", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -408,8 +410,9 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 
 	max_s = max_t = 64.0;
-
-	if (!(particleimage = loadtextureimage("textures/particles/inferno", 0, 0, true, false, true)))
+	
+	particleimage = loadtextureimage("textures/particles/inferno", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -420,7 +423,8 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/particles/zing1", 0, 0, true, false, true)))
+	particleimage = loadtextureimage("textures/particles/zing1", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -433,7 +437,8 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	max_s = max_t = 128.0;
 	
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, true, false, true)))
+	particleimage = loadtextureimage("textures/mzfl/mzfl0", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -444,7 +449,8 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, true, false, true)))
+	particleimage = loadtextureimage("textures/mzfl/mzfl1", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
 		//Clear_LoadingFill ();
 		return;
@@ -454,7 +460,8 @@ void QMB_InitParticles (void)
 
     loading_cur_step++;	
 	SCR_UpdateScreen ();
-	if (!(particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, true, false, true)))
+	particleimage = loadtextureimage("textures/mzfl/mzfl2", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -466,7 +473,8 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen ();
 	
 	max_s = max_t = 64.0;
-	if (!(particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, true, false, true)))
+	particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, true, false, true);
+	if (particleimage <= 0)
 	{
         //Clear_LoadingFill ();
 		return;
@@ -813,7 +821,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 
 		default:
-			Con_Printf ("AddParticle: unexpected type");
+			Con_Printf ("AddParticle: unexpected type\n");
 			break;
 		}
 	}
@@ -875,7 +883,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 		break;
 
 	default:
-		Con_Printf ("AddParticleTrail: unexpected type");
+		Con_Printf ("AddParticleTrail: unexpected type\n");
 		break;
 	}
 
@@ -961,7 +969,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 			break;
 
 		default:
-			Con_Printf ("AddParticleTrail: unexpected type");
+			Con_Printf ("AddParticleTrail: unexpected type\n");
 			break;
 		}
 
@@ -1260,7 +1268,7 @@ inline static void QMB_UpdateParticles(void)
 				break;
 
 			default:
-				Con_Printf ("QMB_UpdateParticles: unexpected pt->move");
+				Con_Printf ("QMB_UpdateParticles: unexpected pt->move\n");
 				break;
 			}
 		}
@@ -1314,9 +1322,9 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 	QGX_Alpha(false);
 	QGX_Blend(true);
     //glDepthMask (GL_FALSE);
-	QGX_ZMode (false);
+	GX_SetZMode(GX_FALSE, GX_LEQUAL, GX_TRUE);
 	
-	GL_Bind0 (white_texturenum);
+	GL_Bind0 (ptex->texnum);
    
     //glBegin (GL_QUADS);
     GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
@@ -1367,7 +1375,7 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 	GX_End ();
 
     //glDepthMask (GL_TRUE);
-	QGX_ZMode (true);
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	
 	QGX_Blend(false);
 	QGX_Alpha(true);
@@ -1400,6 +1408,7 @@ void QMB_DrawParticles (void)
 	VectorNegate (billboard[3], billboard[1]);
 
    	/*glDepthMask (GL_TRUE);*/
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	//glEnable (GL_BLEND);
 	QGX_Blend (true);
 	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
@@ -1411,7 +1420,7 @@ void QMB_DrawParticles (void)
 		pt = &particle_types[i];
 
 		if (!pt->start) {
-			//Con_Printf("Particle type %d (want %d) does not have start\n", pt->drawtype, pd_billboard);
+			Con_Printf("Particle type %d (want %d) does not have start\n", pt->drawtype, pd_billboard);
 			continue;
 		}
 
@@ -1420,9 +1429,10 @@ void QMB_DrawParticles (void)
 
 		switch (pt->drawtype)
 		{
-			/*case pd_hide:
+			case pd_hide:
 				break;
 			case pd_beam:
+				/*
 				ptex = &particle_textures[pt->texture];
 				GL_Bind (ptex->texnum);
 				for (p = pt->start ; p ; p = p->next)
@@ -1478,8 +1488,10 @@ void QMB_DrawParticles (void)
 					glEnd ();
 					glColor4f(1,1,1,1); //return to normal color
 				}
+				*/
 				break;
 			case pd_spark:
+				/*
 				glDisable (GL_TEXTURE_2D);
 				for (p = pt->start ; p ; p = p->next)
 				{
@@ -1520,8 +1532,10 @@ void QMB_DrawParticles (void)
 					glColor4f(1,1,1,1); //return to normal color
 				}
 				glEnable (GL_TEXTURE_2D);
+				*/
 				break;
 			case pd_sparkray:
+				/*
 				glDisable (GL_TEXTURE_2D);
 				for (p = pt->start ; p ; p = p->next)
 				{
@@ -1572,7 +1586,8 @@ void QMB_DrawParticles (void)
 
 				}
 				glEnable (GL_TEXTURE_2D);
-				break;*/
+				*/
+				break;
 			case pd_billboard:
 				ptex = &particle_textures[pt->texture];
 				//GL_Bind (ptex->texnum);
@@ -1594,12 +1609,14 @@ void QMB_DrawParticles (void)
 					
 					// sBTODO Figure out a similar depth setting for GX
 					
-					//if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+					if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+						GX_SetZMode(GX_TRUE, GX_EQUAL, GX_TRUE);
 						//glDepthRange (0, 0.3);
 					
 					DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);
 					
-					//if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+					if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
+						GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 						//glDepthRange(0, 1);
 				}
 				break;
@@ -1722,12 +1739,12 @@ void QMB_DrawParticles (void)
 					QMB_Q3Teleport (p->org, (float)p->color[3] / 255.0);
 				break;*/
 			default:
-					Con_Printf ("QMB_DrawParticles: unexpected drawtype");
+					Con_Printf ("QMB_DrawParticles: unexpected drawtype %d\n", pt->drawtype);
 					break;
 		}
 	}
 
-	/*glDepthMask (GL_FALSE);*/
+	//glDepthMask (GL_FALSE);
 	//glDisable (GL_BLEND);
 	//glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	QGX_Blend (false);
@@ -1852,7 +1869,7 @@ __inline static void AddColoredParticle (part_type_t type, vec3_t org, int count
 			break;
 
 		default:
-		Con_Printf ("AddColoredParticle: unexpected type");
+		Con_Printf ("AddColoredParticle: unexpected type\n");
 			break;
 		}
 	}

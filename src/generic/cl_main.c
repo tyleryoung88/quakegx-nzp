@@ -670,7 +670,7 @@ void CL_RelinkEntities (void)
 			dl->die = cl.time + 0.1f;
 			*/
 			
-			if (i == cl.viewentity /*&& qmb_initialized*/ && r_part_muzzleflash.value)
+			if (i == cl.viewentity && qmb_initialized && r_part_muzzleflash.value)
 			{
 				vec3_t		start, smokeorg, v_forward, v_right, v_up;
 				vec3_t tempangles;
@@ -697,7 +697,7 @@ void CL_RelinkEntities (void)
 				VectorMA (smokeorg, up_offset, v_up ,smokeorg);
 				VectorMA (smokeorg, right_offset, v_right ,smokeorg);
 				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
-				//QMB_MuzzleFlash (smokeorg);
+				QMB_MuzzleFlash (smokeorg);
 			}
 			
 		}
@@ -819,7 +819,7 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_RAYGREEN)
 		{
-			//QMB_RocketTrail(oldorg, ent->origin, RAYGREEN_TRAIL);
+			QMB_RocketTrail(oldorg, ent->origin, RAYGREEN_TRAIL);
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
@@ -832,7 +832,7 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_RAYRED)
 		{
-			//QMB_RocketTrail(oldorg, ent->origin, RAYRED_TRAIL);
+			QMB_RocketTrail(oldorg, ent->origin, RAYRED_TRAIL);
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
