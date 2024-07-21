@@ -140,10 +140,7 @@ typedef struct particle_texture_s
 	float	coords[MAX_PTEX_COMPONENTS][4];
 } particle_texture_t;
 
-static	float	sint[7] = {0.000000, 0.781832, 0.974928, 0.433884, -0.433884, -0.974928, -0.781832};
-static	float	cost[7] = {1.000000, 0.623490, -0.222521, -0.900969, -0.900969, -0.222521, 0.623490};
-
-static			particle_t			*particles, *free_particles, active_particles;
+particle_t		*particles, *free_particles;
 static			particle_type_t		particle_types[num_particletypes];//R00k
 static	int		particle_type_index[num_particletypes];
 static			particle_texture_t	particle_textures[num_particletextures];
@@ -154,10 +151,10 @@ void			R_CalcBeamVerts (float *vert, vec3_t org1, vec3_t org2, float width);//Vu
 
 vec3_t	NULLVEC = {0,0,0};//r00k
 
-static	int		r_numparticles;
+int		r_numparticles;
 static	vec3_t	zerodir = {22, 22, 22};
-static	int		particle_count = 0;
-static	float	particle_time;
+int		particle_count = 0;
+float	particle_time;
 qboolean		qmb_initialized = false;
 int				particle_mode = 0;	// 0: classic (default), 1: QMB, 2: mixed
 
@@ -307,7 +304,7 @@ static byte *ColorForParticle (part_type_t type)
 	return color;
 }
 
-
+/*
 #define ADD_PARTICLE_TEXTURE(_ptex, _texnum, _texindex, _components, _s1, _t1, _s2, _t2)\
 do {																	\
 	particle_textures[_ptex].texnum = _texnum;							\
@@ -317,7 +314,18 @@ do {																	\
 	particle_textures[_ptex].coords[_texindex][2] = (_s2 - 1) / max_s;	\
 	particle_textures[_ptex].coords[_texindex][3] = (_t2 - 1) / max_t;	\
 } while(0)
-
+*/
+float max_s, max_t; //For ADD_PARTICLE_TEXTURE
+void ADD_PARTICLE_TEXTURE(part_tex_t ptex, int texnum, int texindex, int components, int s1, int t1, int s2, int t2)
+{
+	particle_textures[ptex].texnum = texnum;							
+	particle_textures[ptex].components = components;					
+	particle_textures[ptex].coords[texindex][0] = (s1 + 1) / max_s;	
+	particle_textures[ptex].coords[texindex][1] = (t1 + 1) / max_t;	
+	particle_textures[ptex].coords[texindex][2] = (s2 - 1) / max_s;	
+	particle_textures[ptex].coords[texindex][3] = (s2 - 1) / max_t;	
+}
+/*
 #define ADD_PARTICLE_TYPE(_id, _drawtype, _SrcBlend, _DstBlend, _texture, _startalpha, _grav, _accel, _move, _custom)\
 do {\
 	particle_types[count].id = (_id);\
@@ -333,6 +341,23 @@ do {\
 	particle_type_index[_id] = count;\
 	count++;\
 } while(0)
+*/
+int count = 0;
+void ADD_PARTICLE_TYPE(part_type_t id, part_draw_t drawtype, int SrcBlend, int DstBlend, part_tex_t texture, float startalpha, float grav, float accel, part_move_t move, float custom)
+{
+	particle_types[count].id = (id);
+	particle_types[count].drawtype = (drawtype);
+	particle_types[count].SrcBlend = (SrcBlend);
+	particle_types[count].DstBlend = (DstBlend);
+	particle_types[count].texture = (texture);
+	particle_types[count].startalpha = (startalpha);
+	particle_types[count].grav = 9.8 * (grav);
+	particle_types[count].accel = (accel);
+	particle_types[count].move = (move);
+	particle_types[count].custom = (custom);
+	particle_type_index[id] = count;
+	count++;
+}
 
 void QMB_AllocParticles (void)
 {
@@ -353,8 +378,7 @@ void QMB_AllocParticles (void)
 
 void QMB_InitParticles (void)
 {
-	int	i, j, ti, count = 0, particleimage;
-    float	max_s, max_t; //For ADD_PARTICLE_TEXTURE
+	int	i, particleimage;
 
 	particle_mode = pm_classic;
 
@@ -476,6 +500,7 @@ void QMB_InitParticles (void)
 	particleimage = loadtextureimage("textures/particles/bloodcloud", 0, 0, true, false, true);
 	if (particleimage <= 0)
 	{
+		Con_Printf("could not load bloodcloud texture");
         //Clear_LoadingFill ();
 		return;
 	}
@@ -587,14 +612,32 @@ void QMB_InitParticles (void)
 	_p->bounces = 0;					\
 	VectorCopy(_color, _p->color);
 
+//sBTODO this is the problem, area
+/*
+void INIT_NEW_PARTICLE(particle_type_t *pt, particle_t *p, byte *color, float size, float time)
+{
+	p = free_particles;
+	free_particles = p->next;
+	p->next = pt->start;
+	pt->start = p;
+	p->size = size;
+	p->hit = 0;
+	p->start = cl.time;
+	p->die = p->start + time;
+	p->growth = 0;
+	p->rotspeed = 0;
+	p->texindex = (rand() % particle_textures[pt->texture].components);
+	p->bounces = 0;
+	VectorCopy(color, p->color);
+}
+*/
 __inline static void AddParticle (part_type_t type, vec3_t org, int count, float size, float time, col_t col, vec3_t dir)
 {
 	byte			*color;
-	int				i, j, k;
+	int				i, j;
 	float			tempSize; //stage;
 	particle_t		*p;
 	particle_type_t	*pt;
-    static unsigned long q3blood_texindex = 0;
 
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
@@ -643,7 +686,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 			break;
 		case p_smoke:
 			for (j=0 ; j<3 ; j++)
-				p->org[j] = org[j] + ((rand() & 31) - 16) / 2.0;
+				p->org[j] = org[j] + ((rand() & 31) - 24) / 2.0;
 			for (j=0 ; j<3 ; j++)
 				p->vel[j] = ((rand() % 10) - 5) / 20.0;
 			p->growth = 4.5;
@@ -728,6 +771,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 
 		case p_bloodcloud: //shpuld
 			VectorCopy (org, p->org);
+			p->size = size * (rand() % 2) + 0.50;//r00k
 			p->vel[0] = (rand() & 39) - 20;
 			p->vel[1] = (rand() & 39) - 20;
 			p->vel[2] = (rand() & 39) - 20;
@@ -742,7 +786,6 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 		case p_muzzleflash:
 		case p_muzzleflash2:
 		case p_muzzleflash3:
-
 			VectorCopy (org, p->org);
 			p->rotspeed = (rand() & 45) - 90;
 			//p->size = size * (rand() % 6) / 4;//r00k
@@ -835,13 +878,10 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 	vec3_t		point, delta;
 	particle_t	*p;
 	particle_type_t	*pt;
-	static	float	rotangle = 0;
     count = 0;
 
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
-
-	//assert (size > 0 && time > 0);
 
 	if (type < 0 || type >= num_particletypes)
 		Sys_Error ("AddParticle: Invalid type (%d)", type);
@@ -1004,7 +1044,8 @@ inline static void QMB_UpdateParticles(void)
 	float	grav, bounce, frametime, distance[3];
 	vec3_t	oldorg, stop, normal;
 	particle_type_t	*pt;
-	particle_t	*p, *kill;
+	particle_t *p;
+	particle_t *kill;
 
 	if (!qmb_initialized)
 		return;
@@ -1319,17 +1360,22 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
     VectorScale (vright, 1.5, right);
 
     //glEnable (GL_BLEND);
-	QGX_Alpha(false);
+	//QGX_Alpha(false);
 	QGX_Blend(true);
     //glDepthMask (GL_FALSE);
-	GX_SetZMode(GX_FALSE, GX_LEQUAL, GX_TRUE);
+	GX_SetZMode(GX_FALSE, GX_ALWAYS, GX_FALSE);
 	
-	GL_Bind0 (ptex->texnum);
+	//GL_Bind0 (ptex->texnum);
    
     //glBegin (GL_QUADS);
     GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
     scale = p->size;
+	// sBHACK this is not good..
+	// not sure where the problem lies..?
+	if(scale > 100)
+		scale = scale/1000;
+	//Con_Printf("scale: %f\n", scale);
     color[0] = p->color[0];
     color[1] = p->color[1];
     color[2] = p->color[2];
@@ -1347,6 +1393,7 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 	GX_Position3f32(p_downleft[0], p_downleft[1], p_downleft[2]);
     GX_Color4u8(color[0], color[1], color[2], color[3]);
 	GX_TexCoord2f32(subTexLeft, subTexTop);
+	//GX_TexCoord2f32(0.0625, 0.0625);
     // glVertex3fv (p_downleft);
 
    // glTexCoord2f(subTexRight, subTexTop);
@@ -1354,6 +1401,7 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 	GX_Position3f32 (p_upleft[0], p_upleft[1], p_upleft[2]);
 	GX_Color4u8(color[0], color[1], color[2], color[3]);
 	GX_TexCoord2f32(subTexRight, subTexTop);
+	//GX_TexCoord2f32(1.0625, 0.0625);
     //glVertex3fv (p_upleft);
 	
     //glTexCoord2f(subTexRight, subTexBottom);
@@ -1361,6 +1409,7 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 	GX_Position3f32 (p_upright[0], p_upright[1], p_upright[2]);
 	GX_Color4u8(color[0], color[1], color[2], color[3]);
 	GX_TexCoord2f32(subTexRight, subTexBottom);
+	//GX_TexCoord2f32(1.0625, 1.0625);
     //glVertex3fv (p_upright);
 	
     //glTexCoord2f(subTexLeft, subTexBottom);
@@ -1368,6 +1417,7 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 	GX_Position3f32 (p_downright[0], p_downright[1], p_downright[2]);
 	GX_Color4u8(color[0], color[1], color[2], color[3]);
 	GX_TexCoord2f32(subTexLeft, subTexBottom);
+	//GX_TexCoord2f32(0.0625, 1.0625);
     //glVertex3fv (p_downright);
 
     //glEnd ();
@@ -1378,7 +1428,7 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	
 	QGX_Blend(false);
-	QGX_Alpha(true);
+	//QGX_Alpha(true);
     //glDisable (GL_BLEND);
     //glColor3f(1,1,1);
 }
@@ -1386,13 +1436,13 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
 void QMB_DrawParticles (void)
 {
 	int		j, i;
-	vec3_t		up, right, billboard[4], velcoord[4], neworg;
-	particle_t		*p;
+	vec3_t		up, right, billboard[4], velcoord[4]/*, neworg*/;
+	particle_t		*p = malloc(sizeof(*p));
 	particle_type_t		*pt;
 	particle_texture_t	*ptex;
 
-	float	varray_vertex[16];
-	vec3_t	distance;
+	//float	varray_vertex[16];
+	//vec3_t	distance;
 
 	if (!qmb_initialized)
 		return;
@@ -1408,9 +1458,9 @@ void QMB_DrawParticles (void)
 	VectorNegate (billboard[3], billboard[1]);
 
    	/*glDepthMask (GL_TRUE);*/
-	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	//glEnable (GL_BLEND);
 	QGX_Blend (true);
+	//GX_SetZMode(GX_TRUE, GX_LESS, GX_TRUE);
 	//glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	//glShadeModel (GL_SMOOTH);
@@ -1420,12 +1470,13 @@ void QMB_DrawParticles (void)
 		pt = &particle_types[i];
 
 		if (!pt->start) {
-			Con_Printf("Particle type %d (want %d) does not have start\n", pt->drawtype, pd_billboard);
+			//Con_Printf("Particle type %d (want %d) does not have start\n", pt->drawtype, pd_billboard);
 			continue;
 		}
 
 		//glBlendFunc (pt->SrcBlend, pt->DstBlend);
-		QGX_BlendMap (true);
+		GX_SetBlendMode(GX_BM_BLEND, pt->SrcBlend, pt->DstBlend, GX_LO_CLEAR);
+		//QGX_BlendMap (true);
 
 		switch (pt->drawtype)
 		{
@@ -1610,7 +1661,7 @@ void QMB_DrawParticles (void)
 					// sBTODO Figure out a similar depth setting for GX
 					
 					if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
-						GX_SetZMode(GX_TRUE, GX_EQUAL, GX_TRUE);
+						GX_SetZMode(GX_FALSE, GX_LEQUAL, GX_FALSE);
 						//glDepthRange (0, 0.3);
 					
 					DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);
@@ -1745,6 +1796,7 @@ void QMB_DrawParticles (void)
 	}
 
 	//glDepthMask (GL_FALSE);
+	GX_SetZMode(GX_TRUE, GX_LEQUAL, GX_TRUE);
 	//glDisable (GL_BLEND);
 	//glBlendFunc (GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	QGX_Blend (false);
@@ -1826,14 +1878,13 @@ void d8to24col (col_t colourv, int colour)
 	colourv[2] = colourByte[2];
 }
 
-__inline static void AddColoredParticle (part_type_t type, vec3_t org, int count, float size, float time, int colorStart, int colorLength, vec3_t dir)
+void AddColoredParticle (part_type_t type, vec3_t org, int count, float size, float time, int colorStart, int colorLength, vec3_t dir)
 {
 	col_t		color;
 	int		i, j, colorMod = 0;
 	float		tempSize;
 	particle_t	*p;
 	particle_type_t	*pt;
-
 
 	if (!qmb_initialized)
 		Sys_Error ("QMB particle added without initialization");
@@ -1956,14 +2007,14 @@ void QMB_Blood_Splat(part_type_t type, vec3_t org) //Shpuldified
 	
 	else if(type == p_blood2)
 	{
-		AddParticle(p_bloodcloud, org, 3, 7, 0.3, color, zerodir);
+		AddParticle(p_bloodcloud, org, 3, 5, 0.3, color, zerodir);
 		color[0] = 40;
-		AddParticle(p_blood2, org, 16, 3, 1.0, color, zerodir);
+		AddParticle(p_blood2, org, 16, 3, 0.2, color, zerodir);
 	}
 
 	else //p_blood3, trail?
 	{
-		AddParticle(p_bloodcloud, org, 3, 5, 0.6, color, zerodir);
+		AddParticle(p_bloodcloud, org, 3, 2, 0.6, color, zerodir);
 		for (j=0 ; j<4 ; j++)
 		{
 			AngleVectors (angle, NULLVEC, NULLVEC, neworg);
@@ -2011,8 +2062,9 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 	}
 	else if(col == 111) //we will use this color for flames
 	{
+		// sBTODO
 		color[0] = color[1] = color[2] = 255;
-		AddParticle (p_q3flame, org, 3, 3, 2, color, dir);
+		AddParticle (p_fire, org, 3, 3, 2, color, dir);
 		return;
 	}
 	else if(col == 112) //we will use this color for big flames
@@ -2063,7 +2115,8 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 		else
 
 		{
-			AddParticle (p_smoke, org, 3, 12, 1.225f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+			// sBTODO
+			AddParticle (p_smoke, org, 3, 5, 1.225f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
 		}
 		break;
 
@@ -2158,6 +2211,30 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 		}
 		break;
 	}
+}
+
+// cypress - Raygun barrel trail
+void QMB_RayFlash(vec3_t org, float weapon)
+{
+	// if we're ADS, just flat out end here to avoid useless calcs/defs
+	if (cl.stats[STAT_ZOOM] || !qmb_initialized)
+		return;
+
+	//col_t 	color;
+	//vec3_t 	endorg;
+	/*
+	// green trail
+	if (weapon == W_RAY) {
+		color[0] = 0;
+		color[1] = 255;
+	} else { // red trail
+		color[0] = 255;
+		color[1] = 0;
+	}
+	color[2] = 0;
+	*/
+
+	QMB_MuzzleFlash(org);
 }
 
 float pap_detr(int weapon)
@@ -2278,7 +2355,7 @@ void QMB_MuzzleFlash(vec3_t org)
 
 	float size, timemod;
 
-	timemod = 0.08;
+	timemod = 0.28;
 
 	if(!(ISUNDERWATER(TruePointContents(org))))
 	{
@@ -2503,7 +2580,7 @@ void QMB_LavaSplash (vec3_t org)
 {
 	int	i, j;
 	float	vel;
-	vec3_t	dir, neworg;
+	vec3_t	dir/*, neworg*/;
 
 	for (i=-16 ; i<16; i++)
 	{
@@ -2513,9 +2590,9 @@ void QMB_LavaSplash (vec3_t org)
 			dir[1] = i * 8 + (rand() & 7);
 			dir[2] = 256;
 
-			neworg[0] = org[0] + dir[0];
-			neworg[1] = org[1] + dir[1];
-			neworg[2] = org[2] + (rand() & 63);
+			//neworg[0] = org[0] + dir[0];
+			//neworg[1] = org[1] + dir[1];
+			//neworg[2] = org[2] + (rand() & 63);
 
 			VectorNormalizeFast (dir);
 			vel = 50 + (rand() & 63);
@@ -2835,7 +2912,6 @@ void QMB_Q3Teleport (vec3_t org, float alpha)
 	R_DrawQ3Model (ent);
 }
 
-
 #else 
 void QMB_Q3Gunshot (vec3_t org, int skinnum, float alpha)
 {
@@ -2847,7 +2923,6 @@ void QMB_Q3Teleport (vec3_t org, float alpha)
 	Con_Printf("Q3 drawing is not enabled!\n");
 }
 #endif
-
 
 #define NUMVERTEXNORMALS	162
 
@@ -2890,50 +2965,6 @@ void QMB_EntityParticles (entity_t *ent)
 		org[1] = ent->origin[1] + r_avertexnormals[i][1]*dist + forward[1]*16;
 		org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*16;
 		AddParticle (p_flare, org, 1, 2,0.005, color, forward);
-	}
-}
-
-//Modified from Quake2
-void QMB_FlyParticles (vec3_t origin, int count)
-{
-	float		frametime	= fabs(cl.time - cl.oldtime);
-    int         i;
-    float       angle, sp, sy, cp, cy;
-    vec3_t      forward, org;
-    float       dist = 64;
-	col_t		color = {255,255,255,100};
-
-    if (frametime)
-	{
-		if (count > NUMVERTEXNORMALS) {
-			count = NUMVERTEXNORMALS;
-		}
-
-		if (!avelocities[0][0])
-		{
-			for (i=0 ; i<NUMVERTEXNORMALS*3 ; i++)
-				avelocities[0][i] = (rand()&255) * 0.01;
-		}
-
-		for (i=0 ; i<count ; i+=2)
-		{
-			angle = cl.time * avelocities[i][0];
-			sy = sin(angle);
-			cy = cos(angle);
-			angle = cl.time * avelocities[i][1];
-			sp = sin(angle);
-			cp = cos(angle);
-			angle = cl.time * avelocities[i][2];
-
-			forward[0] = cp*cy;
-			forward[1] = cp*sy;
-			forward[2] = -sp;
-
-			dist = sin(cl.time + i)*64;
-			org[0] = origin[0] + r_avertexnormals[i][0]*dist + forward[0]*32;
-			org[1] = origin[1] + r_avertexnormals[i][1]*dist + forward[1]*32;
-			org[2] = origin[2] + r_avertexnormals[i][2]*dist + forward[2]*32;
-		}
 	}
 }
 

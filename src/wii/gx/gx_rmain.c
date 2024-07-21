@@ -951,7 +951,7 @@ void R_DrawAliasModel (entity_t *e)
 	aliashdr_t	*paliashdr;
 	float		an;
 	int			anim;
-	Mtx			temp;
+	Mtx			temp, temp2;
 	lerpdata_t	lerpdata;
 
 	clmodel = currententity->model;
@@ -1127,8 +1127,8 @@ void R_DrawAliasModel (entity_t *e)
 		//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
 		guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1] * scale, paliashdr->scale_origin[2] * scale);
 		guMtxConcat(model, temp, model);
-		guMtxScale (temp, paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
-		guMtxConcat(model, temp, model);
+		guMtxScale (temp2, paliashdr->scale[0] * scale, paliashdr->scale[1] * scale, paliashdr->scale[2] * scale);
+		guMtxConcat(model, temp2, model);
 	}
 	
 	/*
@@ -1304,6 +1304,10 @@ void R_DrawEntitiesOnList (void)
 				R_DrawSpriteModel (currententity);
 				break;
 			case mod_alias:
+			
+				if (qmb_initialized && SetFlameModelState() == -1)
+					continue;
+			
 				if(specChar == '$') { //mdl model with blended alpha 
 					R_DrawTransparentAliasModel(currententity);
 				}
@@ -1394,6 +1398,89 @@ void R_DrawViewModel (void)
 	R_DrawAliasModel (currententity);
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
+
+//==================================================================================
+int SetFlameModelState (void)
+{
+	if (!r_part_flames.value && !strcmp(currententity->model->name, "progs/flame0.mdl"))
+	{
+		currententity->model = cl.model_precache[cl_modelindex[mi_flame1]];
+	}
+	else if (r_part_flames.value)
+	{
+		vec3_t	liteorg;
+
+		VectorCopy (currententity->origin, liteorg);
+		if (currententity->baseline.modelindex == cl_modelindex[mi_flame0])
+		{
+			if (r_part_flames.value == 2)
+			{
+				liteorg[2] += 14;
+				QMB_Q3TorchFlame (liteorg, 15);
+			}
+			else
+			{
+				liteorg[2] += 5.5;
+
+				if(r_flametype.value == 2)
+				  QMB_FlameGt (liteorg, 7, 0.8);
+				else
+				  QMB_TorchFlame(liteorg);
+			}
+		}
+		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame1])
+		{
+			if (r_part_flames.value == 2)
+			{
+				liteorg[2] += 14;
+				QMB_Q3TorchFlame (liteorg, 15);
+			}
+			else
+			{
+				liteorg[2] += 5.5;
+
+				if(r_flametype.value > 1)
+				  QMB_FlameGt (liteorg, 7, 0.8);
+				else
+			      QMB_TorchFlame(liteorg);
+
+			}
+			currententity->model = cl.model_precache[cl_modelindex[mi_flame0]];
+		}
+		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame2])
+		{
+			if (r_part_flames.value == 2)
+            {
+				liteorg[2] += 14;
+				QMB_Q3TorchFlame (liteorg, 32);
+            }
+			else
+			{
+                liteorg[2] -= 1;
+
+				if(r_flametype.value > 1)
+				  QMB_FlameGt (liteorg, 12, 1);
+				else
+			      QMB_BigTorchFlame(liteorg);
+			}
+			return -1;	//continue;
+		}
+        else if (!strcmp(currententity->model->name, "progs/wyvflame.mdl"))
+		{
+			liteorg[2] -= 1;
+
+			if(r_flametype.value > 1)
+			  QMB_FlameGt (liteorg, 12, 1);
+			else
+			  QMB_BigTorchFlame(liteorg);
+
+			return -1;	//continue;
+		}
+	}
+
+	return 0;
+}
+
 
 #if 0
 /*

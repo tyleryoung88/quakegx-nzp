@@ -210,7 +210,6 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_part_lightning);
 	Cvar_RegisterVariable (&r_part_flies);
 	Cvar_RegisterVariable (&r_part_muzzleflash);
-	Cvar_RegisterVariable (&r_flametype);
 	Cvar_RegisterVariable (&r_skyfog);
 	Cvar_RegisterVariable (&r_model_brightness);
 	

@@ -30,10 +30,11 @@ int		ramp1[8] = {0x6f, 0x6d, 0x6b, 0x69, 0x67, 0x65, 0x63, 0x61};
 int		ramp2[8] = {0x6f, 0x6e, 0x6d, 0x6c, 0x6b, 0x6a, 0x68, 0x66};
 int		ramp3[8] = {0x6d, 0x6b, 6, 5, 4, 3};
 
-particle_t	*active_particles, *free_particles;
+particle_t	*active_particles;
+extern particle_t *free_particles;
 
-particle_t	*particles;
-int			r_numparticles;
+extern particle_t	*particles;
+extern int			r_numparticles;
 
 vec3_t			r_pright, r_pup, r_ppn;
 
@@ -65,49 +66,6 @@ void R_InitParticles (void)
 	QMB_InitParticles();
 }
 
-#ifdef QUAKE2
-void R_DarkFieldParticles (entity_t *ent)
-{
-	int			i, j, k;
-	particle_t	*p;
-	float		vel;
-	vec3_t		dir;
-	vec3_t		org;
-
-	org[0] = ent->origin[0];
-	org[1] = ent->origin[1];
-	org[2] = ent->origin[2];
-	for (i=-16 ; i<16 ; i+=8)
-		for (j=-16 ; j<16 ; j+=8)
-			for (k=0 ; k<32 ; k+=8)
-			{
-				if (!free_particles)
-					return;
-				p = free_particles;
-				free_particles = p->next;
-				p->next = active_particles;
-				active_particles = p;
-		
-				p->die = cl.time + 0.2 + (rand()&7) * 0.02;
-				p->color = 150 + rand()%6;
-				p->type = pt_slowgrav;
-				
-				dir[0] = j*8;
-				dir[1] = i*8;
-				dir[2] = k*8;
-	
-				p->org[0] = org[0] + i + (rand()&3);
-				p->org[1] = org[1] + j + (rand()&3);
-				p->org[2] = org[2] + k + (rand()&3);
-	
-				VectorNormalize (dir);						
-				vel = 50 + (rand()&63);
-				VectorScale (dir, vel, p->vel);
-			}
-}
-#endif
-
-
 /*
 ===============
 R_EntityParticles
@@ -122,18 +80,16 @@ vec3_t	avelocity = {23, 7, 3};
 float	partstep = 0.01;
 float	timescale = 0.01;
 
-void R_EntityParticles (entity_t *ent)
+void R_Entity_Classic_Particles (entity_t *ent)
 {
-	int			count;
 	int			i;
 	particle_t	*p;
 	float		angle;
-	float		sr, sp, sy, cr, cp, cy;
+	float		sp, sy, cp, cy;
 	vec3_t		forward;
 	float		dist;
 	
 	dist = 64;
-	count = 50;
 
 	if (!avelocities[0][0])
 	{
@@ -151,8 +107,6 @@ void R_EntityParticles (entity_t *ent)
 		sp = sin(angle);
 		cp = cos(angle);
 		angle = cl.time * avelocities[i][2];
-		sr = sin(angle);
-		cr = cos(angle);
 	
 		forward[0] = cp*cy;
 		forward[1] = cp*sy;
@@ -173,6 +127,14 @@ void R_EntityParticles (entity_t *ent)
 		p->org[1] = ent->origin[1] + r_avertexnormals[i][1]*dist + forward[1]*beamlength;			
 		p->org[2] = ent->origin[2] + r_avertexnormals[i][2]*dist + forward[2]*beamlength;			
 	}
+}
+
+void R_EntityParticles (entity_t *ent)
+{
+	if (qmb_initialized && r_part_trails.value)
+		QMB_EntityParticles (ent);
+	else
+		R_Entity_Classic_Particles (ent);
 }
 
 
@@ -207,7 +169,7 @@ void R_ReadPointFile_f (void)
 	
 	sprintf (name,"maps/%s.pts", sv.name);
 
-	COM_FOpenFile (name, &f);
+	COM_FOpenFile (name, (int *)&f);
 	if (!f)
 	{
 		Con_Printf ("couldn't open %s\n", name);
@@ -270,14 +232,14 @@ void R_ParseParticleEffect (void)
 	
 	R_RunParticleEffect (org, dir, color, count);
 }
-	
+
 /*
 ===============
-R_ParticleExplosion
+R_Classic_ParticleExplosion
 
 ===============
 */
-void R_ParticleExplosion (vec3_t org)
+void R_Classic_ParticleExplosion (vec3_t org)
 {
 	int			i, j;
 	particle_t	*p;
@@ -313,6 +275,20 @@ void R_ParticleExplosion (vec3_t org)
 			}
 		}
 	}
+}
+	
+/*
+===============
+R_ParticleExplosion
+
+===============
+*/
+void R_ParticleExplosion (vec3_t org)
+{
+	if (!qmb_initialized)
+		R_Classic_ParticleExplosion (org);
+	else
+		QMB_ParticleExplosion (org);
 }
 
 /*
@@ -351,11 +327,11 @@ void R_ParticleExplosion2 (vec3_t org, int colorStart, int colorLength)
 
 /*
 ===============
-R_BlobExplosion
+R_Classic_BlobExplosion
 
 ===============
 */
-void R_BlobExplosion (vec3_t org)
+void R_Classic_BlobExplosion (vec3_t org)
 {
 	int			i, j;
 	particle_t	*p;
@@ -396,63 +372,17 @@ void R_BlobExplosion (vec3_t org)
 
 /*
 ===============
-R_RunParticleEffect
+R_BlobExplosion
 
 ===============
-
-void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
-{
-	int			i, j;
-	particle_t	*p;
-	
-	for (i=0 ; i<count ; i++)
-	{
-		if (!free_particles)
-			return;
-		p = free_particles;
-		free_particles = p->next;
-		p->next = active_particles;
-		active_particles = p;
-
-		if (count == 1024)
-		{	// rocket explosion
-			p->die = cl.time + 5;
-			p->color[0] = p->color[1] = p->color[2] = ramp1[0];
-			p->ramp = rand()&3;
-			if (i & 1)
-			{
-				p->type = pt_explode;
-				for (j=0 ; j<3 ; j++)
-				{
-					p->org[j] = org[j] + ((rand()%32)-16);
-					p->vel[j] = (rand()%512)-256;
-				}
-			}
-			else
-			{
-				p->type = pt_explode2;
-				for (j=0 ; j<3 ; j++)
-				{
-					p->org[j] = org[j] + ((rand()%32)-16);
-					p->vel[j] = (rand()%512)-256;
-				}
-			}
-		}
-		else
-		{
-			p->die = cl.time + 0.1*(rand()%5);
-			p->color[0] = p->color[1] = p->color[2] = (color&~7) + (rand()&7);
-			p->type = pt_slowgrav;
-			for (j=0 ; j<3 ; j++)
-			{
-				p->org[j] = org[j] + ((rand()&15)-8);
-				p->vel[j] = dir[j]*15;// + (rand()%300)-150;
-			}
-		}
-	}
-}
 */
-
+void R_BlobExplosion (vec3_t org)
+{
+	if (!qmb_initialized)
+		R_Classic_BlobExplosion (org);
+	else
+		QMB_BlobExplosion (org);
+}
 
 /*
 ===============
@@ -519,14 +449,17 @@ R_RunParticleEffect
 ===============
 */
 
-#define RunParticleEffect(org, dir, color, count)		\
-	if (qmb_initialized)				\
-		QMB_RunParticleEffect (org, dir, color, count);		\
-	else													\
-		Run_Classic_ParticleEffect (org, dir, color, count);
+void RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
+{
+	if (qmb_initialized)				
+		QMB_RunParticleEffect (org, dir, col, count);		
+	else													
+		Run_Classic_ParticleEffect (org, dir, col, count);
+}
 
 void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 {
+
 	if (color == 73 || color == 225)
 	{
 		RunParticleEffect(org, dir, color, count);
@@ -543,6 +476,7 @@ void R_RunParticleEffect (vec3_t org, vec3_t dir, int color, int count)
 		default:
 			RunParticleEffect(org, dir, color, count);
 	}
+
 }
 
 /*
@@ -589,11 +523,11 @@ void R_LavaSplash (vec3_t org)
 
 /*
 ===============
-R_TeleportSplash
+R_Classic_TeleportSplash
 
 ===============
 */
-void R_TeleportSplash (vec3_t org)
+void R_Classic_TeleportSplash (vec3_t org)
 {
 	int			i, j, k;
 	particle_t	*p;
@@ -629,7 +563,16 @@ void R_TeleportSplash (vec3_t org)
 			}
 }
 
-void R_RocketTrail (vec3_t start, vec3_t end, int type)
+void R_TeleportSplash (vec3_t org)
+{
+	if (!qmb_initialized)
+		R_Classic_TeleportSplash (org);
+	else
+		QMB_TeleportSplash(org);
+
+}
+
+void R_Classic_RocketTrail (vec3_t start, vec3_t end, int type)
 {
 	vec3_t		vec;
 	float		len;
@@ -731,6 +674,15 @@ void R_RocketTrail (vec3_t start, vec3_t end, int type)
 
 		VectorAdd (start, vec, start);
 	}
+}
+
+void R_RocketTrail (vec3_t start, vec3_t end, int type)
+{
+
+	if (qmb_initialized && r_part_trails.value)
+		QMB_RocketTrail (start, end, (trail_type_t)type);
+	else
+		R_Classic_RocketTrail (start, end, type);
 }
 
 
@@ -890,167 +842,6 @@ void R_Classic_DrawParticles (void)
 	QGX_Blend(false);
 	GX_SetTevOp(GX_TEVSTAGE0, GX_REPLACE);
 }
-
-/*
-===============
-R_Classic_DrawParticles
-===============
-
-extern	cvar_t	sv_gravity;
-
-void R_Classic_DrawParticles (void)
-{
-	particle_t		*p, *kill;
-	float			grav;
-	int				i;
-	float			time2, time3;
-	float			time1;
-	float			dvel;
-	float			frametime;
-	
-#ifdef GLQUAKE
-	vec3_t			up, right;
-	float			scale;
-
-    GL_Bind(particletexture);
-	glEnable (GL_BLEND);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-	glBegin (GL_TRIANGLES);
-
-	VectorScale (vup, 1.5, up);
-	VectorScale (vright, 1.5, right);
-#else
-	D_StartParticles ();
-
-	VectorScale (vright, xscaleshrink, r_pright);
-	VectorScale (vup, yscaleshrink, r_pup);
-	VectorCopy (vpn, r_ppn);
-#endif
-	frametime = cl.time - cl.oldtime;
-	time3 = frametime * 15;
-	time2 = frametime * 10; // 15;
-	time1 = frametime * 5;
-	grav = frametime * sv_gravity.value * 0.05;
-	dvel = 4*frametime;
-	
-	for ( ;; ) 
-	{
-		kill = active_particles;
-		if (kill && kill->die < cl.time)
-		{
-			active_particles = kill->next;
-			kill->next = free_particles;
-			free_particles = kill;
-			continue;
-		}
-		break;
-	}
-
-	for (p=active_particles ; p ; p=p->next)
-	{
-		for ( ;; )
-		{
-			kill = p->next;
-			if (kill && kill->die < cl.time)
-			{
-				p->next = kill->next;
-				kill->next = free_particles;
-				free_particles = kill;
-				continue;
-			}
-			break;
-		}
-
-#ifdef GLQUAKE
-		// hack a scale up to keep particles from disapearing
-		scale = (p->org[0] - r_origin[0])*vpn[0] + (p->org[1] - r_origin[1])*vpn[1]
-			+ (p->org[2] - r_origin[2])*vpn[2];
-		if (scale < 20)
-			scale = 1;
-		else
-			scale = 1 + scale * 0.004;
-		
-		glColor4ubv (p->color);
-		glTexCoord2f (0,0);
-		glVertex3fv (p->org);
-		glTexCoord2f (1,0);
-		glVertex3f (p->org[0] + up[0]*scale, p->org[1] + up[1]*scale, p->org[2] + up[2]*scale);
-		glTexCoord2f (0,1);
-		glVertex3f (p->org[0] + right[0]*scale, p->org[1] + right[1]*scale, p->org[2] + right[2]*scale);
-#else
-		D_DrawParticle (p);
-#endif
-		p->org[0] += p->vel[0]*frametime;
-		p->org[1] += p->vel[1]*frametime;
-		p->org[2] += p->vel[2]*frametime;
-		
-		switch (p->type)
-		{
-		case pt_static:
-			break;
-		case pt_fire:
-			p->ramp += time1;
-			if (p->ramp >= 6)
-				p->die = -1;
-			else
-				p->color[0] = p->color[1] = p->color[2] = ramp3[(int)p->ramp];
-			p->vel[2] += grav;
-			break;
-
-		case pt_explode:
-			p->ramp += time2;
-			if (p->ramp >=8)
-				p->die = -1;
-			else
-				p->color[0] = p->color[1] = p->color[2] = ramp1[(int)p->ramp];
-			for (i=0 ; i<3 ; i++)
-				p->vel[i] += p->vel[i]*dvel;
-			p->vel[2] -= grav;
-			break;
-
-		case pt_explode2:
-			p->ramp += time3;
-			if (p->ramp >=8)
-				p->die = -1;
-			else
-				p->color[0] = p->color[1] = p->color[2] = ramp2[(int)p->ramp];
-			for (i=0 ; i<3 ; i++)
-				p->vel[i] -= p->vel[i]*frametime;
-			p->vel[2] -= grav;
-			break;
-
-		case pt_blob:
-			for (i=0 ; i<3 ; i++)
-				p->vel[i] += p->vel[i]*dvel;
-			p->vel[2] -= grav;
-			break;
-
-		case pt_blob2:
-			for (i=0 ; i<2 ; i++)
-				p->vel[i] -= p->vel[i]*dvel;
-			p->vel[2] -= grav;
-			break;
-
-		case pt_grav:
-#ifdef QUAKE2
-			p->vel[2] -= grav * 20;
-			break;
-#endif
-		case pt_slowgrav:
-			p->vel[2] -= grav;
-			break;
-		}
-	}
-
-#ifdef GLQUAKE
-	glEnd ();
-	glDisable (GL_BLEND);
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-#else
-	D_EndParticles ();
-#endif
-}
-*/
 
 /////////////////////////////////////
 
