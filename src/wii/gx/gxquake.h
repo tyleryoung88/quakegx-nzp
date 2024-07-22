@@ -128,24 +128,19 @@ typedef enum {
 
 typedef	byte	col_t[4];
 
-typedef struct particle_s
+// !!! if this is changed, it must be changed in d_ifacea.h too !!!
+typedef struct particle2_s
 {
-	struct	particle_s	*next;
-	vec3_t				org, endorg;
-	col_t				color;
-	float				growth;
-	vec3_t				vel;
-	float 				ramp;
-	ptype_t 			type;
-	float				rotangle;
-	float				rotspeed;
-	float				size;
-	float				start;
-	float				die;
-	byte				hit;
-	byte				texindex;
-	byte				bounces;
-} particle_t;
+// driver-usable fields
+	vec3_t		org;
+	float		color;
+// drivers never touch the following fields
+	struct particle2_s	*next;
+	vec3_t		vel;
+	float		ramp;
+	float		die;
+	ptype_t		type;
+} particle2_t;
 
 
 //====================================================

@@ -295,7 +295,7 @@ void Fog_EnableGFog (void)
 		end = 500;
 		
 	//Con_Printf("enabled fog: e%f r%f g%f b%f\n", end, r, g, b);
-	if (r == 0 && g == 0 && b == 0 && end == 300)
+	if (r == 0 && g == 0 && b == 0 && end == 500)
 		GX_SetFog(GX_FOG_NONE, 0.0F, 1.0F, 0.0F, 1.0F, color);
 	else
 		GX_SetFog(GX_FOG_EXP2 /*GX_FOG_LIN*/, 0.0F, end, near, far, FogColor);

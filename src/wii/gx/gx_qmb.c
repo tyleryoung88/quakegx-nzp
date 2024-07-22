@@ -22,7 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../../generic/quakedef.h"
 //#define	DEFAULT_NUM_PARTICLES		8192
-#define	ABSOLUTE_MIN_PARTICLES      64
+#define	ABSOLUTE_MIN_PARTICLES      512
 #define	ABSOLUTE_MAX_PARTICLES      6144
 
 extern int decal_blood1, decal_blood2, decal_blood3, decal_q3blood, decal_burn, decal_mark, decal_glow;
@@ -116,6 +116,23 @@ typedef	enum
 	pd_q3teleport
 } part_draw_t;
 
+typedef struct particle_s
+{
+	struct	particle_s	*next;
+	vec3_t				org, endorg;
+	col_t				color;
+	float				growth;
+	vec3_t				vel;
+	float				rotangle;
+	float				rotspeed;
+	float				size;
+	float				start;
+	float				die;
+	byte				hit;
+	byte				texindex;
+	byte				bounces;
+} particle_t;
+
 typedef	struct particle_type_s
 {
 	particle_t			*start;
@@ -140,7 +157,7 @@ typedef struct particle_texture_s
 	float	coords[MAX_PTEX_COMPONENTS][4];
 } particle_texture_t;
 
-particle_t		*particles, *free_particles;
+static 	particle_t		*particles, *free_particles;
 static			particle_type_t		particle_types[num_particletypes];//R00k
 static	int		particle_type_index[num_particletypes];
 static			particle_texture_t	particle_textures[num_particletextures];
@@ -151,10 +168,10 @@ void			R_CalcBeamVerts (float *vert, vec3_t org1, vec3_t org2, float width);//Vu
 
 vec3_t	NULLVEC = {0,0,0};//r00k
 
-int		r_numparticles;
+static  int		r_numparticles;
 static	vec3_t	zerodir = {22, 22, 22};
-int		particle_count = 0;
-float	particle_time;
+static 	int		particle_count = 0;
+static 	float	particle_time;
 qboolean		qmb_initialized = false;
 int				particle_mode = 0;	// 0: classic (default), 1: QMB, 2: mixed
 
@@ -170,7 +187,7 @@ qboolean OnChange_gl_particle_count (cvar_t *var, char *string)
 	return true;
 }
 
-cvar_t	r_particle_count	= {"r_particle_count", "1024", true};
+cvar_t	r_particle_count	= {"r_particle_count", "2048", true};
 cvar_t	r_bounceparticles	= {"r_bounceparticles", "1",true};
 cvar_t	r_decal_blood		= {"r_decal_blood", "1",true};
 cvar_t	r_decal_bullets	    = {"r_decal_bullets","1",true};
@@ -304,6 +321,9 @@ static byte *ColorForParticle (part_type_t type)
 	return color;
 }
 
+// sB Translated these functions for debugging purposes
+// if everything is working okay then I see no harm in keeping them
+// as #defines 
 /*
 #define ADD_PARTICLE_TEXTURE(_ptex, _texnum, _texindex, _components, _s1, _t1, _s2, _t2)\
 do {																	\
@@ -325,6 +345,7 @@ void ADD_PARTICLE_TEXTURE(part_tex_t ptex, int texnum, int texindex, int compone
 	particle_textures[ptex].coords[texindex][2] = (s2 - 1) / max_s;	
 	particle_textures[ptex].coords[texindex][3] = (s2 - 1) / max_t;	
 }
+
 /*
 #define ADD_PARTICLE_TYPE(_id, _drawtype, _SrcBlend, _DstBlend, _texture, _startalpha, _grav, _accel, _move, _custom)\
 do {\
@@ -342,6 +363,7 @@ do {\
 	count++;\
 } while(0)
 */
+
 int count = 0;
 void ADD_PARTICLE_TYPE(part_type_t id, part_draw_t drawtype, int SrcBlend, int DstBlend, part_tex_t texture, float startalpha, float grav, float accel, part_move_t move, float custom)
 {
@@ -612,7 +634,8 @@ void QMB_InitParticles (void)
 	_p->bounces = 0;					\
 	VectorCopy(_color, _p->color);
 
-//sBTODO this is the problem, area
+
+//sBTODO this is the problem area
 /*
 void INIT_NEW_PARTICLE(particle_type_t *pt, particle_t *p, byte *color, float size, float time)
 {
@@ -655,6 +678,7 @@ __inline static void AddParticle (part_type_t type, vec3_t org, int count, float
 
 		color = col ? col : ColorForParticle (type);
 
+		//Con_Printf("addsize: %f\n", size);
 		INIT_NEW_PARTICLE(pt, p, color, size, time);
 
 		switch (type)
@@ -876,7 +900,7 @@ __inline static void AddParticleTrail (part_type_t type, vec3_t start, vec3_t en
 	int		i, j, num_particles;
 	float		count, length;
 	vec3_t		point, delta;
-	particle_t	*p;
+	particle_t		*p;
 	particle_type_t	*pt;
     count = 0;
 
@@ -1227,6 +1251,7 @@ inline static void QMB_UpdateParticles(void)
 					VectorCopy (oldorg, p->org);
 					VectorClear (p->vel);//R00k added Needed?
 					p->die = 0;
+					p->size = 0;
 				}
 
 				break;
@@ -1373,9 +1398,10 @@ void DRAW_PARTICLE_BILLBOARD(particle_texture_t *ptex, particle_t *p, vec3_t *co
     scale = p->size;
 	// sBHACK this is not good..
 	// not sure where the problem lies..?
-	if(scale > 100)
-		scale = scale/1000;
-	//Con_Printf("scale: %f\n", scale);
+	// probably INIT_NEW_PARTICLE
+	if(scale > 50)
+		scale = scale/500;
+	Con_Printf("new scale: %f\n", scale);
     color[0] = p->color[0];
     color[1] = p->color[1];
     color[2] = p->color[2];
@@ -1437,7 +1463,7 @@ void QMB_DrawParticles (void)
 {
 	int		j, i;
 	vec3_t		up, right, billboard[4], velcoord[4]/*, neworg*/;
-	particle_t		*p = malloc(sizeof(*p));
+	particle_t		*p;
 	particle_type_t		*pt;
 	particle_texture_t	*ptex;
 
@@ -1883,7 +1909,7 @@ void AddColoredParticle (part_type_t type, vec3_t org, int count, float size, fl
 	col_t		color;
 	int		i, j, colorMod = 0;
 	float		tempSize;
-	particle_t	*p;
+	particle_t		*p;
 	particle_type_t	*pt;
 
 	if (!qmb_initialized)
@@ -2007,9 +2033,9 @@ void QMB_Blood_Splat(part_type_t type, vec3_t org) //Shpuldified
 	
 	else if(type == p_blood2)
 	{
-		AddParticle(p_bloodcloud, org, 3, 5, 0.3, color, zerodir);
+		AddParticle(p_bloodcloud, org, 3, 7, 0.3, color, zerodir);
 		color[0] = 40;
-		AddParticle(p_blood2, org, 16, 3, 0.2, color, zerodir);
+		AddParticle(p_blood2, org, 16, 3, 0.4, color, zerodir);
 	}
 
 	else //p_blood3, trail?
@@ -2116,7 +2142,7 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 
 		{
 			// sBTODO
-			AddParticle (p_smoke, org, 3, 5, 1.225f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+			AddParticle (p_smoke, org, 3, 12, 1.225f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
 		}
 		break;
 
@@ -2355,7 +2381,7 @@ void QMB_MuzzleFlash(vec3_t org)
 
 	float size, timemod;
 
-	timemod = 0.28;
+	timemod = 0.18;
 
 	if(!(ISUNDERWATER(TruePointContents(org))))
 	{

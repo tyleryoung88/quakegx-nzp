@@ -112,10 +112,10 @@ void CL_ParseTEnt (void)
 	vec3_t	endpos;
 #endif
 	dlight_t	*dl;
-	int		rnd;
 	int		colorStart, colorLength;
 
 	type = MSG_ReadByte ();
+	
 	switch (type)
 	{
 	case TE_WIZSPIKE:			// spike hitting wall

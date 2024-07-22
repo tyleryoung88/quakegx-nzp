@@ -362,9 +362,8 @@ GL_DrawAliasFrame
 */
 void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 {
-	float 	l;
+	//float 	l;
 	trivertx_t	*verts1, *verts2;
-	int		*order;
 	int		*commands;
 	int		count;
 	float	blend, iblend;
@@ -392,7 +391,7 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 
 	commands = (int *)((byte *)paliashdr + paliashdr->commands);
 	
-	l = shadedots[verts1->lightnormalindex];
+	//l = shadedots[verts1->lightnormalindex];
 	
 	//glColor4f(lightcolor[0]/255, lightcolor[1]/255, lightcolor[2]/255, 1.0f);
 	//
@@ -427,17 +426,16 @@ void GL_DrawAliasFrame (aliashdr_t *paliashdr, lerpdata_t lerpdata)
 				GX_Position3f32(verts1->v[0]*iblend + verts2->v[0]*blend,
 								verts1->v[1]*iblend + verts2->v[1]*blend,
 								verts1->v[2]*iblend + verts2->v[2]*blend);
-								
+				GX_Color4u8(lightcolor[0], lightcolor[1], lightcolor[2], 0xff);				
 				verts1++;
 				verts2++;
 			} else {
 				//glVertex3f (verts1->v[0], verts1->v[1], verts1->v[2]);
 				GX_Position3f32(verts1->v[0], verts1->v[1], verts1->v[2]);
-				
+				GX_Color4u8(lightcolor[0], lightcolor[1], lightcolor[2], 0xff);
 				verts1++;
 
 			}
-			GX_Color4u8(lightcolor[0], lightcolor[1], lightcolor[2], 0xff);
 			GX_TexCoord2f32(((float *)commands)[0], ((float *)commands)[1]);
 			
 			commands += 2;
@@ -459,15 +457,15 @@ extern	vec3_t			lightspot;
 void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 {
 	
-	float	s, t, l;
-	int		i, j;
-	int		index;
+	//float	s, t, l;
+	//int		i, j;
+	//int		index;
 	
-	trivertx_t	*v, *verts;
-	int		list;
+	trivertx_t	/**v,*/ *verts;
+	//int		list;
 	int		*order;
 	vec3_t	point;
-	float	*normal;
+	//float	*normal;
 	float	height, lheight;
 	int		count;
 
@@ -479,7 +477,8 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 	order = (int *)((byte *)paliashdr + paliashdr->commands);
 
 	height = -lheight + 1.0;
-	/*
+	
+	//sB should be working now. 
 	while (1)
 	{
 		// get the vertex count and primitive type
@@ -500,7 +499,6 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 		{
 			// texture coordinates come from the draw list
 			// (skipped for shadows) glTexCoord2fv ((float *)order);
-			order += 2;
 
 			// normals and vertexes come from the frame list
 			point[0] = verts->v[0] * paliashdr->scale[0] + paliashdr->scale_origin[0];
@@ -512,16 +510,18 @@ void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 			point[2] = height;
 //			height -= 0.001;
 			//glVertex3fv (point);
+			
 			GX_Position3f32(point[0], point[1], point[2]);
 			GX_Color4u8(0xff, 0xff, 0xff, 0xff);
+			verts++;	
+			order += 2;
 
-			verts++;
 		} while (--count);
 
 		//glEnd ();
 		GX_End();
 	}
-	*/
+	
 }
 
 
@@ -776,16 +776,16 @@ R_DrawTransparentAliasModel
 */
 void R_DrawTransparentAliasModel (entity_t *e)
 {
-	int			i, j;
-	int			lnum;
-	vec3_t		dist;
-	float		add;
+	//int			i, j;
+	//int			lnum;
+	//vec3_t		dist;
+	//float		add;
 	model_t		*clmodel;
 	vec3_t		mins, maxs;
 	aliashdr_t	*paliashdr;
-	trivertx_t	*verts, *v;
-	int			index;
-	float		s, t, an;
+	//trivertx_t	*verts, *v;
+	//int			index;
+	//float		s, t, an;
 	int			anim;
 	Mtx			temp;
 	lerpdata_t	lerpdata;
@@ -1226,6 +1226,89 @@ void R_DrawAliasModel (entity_t *e)
 
 //==================================================================================
 
+//==================================================================================
+int SetFlameModelState (void)
+{
+	if (!r_part_flames.value && !strcmp(currententity->model->name, "progs/flame0.mdl"))
+	{
+		currententity->model = cl.model_precache[cl_modelindex[mi_flame1]];
+	}
+	else if (r_part_flames.value)
+	{
+		vec3_t	liteorg;
+
+		VectorCopy (currententity->origin, liteorg);
+		if (currententity->baseline.modelindex == cl_modelindex[mi_flame0])
+		{
+			if (r_part_flames.value == 2)
+			{
+				liteorg[2] += 14;
+				QMB_Q3TorchFlame (liteorg, 15);
+			}
+			else
+			{
+				liteorg[2] += 5.5;
+
+				if(r_flametype.value == 2)
+				  QMB_FlameGt (liteorg, 7, 0.8);
+				else
+				  QMB_TorchFlame(liteorg);
+			}
+		}
+		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame1])
+		{
+			if (r_part_flames.value == 2)
+			{
+				liteorg[2] += 14;
+				QMB_Q3TorchFlame (liteorg, 15);
+			}
+			else
+			{
+				liteorg[2] += 5.5;
+
+				if(r_flametype.value > 1)
+				  QMB_FlameGt (liteorg, 7, 0.8);
+				else
+			      QMB_TorchFlame(liteorg);
+
+			}
+			currententity->model = cl.model_precache[cl_modelindex[mi_flame0]];
+		}
+		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame2])
+		{
+			if (r_part_flames.value == 2)
+            {
+				liteorg[2] += 14;
+				QMB_Q3TorchFlame (liteorg, 32);
+            }
+			else
+			{
+                liteorg[2] -= 1;
+
+				if(r_flametype.value > 1)
+				  QMB_FlameGt (liteorg, 12, 1);
+				else
+			      QMB_BigTorchFlame(liteorg);
+			}
+			return -1;	//continue;
+		}
+        else if (!strcmp(currententity->model->name, "progs/wyvflame.mdl"))
+		{
+			liteorg[2] -= 1;
+
+			if(r_flametype.value > 1)
+			  QMB_FlameGt (liteorg, 12, 1);
+			else
+			  QMB_BigTorchFlame(liteorg);
+
+			return -1;	//continue;
+		}
+	}
+
+	return 0;
+}
+
+
 /*
 =============
 R_DrawEntitiesOnList
@@ -1326,6 +1409,7 @@ R_DrawView2Model
 */
 void R_DrawView2Model (void)
 {
+	/*
 	float		ambient[4], diffuse[4];
 	int			j;
 	int			lnum;
@@ -1333,6 +1417,7 @@ void R_DrawView2Model (void)
 	float		add;
 	dlight_t	*dl;
 	int			ambientlight, shadelight;
+	*/
 
 	if (!r_drawviewmodel.value)
 		return;
@@ -1366,6 +1451,7 @@ R_DrawViewModel
 */
 void R_DrawViewModel (void)
 {
+	/*
 	float		ambient[4], diffuse[4];
 	int			j;
 	int			lnum;
@@ -1373,6 +1459,7 @@ void R_DrawViewModel (void)
 	float		add;
 	dlight_t	*dl;
 	int			ambientlight, shadelight;
+	*/
 
 	if (!r_drawviewmodel.value)
 		return;
@@ -1398,89 +1485,6 @@ void R_DrawViewModel (void)
 	R_DrawAliasModel (currententity);
 	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
 }
-
-//==================================================================================
-int SetFlameModelState (void)
-{
-	if (!r_part_flames.value && !strcmp(currententity->model->name, "progs/flame0.mdl"))
-	{
-		currententity->model = cl.model_precache[cl_modelindex[mi_flame1]];
-	}
-	else if (r_part_flames.value)
-	{
-		vec3_t	liteorg;
-
-		VectorCopy (currententity->origin, liteorg);
-		if (currententity->baseline.modelindex == cl_modelindex[mi_flame0])
-		{
-			if (r_part_flames.value == 2)
-			{
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 15);
-			}
-			else
-			{
-				liteorg[2] += 5.5;
-
-				if(r_flametype.value == 2)
-				  QMB_FlameGt (liteorg, 7, 0.8);
-				else
-				  QMB_TorchFlame(liteorg);
-			}
-		}
-		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame1])
-		{
-			if (r_part_flames.value == 2)
-			{
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 15);
-			}
-			else
-			{
-				liteorg[2] += 5.5;
-
-				if(r_flametype.value > 1)
-				  QMB_FlameGt (liteorg, 7, 0.8);
-				else
-			      QMB_TorchFlame(liteorg);
-
-			}
-			currententity->model = cl.model_precache[cl_modelindex[mi_flame0]];
-		}
-		else if (currententity->baseline.modelindex == cl_modelindex[mi_flame2])
-		{
-			if (r_part_flames.value == 2)
-            {
-				liteorg[2] += 14;
-				QMB_Q3TorchFlame (liteorg, 32);
-            }
-			else
-			{
-                liteorg[2] -= 1;
-
-				if(r_flametype.value > 1)
-				  QMB_FlameGt (liteorg, 12, 1);
-				else
-			      QMB_BigTorchFlame(liteorg);
-			}
-			return -1;	//continue;
-		}
-        else if (!strcmp(currententity->model->name, "progs/wyvflame.mdl"))
-		{
-			liteorg[2] -= 1;
-
-			if(r_flametype.value > 1)
-			  QMB_FlameGt (liteorg, 12, 1);
-			else
-			  QMB_BigTorchFlame(liteorg);
-
-			return -1;	//continue;
-		}
-	}
-
-	return 0;
-}
-
 
 #if 0
 /*
@@ -1888,7 +1892,7 @@ void R_RenderScene (void)
 
 	//GL_DisableMultitexture();
 
-	GX_LoadPosMtxImm(view, GX_PNMTX0);
+	//GX_LoadPosMtxImm(view, GX_PNMTX0);
 	R_DrawParticles ();
 }
 
