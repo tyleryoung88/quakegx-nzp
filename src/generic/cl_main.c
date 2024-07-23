@@ -29,7 +29,7 @@ cvar_t	autosave_waypoint = {"autosave_waypoint", "0", false};// waypoint mode ac
 cvar_t	cl_name = {"_cl_name", "player", true};
 cvar_t	cl_color = {"_cl_color", "0", true};
 
-cvar_t	cl_shownet = {"cl_shownet","0"};	// can be 0, 1, or 2
+cvar_t	cl_shownet = {"cl_shownet","1"};	// can be 0, 1, or 2
 cvar_t	cl_nolerp = {"cl_nolerp","0"};
 
 cvar_t	lookspring = {"lookspring","0", true};
@@ -540,7 +540,7 @@ void CL_RelinkEntities (void)
 	int			i, j;
 	float		frac, f, d;
 	vec3_t		delta;
-	float		bobjrotate;
+	//float		bobjrotate;
 	vec3_t		oldorg;
 	dlight_t	*dl;
 
@@ -683,12 +683,8 @@ void CL_RelinkEntities (void)
 				VectorMA (smokeorg, up_offset, v_up ,smokeorg);
 				VectorMA (smokeorg, right_offset, v_right ,smokeorg);
 				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
-				//QMB_MuzzleFlash (smokeorg);
-				if (sv_player->v.weapon != W_RAY && sv_player->v.weapon != W_PORTER) {
-					QMB_MuzzleFlash (smokeorg);
-				} else {
-					QMB_RayFlash(smokeorg, sv_player->v.weapon);
-				}
+				QMB_MuzzleFlash (smokeorg);
+				
 			}
 			
 		}
@@ -818,7 +814,8 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 0;
 			dl->color[1] = 255;
 			dl->color[2] = 0;
-	        dl->type = SetDlightColor (2, lt_rocket, true);
+			//DLight color 4 is green
+	        dl->type = SetDlightColor (4, lt_rocket, true);
 		}
 
 		if (ent->effects & EF_RAYRED)
@@ -831,7 +828,8 @@ void CL_RelinkEntities (void)
 	        dl->color[0] = 255;
 			dl->color[1] = 0;
 			dl->color[2] = 0;
-	        dl->type = SetDlightColor (2, lt_rocket, true);
+			//DLight color 1 is red
+	        dl->type = SetDlightColor (1, lt_rocket, true);
 		}
 		
 		if (!strcmp(ent->model->name, "progs/flame2.mdl"))

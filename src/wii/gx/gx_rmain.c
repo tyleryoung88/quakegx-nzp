@@ -1892,7 +1892,7 @@ void R_RenderScene (void)
 
 	//GL_DisableMultitexture();
 
-	//GX_LoadPosMtxImm(view, GX_PNMTX0);
+	GX_LoadPosMtxImm(view, GX_PNMTX0);
 	R_DrawParticles ();
 }
 

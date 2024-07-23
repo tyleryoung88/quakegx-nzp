@@ -737,7 +737,12 @@ void IN_Move (usercmd_t *cmd)
 		x2 = clamp((float)wiimote_ir_x / (pointer.vres[0] / 2.0f) - 1.0f, -1.0f, 1.0f);
 		y2 = clamp((float)wiimote_ir_y / (pointer.vres[1] / 2.0f) - 1.0f, -1.0f, 1.0f);
 		// Move the cross position
-		if (aimsnap == true) {
+		
+		// sB if sniper scope we want to aim in da middle
+		// Unless I can find a way to make the scope image 
+		// move with pointer>>??
+		// seems impossible in my mind
+		if (cl.stats[STAT_ZOOM] == 2) {
 			Cvar_SetValue("cl_crossx", scr_vrect.width/2);
 			Cvar_SetValue("cl_crossy", scr_vrect.height/2);
 			zoom_snap = 1;
@@ -791,14 +796,14 @@ void IN_Move (usercmd_t *cmd)
 	//far the IR pointer is from the 
 	//center of the screen.
 	
-	
+	/*
 	if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2) {
 		centerdrift_offset_yaw = 1; //yaw
 		centerdrift_offset_pitch = 1; //pitch
-	} else {
+	} else {*/
 		centerdrift_offset_yaw = fabsf(x2); //yaw
 		centerdrift_offset_pitch = fabsf(y2); //pitch
-	}
+	//}
 	
 	// Apply the dead zone.
 	apply_dead_zone(&x1, &y1, dead_zone);

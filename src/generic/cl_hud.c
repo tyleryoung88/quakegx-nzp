@@ -563,7 +563,7 @@ int maxammoopac;
 void HUD_MaxAmmo(void)
 {
 
-	maxammoy -= cl.time * 0.03;
+	maxammoy -= cl.time * 0.4;
 	maxammoopac -= 5;
 
 	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")*12/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1.5);
@@ -1160,7 +1160,7 @@ HUD_Powerups
 void HUD_Powerups (void)
 {
 
-	int count;
+	int count = 0;
 
 	// horrible way to offset check :)))))))))))))))))) :DDDDDDDD XOXO
 

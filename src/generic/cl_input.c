@@ -516,7 +516,7 @@ float angledelta(float a);
 float deltaPitch,deltaYaw;
 void CL_SendMove (usercmd_t *cmd)
 {
-	int		bits, i;
+	int		bits/*, i*/;
 	sizebuf_t	buf;
 	byte	data[128];
 	
@@ -540,7 +540,6 @@ void CL_SendMove (usercmd_t *cmd)
 		zoom_snap = 0;
 	}
 
-	zoom_snap = 0;
 	//==== Sniper Scope Swaying ====
 	if(cl.stats[STAT_ZOOM] == 2 && !(cl.perks & 64))
 	{
@@ -578,14 +577,26 @@ void CL_SendMove (usercmd_t *cmd)
 	 * It's also possible to bypass the client-side PITCH limits. Beware, this may be considered cheating!
 	 */
 	
-	if(aimsnap) {
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height/* * IR_PITCHRANGE*/);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width/* * IR_YAWRANGE*/);
+	// sB this was for experimental view snapping.. 
+	// it got bad feedback so
+	
+	if(cl.stats[STAT_ZOOM] == 2) {
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/*/scr_vrect.height * IR_PITCHRANGE*/);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/*/scr_vrect.width * IR_YAWRANGE*/);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
 	} else {
+		
+		
+		//sBTODO figure out how to make this way more accurate than it is/
+		
+		
 		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
 		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
+		
+		
+		
+		
 	}
 	
 	/*	

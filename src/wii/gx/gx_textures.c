@@ -176,7 +176,6 @@ void QGX_BlendMap(qboolean state)
 {
 	if (state)
 		GX_SetBlendMode(GX_BM_BLEND, GX_BL_DSTCLR, GX_BL_SRCCLR, GX_LO_CLEAR);
-		//GX_SetBlendMode(GX_BM_BLEND, GX_BL_SRCALPHA, GX_BL_SRCCLR, GX_LO_CLEAR);
 	else
 		GX_SetBlendMode(GX_BM_NONE,GX_BL_ONE,GX_BL_ZERO,GX_LO_COPY);
 }
@@ -772,7 +771,6 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	byte	*pix, *image_rgba;
 	int		x, y;
 	int		dataByte, runLength;
-	int		count;
 	byte	*pcx_data;
 	byte	*pic;
 
