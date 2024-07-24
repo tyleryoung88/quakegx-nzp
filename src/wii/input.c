@@ -116,10 +116,13 @@ static float clamp(float value, float minimum, float maximum)
 		return value;
 	}
 }
-
+extern qboolean aimsnap;
 static void apply_dead_zone(float* x, float* y, float dead_zone)
 {
-	if ((fabsf(*x) >= dead_zone) || (fabsf(*y) >= dead_zone)/* || cl.stats[STAT_ZOOM == 1] || cl.stats[STAT_ZOOM == 2]*/)
+	if (aimsnap == true)
+		dead_zone = 0.15f;
+	
+	if ((fabsf(*x) >= dead_zone) || (fabsf(*y) >= dead_zone))
 	{
 		// Nothing to do.
 	}
@@ -685,7 +688,6 @@ void IN_Commands (void)
 extern bool croshhairmoving;
 extern float crosshair_opacity;
 float centerdrift_offset_yaw, centerdrift_offset_pitch;
-extern qboolean aimsnap;
 extern int zoom_snap;
 int ir_x, ir_y;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
@@ -742,10 +744,9 @@ void IN_Move (usercmd_t *cmd)
 		// Unless I can find a way to make the scope image 
 		// move with pointer>>??
 		// seems impossible in my mind
-		if (cl.stats[STAT_ZOOM] == 2) {
-			Cvar_SetValue("cl_crossx", scr_vrect.width/2);
-			Cvar_SetValue("cl_crossy", scr_vrect.height/2);
-			zoom_snap = 1;
+		if (cl.stats[STAT_ZOOM] == 2 || aimsnap == true) {
+			Cvar_SetValue("cl_crossx", vid.conwidth/2);
+			Cvar_SetValue("cl_crossy", vid.conheight/2);
 		} else {
 			Cvar_SetValue("cl_crossx", scr_vrect.width/ 2 * x2);
 			Cvar_SetValue("cl_crossy", scr_vrect.height/2 * y2);

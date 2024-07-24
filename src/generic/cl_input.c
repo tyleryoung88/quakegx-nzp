@@ -412,7 +412,7 @@ int EN_Find(int num,char *string)
 }
 qboolean aimsnap = false;
 extern int ir_x, ir_y;
-int zoom_snap;
+int zoom_snap = 0;
 void CL_Aim_Snap(void)
 {
 	edict_t *z,*bz,*player;
@@ -425,18 +425,7 @@ void CL_Aim_Snap(void)
 	bz = sv.edicts;
 	
 	aimsnap = false;
-	// sB add a way to break out of aim snapping 
-	// hacked it in for now
-	// x value on IR pointer is different that vid.width
-	// this could be a reason for some other bugs. need to investivate
-	/*
-	int x_deadzone_neg = 315 - 10; 
-	int x_deadzone_pos = 315 + 10;
 	
-	//Con_Printf("dead:%i dead:%i x:%i y:%i\n", x_deadzone_neg, x_deadzone_pos, ir_x, ir_y);
-	if (ir_y < 50 || ir_y > 380 || ir_x < x_deadzone_neg || ir_x > x_deadzone_pos) // the x axis is more important here. a deadzone of 130 pixels on x axis seems reasonable? 
-		return;
-	*/
 	int vofs = 32;//32 is actual v_ofs num
 	int aimOfs = -10;//30 is top of bbox, 20 is our goal, so -10
 	//Zombie body bbox vert max = 30
@@ -499,10 +488,9 @@ void CL_Aim_Snap(void)
 
 		if(distVec[0] < -70 || distVec[0] > 80)
 			return;
-
-		aimsnap = true;		
+	
 		VectorCopy(distVec,cl.viewangles);
-		zoom_snap = 1;
+		aimsnap = true;
 	}
 }
 
@@ -518,7 +506,7 @@ void CL_SendMove (usercmd_t *cmd)
 {
 	int		bits/*, i*/;
 	sizebuf_t	buf;
-	byte	data[128];
+	byte	data[128]; 
 	
 	buf.maxsize = 128;
 	buf.cursize = 0;
@@ -529,7 +517,7 @@ void CL_SendMove (usercmd_t *cmd)
 	//==== Aim Assist Code ====
 	if((cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2) && ((in_aimassist.value) || (cl.perks & 64)))
 	{
-		if(!zoom_snap)
+		if(zoom_snap == 0)
 		{
 			CL_Aim_Snap();
 			zoom_snap = 1;
@@ -577,12 +565,10 @@ void CL_SendMove (usercmd_t *cmd)
 	 * It's also possible to bypass the client-side PITCH limits. Beware, this may be considered cheating!
 	 */
 	
-	// sB this was for experimental view snapping.. 
-	// it got bad feedback so
-	
-	if(cl.stats[STAT_ZOOM] == 2) {
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/*/scr_vrect.height * IR_PITCHRANGE*/);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/*/scr_vrect.width * IR_YAWRANGE*/);
+	// sB lock crosshair in the center of screen for sniper scopes
+	if(cl.stats[STAT_ZOOM] == 2 || aimsnap == true) {
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/vid.conheight + 1)/* * IR_PITCHRANGE*/);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/vid.conwidth - 2) /* * IR_YAWRANGE*/);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
 	} else {
 		
@@ -590,8 +576,8 @@ void CL_SendMove (usercmd_t *cmd)
 		//sBTODO figure out how to make this way more accurate than it is/
 		
 		
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/vid.conheight + 1) * IR_PITCHRANGE);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/vid.conwidth - 2) * IR_YAWRANGE);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
 		
 		

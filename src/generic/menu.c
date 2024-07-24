@@ -1351,8 +1351,8 @@ void M_Menu_MultiPlayer_f (void)
 
 void M_MultiPlayer_Draw (void)
 {
-	int		f;
-	qpic_t	*p;
+	//int		f;
+	//qpic_t	*p;
 	/*
 	M_DrawTransPic (16, 4, Draw_CachePic ("gfx/qplaque.lmp") );
 	p = Draw_CachePic ("gfx/p_multi.lmp");
@@ -2067,11 +2067,11 @@ void M_UnbindCommand (char *command)
 
 void M_Keys_Draw (void)
 {
-	int		i, l;
+	int		i/*, l*/;
 	int		keys[2];
 	char	*name;
 	int		x, y;
-	qpic_t	*p;
+	//qpic_t	*p;
 
 	//p = Draw_CachePic ("gfx/ttl_cstm.lmp");
 	//M_DrawPic ( (320-p->width)/2, 4, p);
@@ -2088,7 +2088,7 @@ void M_Keys_Draw (void)
 
 		M_Print (16, y, bindnames[i][1]);
 
-		l = strlen (bindnames[i][0]);
+		//l = strlen (bindnames[i][0]);
 
 		M_FindKeysForCommand (bindnames[i][0], keys);
 

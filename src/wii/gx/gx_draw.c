@@ -104,7 +104,7 @@ qpic_t	*Draw_CachePic (char *path)
 {
 	cachepic_t	*pic;
 	int			i;
-	qpic_t		*dat;
+	//qpic_t	*dat;
 	glpic_t		*gl;
 	char		str[128];
 	int			index = 0;
@@ -166,7 +166,7 @@ qpic_t	*Draw_CachePic (char *path)
 
 		return &pic->pic;
 	}*/
-	return -1;
+	return NULL;
 }
 
 /*
@@ -201,6 +201,7 @@ Draw_Init
 */
 void Draw_Init (void)
 {
+	/*
 	int		i;
 	qpic_t	*cb;
 	qpic_t	*player_pic;
@@ -210,6 +211,7 @@ void Draw_Init (void)
 	glpic_t	*gl;
 	int		start;
 	byte	*ncdata;
+	*/
 	byte	white_texture[64] = { // ELUTODO assumes 0xfe is white
 									0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe,
 									0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe, 0xfe,
@@ -690,7 +692,7 @@ void Draw_LoadingFill(void)
     int x          	= (vid.width  / 2) - (max_step / 2);
     int y          	= vid.height - (size/ 2) - 35;
 	int l;
-	char str[64];
+	//char str[64];
 	char* text;
 
 
@@ -1129,7 +1131,7 @@ void Draw_Crosshair (void)
 	}
 	
    	if (Hitmark_Time > sv.time) { 
-		if (aimsnap == true)
+		if (cl.stats[STAT_ZOOM] == 2)
 			Draw_ColoredStretchPic (cl_crossx.value - 12/* - hitmark->width*/, cl_crossy.value - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
 		else
 			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,

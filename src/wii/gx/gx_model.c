@@ -1371,7 +1371,7 @@ void Mod_LoadBrushModel (model_t *mod, void *buffer)
 	
 	loading_cur_step++;
 
-	loading_step = 2;
+	loading_step = 3;
 
 	strcpy(loading_name, "Screen");
     loading_cur_step++;

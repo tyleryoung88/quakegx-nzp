@@ -441,7 +441,7 @@ void QMB_InitParticles (void)
 	loading_cur_step++;
 	SCR_UpdateScreen ();
 	
-	max_s = max_t = 128.0;
+	max_s = max_t = 64.0;
 	
 	particleimage = loadtextureimage("textures/particles/flame", 0, 0, true, false, true);
 	if (particleimage <= 0)
@@ -551,7 +551,7 @@ void QMB_InitParticles (void)
 
 	ADD_PARTICLE_TYPE(p_inferno_trail, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
 	ADD_PARTICLE_TYPE(p_trailpart, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 230, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_smoke, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_smoke, 140, 3, 0, pm_normal, 0);
+	ADD_PARTICLE_TYPE(p_smoke, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
 	ADD_PARTICLE_TYPE(p_raysmoke, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_smoke, 140, 3, 0, pm_normal, 0);
 	//ADD_PARTICLE_TYPE(p_dpfire, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_dpsmoke, 144, 0, 0, pm_die, 0);
 
@@ -564,7 +564,7 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen();
 	
 	ADD_PARTICLE_TYPE(p_dot, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_blood1, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCCLR, ptex_blood1, 255, -20, 0, pm_die, 0);
+	ADD_PARTICLE_TYPE(p_blood1, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_blood1, 255, -20, 0, pm_die, 0);
 	ADD_PARTICLE_TYPE(p_blood2, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_blood3, 255, -45, 0, pm_normal, 0.018);//disisgonnabethegibchunks
 	ADD_PARTICLE_TYPE(p_blood3, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_blood3, 255, -30, 0, pm_normal, 0);
 	
@@ -578,7 +578,7 @@ void QMB_InitParticles (void)
 	
 	//ADD_PARTICLE_TYPE(p_lavatrail, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_dpsmoke, 255, 3, 0, pm_normal, 0);//R00k
 	ADD_PARTICLE_TYPE(p_glow, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 204, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_alphatrail, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 100, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_alphatrail, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_generic, 100, 0, 0, pm_static, 0);
 	
 	loading_cur_step++;
 	SCR_UpdateScreen();
@@ -592,9 +592,9 @@ void QMB_InitParticles (void)
 	SCR_UpdateScreen();
 	
 	ADD_PARTICLE_TYPE(p_lightningbeam, pd_beam, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_lightning, 255, 0, 0, pm_die, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
-	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_muzzleflash, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash2, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_muzzleflash2, 255, 0, 0, pm_static, 0);
+	ADD_PARTICLE_TYPE(p_muzzleflash3, pd_billboard, GX_BL_SRCALPHA, GX_BL_ONE, ptex_muzzleflash3, 255, 0, 0, pm_static, 0);
 	ADD_PARTICLE_TYPE(p_rain, pd_billboard, GX_BL_SRCALPHA, GX_BL_INVSRCALPHA, ptex_generic, 255, -16, 0, pm_rain, 0);
 	
 	loading_cur_step++;
@@ -626,7 +626,7 @@ void QMB_InitParticles (void)
 	_p->size = _size;					\
 	_p->hit = 0;						\
 	_p->start = cl.time;					\
-	_p->die = _p->start + _time;				\
+	_p->die = cl.time + _time;				\
 	_p->growth = 0;						\
 	_p->rotspeed = 0;					\
 	_p->texindex = (rand() % particle_textures[_pt->texture].components);	\
@@ -645,7 +645,7 @@ void INIT_NEW_PARTICLE(particle_type_t *pt, particle_t *p, byte *color, float si
 	p->size = size;
 	p->hit = 0;
 	p->start = cl.time;
-	p->die = p->start + time;
+	p->die = cl.time + time;
 	p->growth = 0;
 	p->rotspeed = 0;
 	p->texindex = (rand() % particle_textures[pt->texture].components);
@@ -671,7 +671,7 @@ void AddParticle (part_type_t type, vec3_t org, int count, float size, float tim
 	}
 
 	pt = &particle_types[particle_type_index[type]];
-
+	
 	for (i=0 ; i < count && free_particles ; i++)
 	{
 
@@ -834,7 +834,7 @@ void AddParticle (part_type_t type, vec3_t org, int count, float size, float tim
 			p->vel[0] = (rand() & 200) - 100;
 			p->vel[1] = (rand() & 200) - 100;
 			p->vel[2] = (rand() & 250) - 70;
-			p->growth = 0.1;
+			//p->growth = 0.1;
 			break;
 
 		case p_blood3:
@@ -1063,7 +1063,7 @@ void QMB_ClearParticles (void)
 void QMB_UpdateParticles(void)
 {
 	int		i, c;
-	float	grav, bounce, frametime, distance[3];
+	float	grav, bounce/*, frametime*/, distance[3];
 	vec3_t	oldorg, stop, normal;
 	particle_type_t	*pt;
 	particle_t *p;
@@ -1073,7 +1073,7 @@ void QMB_UpdateParticles(void)
 		return;
 
 	particle_count = 0;
-	frametime = fabs(cl.ctime - cl.oldtime);
+	//frametime = cl.ctime - cl.oldtime;
 	grav = sv_gravity.value / 800.0;
 
 	for (i=0 ; i<num_particletypes ; i++)
@@ -1113,8 +1113,15 @@ void QMB_UpdateParticles(void)
 
 			particle_count++;
 			
-			//sBTODO growth is too intense?
-			p->size += p->growth*(0.05) /* * frametime*/;
+			// sBTODO growth is too intense?
+			// can't use frametime for this.
+			// this alternative works fine for now
+			
+			// actualy host_frametime might be more
+			// appropriate for this application. 
+			p->size += p->growth * host_frametime;
+			
+			//Con_Printf("frametime: %f host_frametime %f\n", frametime, host_frametime);
 
 			if (p->size <= 0)
 			{
@@ -1145,14 +1152,14 @@ void QMB_UpdateParticles(void)
 					break;
 			}
 
-			p->rotangle += p->rotspeed * frametime;
+			p->rotangle += p->rotspeed * host_frametime;
 
 			if (p->hit)
 				continue;
 
-			p->vel[2] += pt->grav * grav * frametime;
+			p->vel[2] += pt->grav * grav * host_frametime;
 
-			VectorScale (p->vel, 1 + pt->accel * frametime, p->vel);
+			VectorScale (p->vel, 1 + pt->accel * host_frametime, p->vel);
 
 			switch (pt->move)
 			{
@@ -1161,7 +1168,7 @@ void QMB_UpdateParticles(void)
 
 			case pm_normal:
 				VectorCopy (p->org, oldorg);
-				VectorMA (p->org, frametime, p->vel, p->org);
+				VectorMA (p->org, host_frametime, p->vel, p->org);
 
 				if (CONTENTS_SOLID == TruePointContents(p->org))
 				{
@@ -1190,7 +1197,7 @@ void QMB_UpdateParticles(void)
 			break;
 
 			case pm_float:
-				VectorMA (p->org, frametime, p->vel, p->org);
+				VectorMA (p->org, host_frametime, p->vel, p->org);
 				p->org[2] += p->size + 1;
 				if (!ISUNDERWATER(TruePointContents(p->org)))
 					p->die = 0;
@@ -1198,12 +1205,12 @@ void QMB_UpdateParticles(void)
 				break;
 
 			case pm_nophysics:
-				VectorMA (p->org, frametime, p->vel, p->org);
+				VectorMA (p->org, host_frametime, p->vel, p->org);
 				break;
 
 			case pm_die:
 				VectorCopy (p->org, oldorg);
-				VectorMA (p->org, frametime, p->vel, p->org);
+				VectorMA (p->org, host_frametime, p->vel, p->org);
 
 				if (CONTENTS_SOLID == TruePointContents(p->org))
 				{
@@ -1259,7 +1266,7 @@ void QMB_UpdateParticles(void)
 			case pm_bounce:
 				if (!r_bounceparticles.value || p->bounces)
 				{
-					VectorMA(p->org, frametime, p->vel, p->org);
+					VectorMA(p->org, host_frametime, p->vel, p->org);
 					if (CONTENTS_SOLID == TruePointContents(p->org))
 					{
 						p->die = 0;
@@ -1268,7 +1275,7 @@ void QMB_UpdateParticles(void)
 				else
 				{
 					VectorCopy (p->org, oldorg);
-					VectorMA (p->org, frametime, p->vel, p->org);
+					VectorMA (p->org, host_frametime, p->vel, p->org);
 
 					if (CONTENTS_SOLID == TruePointContents(p->org))
 					{
@@ -1286,7 +1293,7 @@ void QMB_UpdateParticles(void)
 
 			case pm_streak:
 				VectorCopy(p->org, oldorg);
-				VectorMA(p->org, frametime, p->vel, p->org);
+				VectorMA(p->org, host_frametime, p->vel, p->org);
 				if (CONTENTS_SOLID == TruePointContents(p->org))
 				{
 					if (TraceLineN(oldorg, p->org, stop, normal))
@@ -1305,7 +1312,7 @@ void QMB_UpdateParticles(void)
 
 			case pm_rain:
 				VectorCopy(p->org, oldorg);
-				VectorMA(p->org, frametime, p->vel, p->org);
+				VectorMA(p->org, host_frametime, p->vel, p->org);
 
 				VectorSubtract(r_refdef.vieworg,oldorg, distance);
 
@@ -1326,7 +1333,7 @@ void QMB_UpdateParticles(void)
 
 			case pm_streakwave:
 				VectorCopy(p->org, oldorg);
-				VectorMA(p->org, frametime, p->vel, p->org);
+				VectorMA(p->org, host_frametime, p->vel, p->org);
 				AddParticle (p_streaktrail, oldorg, 1, p->size, 0.5, p->color, p->org);
 				p->vel[0] = 19 * p->vel[0] / 20;
 				p->vel[1] = 19 * p->vel[1] / 20;
@@ -1493,7 +1500,7 @@ void QMB_DrawParticles (void)
 		}
 
 		//glBlendFunc (pt->SrcBlend, pt->DstBlend);
-		//GX_SetBlendMode(GX_BM_BLEND, pt->SrcBlend, pt->DstBlend, GX_LO_CLEAR);
+		GX_SetBlendMode(GX_BM_BLEND, pt->SrcBlend, pt->DstBlend, GX_LO_CLEAR);
 
 		switch (pt->drawtype)
 		{
@@ -2029,7 +2036,7 @@ void QMB_Blood_Splat(part_type_t type, vec3_t org) //Shpuldified
 	{
 		AddParticle(p_bloodcloud, org, 3, 7, 0.3, color, zerodir);
 		color[0] = 40;
-		AddParticle(p_blood2, org, 16, 3, 0.1, color, zerodir);
+		AddParticle(p_blood2, org, 16, 3, 1.0, color, zerodir);
 	}
 
 	else //p_blood3, trail?
@@ -2101,9 +2108,9 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 		{
 			color[0] = 200;	color[1] = 200;	color[2] = 125;
 
-			AddParticle (p_spark, org, 6, 70, 0.6, NULL, zerodir);
+			AddParticle (p_spark, org, 22, 100, 0.2, NULL, zerodir);
 
-			AddParticle (p_chunk, org, 3, 1, 0.75, NULL, zerodir);
+			//AddParticle (p_chunk, org, 3, 1, 0.75, NULL, zerodir);
 
 			contents = TruePointContents (org);//R00k Added
 
@@ -2114,7 +2121,10 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 			else
 
 			{
-				AddParticle (p_smoke, org, 1, 4, 0.825f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+				//AddParticle (p_smoke, org, 1, 4, 0.825f + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
+				
+				// from Quakespasm
+				AddParticle (p_smoke, org, 3, 12, 1.225 + ((rand() % 10) - 5) / 40.0, NULL, zerodir);
 			}
 		}
 		break;
@@ -2124,7 +2134,7 @@ void QMB_RunParticleEffect (vec3_t org, vec3_t dir, int col, int count)
 
         AddParticle (p_spark, org, 22, 100, 0.2, NULL, zerodir);
 
-		//AddParticle (p_chunk, org, 6, 2, 0.75, NULL, zerodir);
+		//AddParticle (p_chunk, org, 22, 2, 0.75, NULL, zerodir);
 
 		contents = TruePointContents (org);//R00k Added
 
@@ -2350,7 +2360,7 @@ void QMB_MuzzleFlash(vec3_t org)
 
 	float size, timemod;
 
-	timemod = 0.03f;
+	timemod = 0.18;
 
 	if(!(ISUNDERWATER(TruePointContents(org))))
 	{
@@ -2365,16 +2375,16 @@ void QMB_MuzzleFlash(vec3_t org)
         switch(rand() % 3 + 1)
         {
             case 1:
-                AddParticle (p_muzzleflash, org, 1, size, timemod/* * frametime*/, color, zerodir);
+                AddParticle (p_muzzleflash, org, 1, size, timemod * host_frametime, color, zerodir);
                 break;
             case 2:
-                AddParticle (p_muzzleflash2, org, 1, size, timemod/* * frametime*/, color, zerodir);
+                AddParticle (p_muzzleflash2, org, 1, size, timemod * host_frametime, color, zerodir);
                 break;
             case 3:
-                AddParticle (p_muzzleflash3, org, 1, size, timemod/* * frametime*/, color, zerodir);
+                AddParticle (p_muzzleflash3, org, 1, size, timemod * host_frametime, color, zerodir);
                 break;
             default:
-                AddParticle (p_muzzleflash, org, 1, size, timemod/* * frametime*/, color, zerodir);
+                AddParticle (p_muzzleflash, org, 1, size, timemod * host_frametime, color, zerodir);
                 break;
         }
 	}
@@ -2655,9 +2665,9 @@ void QMB_InfernoFlame (vec3_t org)
 		}
 		else
 		{
-			AddParticle (p_inferno_flame, org, 1, 30, 13.125 * frametime, NULL, zerodir);
-			AddParticle (p_inferno_trail, org, 2, 1.75, 45.0 * frametime, NULL, zerodir);
-			AddParticle (p_inferno_trail, org, 2, 1.0, 52.5 * frametime, NULL, zerodir);
+			AddParticle (p_inferno_flame, org, 1, 30, 13.125 * host_frametime, NULL, zerodir);
+			AddParticle (p_inferno_trail, org, 2, 1.75, 45.0 * host_frametime, NULL, zerodir);
+			AddParticle (p_inferno_trail, org, 2, 1.0, 52.5 * host_frametime, NULL, zerodir);
 		}
 	}
 }
