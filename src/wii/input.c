@@ -690,6 +690,7 @@ extern float crosshair_opacity;
 float centerdrift_offset_yaw, centerdrift_offset_pitch;
 extern int zoom_snap;
 int ir_x, ir_y;
+extern kbutton_t in_forward, in_left, in_right;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
@@ -748,8 +749,10 @@ void IN_Move (usercmd_t *cmd)
 			Cvar_SetValue("cl_crossx", vid.conwidth/2);
 			Cvar_SetValue("cl_crossy", vid.conheight/2);
 		} else {
-			Cvar_SetValue("cl_crossx", scr_vrect.width/ 2 * x2);
-			Cvar_SetValue("cl_crossy", scr_vrect.height/2 * y2);
+			Cvar_SetValue("cl_crossx", scr_vrect.width / 2 * x2);
+			Cvar_SetValue("cl_crossy", scr_vrect.height / 2 * y2);
+			
+			//Con_Printf ("crossx: %f crossy %f", scr_vrect.width/2 * x2, scr_vrect.height/2 * y2);
 		}
 	}
 		
@@ -866,7 +869,7 @@ void IN_Move (usercmd_t *cmd)
 	
 	// cut look speed in half when facing enemy, unless mag is empty
 	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0)
-		speed = 0.5;
+		speed = 0.6;
 	else
 		speed = 1;
 		
@@ -922,15 +925,13 @@ void IN_Move (usercmd_t *cmd)
 	}
 	
 	//Con_Printf("%f\n", x2);
-	
+	//Con_Printf ("keystate %f\n", CL_KeyState (&in_forward));
 	// crosshair stuff
-	if (x2 < 0.065f && x2 > -0.065f && y2 < 0.065f && y2 > -0.065f) {
+	if (x2 < 0.065f && x2 > -0.065f && y2 < 0.065f && y2 > -0.065f && CL_KeyState (&in_forward) == 0 && CL_KeyState (&in_right) == 0 && CL_KeyState (&in_left) == 0) {
 		croshhairmoving = false;
-
 		crosshair_opacity += 22;
-
 		if (crosshair_opacity >= 255)
-			crosshair_opacity = 255;
+			crosshair_opacity = 255;	
 	} else {
 		croshhairmoving = true;
 		crosshair_opacity -= 8;

@@ -300,7 +300,6 @@ bprint(style, value)
 */
 void PF_bprint (void)
 {
-	// 
 	float style = G_FLOAT(OFS_PARM0);
 	char *s = PF_VarString(1);
 	SV_BroadcastPrintf ("%s", s);
@@ -1152,7 +1151,7 @@ void PF_dprint (void)
 	Con_DPrintf ("%s",PF_VarString(0));
 }
 
-char	pr_string_temp[128];
+char	pr_string_temp[2048];
 
 void PF_ftos (void)
 {
@@ -1268,7 +1267,7 @@ string strtrim (string)
 void PF_strtrim (void)
 {
 		int		offset, length;
-	int		maxoffset;		// 2001-10-25 Enhanced temp string handling by Maddes
+	//int		maxoffset;		// 2001-10-25 Enhanced temp string handling by Maddes
 	char	*str;
 	char 	*end;
 
@@ -2652,7 +2651,7 @@ songegg(trackname)
 */
 void PF_SongEgg (void)
 {
-	char trackname;
+	char *trackname;
 	
 	trackname = G_STRING(OFS_PARM0);
 
@@ -3027,7 +3026,7 @@ int Pathfind (int start_way, int end_way)//note thease 2 are ARRAY locations. No
 		closedset[i] = 0;
 		waypoints[i].f_score = 0;
 		waypoints[i].g_score = 0;
-		waypoints[i].came_from = 0;
+		waypoints[i].came_from = -1;
 	}
 	opensetLength = 0;
 
@@ -3150,7 +3149,7 @@ void Open_Waypoint (string, string, string, string, string, string, string, stri
 */
 void Open_Waypoint (void)
 {
-	int i, t;
+	int i, t = 0;
 	char *p = G_STRING(OFS_PARM0);
 
 	//Con_DPrintf("Open_Waypoint\n");
@@ -3161,17 +3160,17 @@ void Open_Waypoint (void)
 			if (!strcmp(p, waypoints[i].special))
 			{
 				waypoints[i].open = 1;
-				//Con_DPrintf("Open_Waypoint: %i, opened\n", i);
+				Con_DPrintf("Open_Waypoint: %i, opened\n", i);
 				t = 1;
 			}
 			else
 				continue;
 		}
 	}
-	//if (t == 0)
-	//{
-		//Con_DPrintf("Open_Waypoint: no waypoints opened\n");
-	//}
+	if (t == 0)
+	{
+		Con_DPrintf("Open_Waypoint: no waypoints opened\n");
+	}
 }
 
 /*
@@ -3218,7 +3217,7 @@ void Do_Pathfind (void)
 	int i, s;
 	trace_t   trace;
 
-	Con_DPrintf("Starting Do_Pathfind\n"); //we first need to look for closest point for both zombie and the player
+	//Con_DPrintf("Starting Do_Pathfind\n"); //we first need to look for closest point for both zombie and the player
 
 	int zombie_entnum = G_EDICTNUM(OFS_PARM0);
 	int target_entnum = G_EDICTNUM(OFS_PARM1);

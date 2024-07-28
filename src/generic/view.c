@@ -44,7 +44,7 @@ cvar_t	cl_rollangle = {"cl_rollangle", "2.0f"};
 
 cvar_t	cl_bob = {"cl_bob","0.02", false};
 cvar_t	cl_bobcycle = {"cl_bobcycle","0.06", false};
-cvar_t	cl_bobup = {"cl_bobup","0.01", false};//BLUB changed to 0.02
+cvar_t	cl_bobup = {"cl_bobup","0.02", false};//BLUB changed to 0.02
 
 cvar_t	cl_sidebobbing = {"cl_sidebobbing","1"};
 cvar_t	cl_bobside = {"cl_bobside","0.1"};
@@ -60,9 +60,9 @@ cvar_t	cl_weapon_inrollangle = {"cl_weapon_inrollangle", "0", true};
 cvar_t	v_iyaw_cycle = {"v_iyaw_cycle", "2", false};
 cvar_t	v_iroll_cycle = {"v_iroll_cycle", "0.5", false};
 cvar_t	v_ipitch_cycle = {"v_ipitch_cycle", "1", false};
-cvar_t	v_iyaw_level = {"v_iyaw_level", "0.3", false};
-cvar_t	v_iroll_level = {"v_iroll_level", "0.1f", false};
-cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", false};
+cvar_t	v_iyaw_level = {"v_iyaw_level", "0.3", false}; //0.3
+cvar_t	v_iroll_level = {"v_iroll_level", "0.1f", false}; //0.1f
+cvar_t	v_ipitch_level = {"v_ipitch_level", "0.3", false}; //0.3
 
 cvar_t	v_idlescale = {"v_idlescale", "0", false};
 
@@ -594,8 +594,8 @@ CalcGunAngle
 ==================
 */
 
-static float OldYawTheta;
-static float OldPitchTheta;
+//static float OldYawTheta;
+//static float OldPitchTheta;
 
 int lock_viewmodel; 
 extern float centerdrift_offset_yaw;
@@ -658,13 +658,15 @@ void CalcGunAngle (void)
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
 	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5));
 	
-	if (lock_viewmodel != 1) {
 		if (aimsnap == false)
 		{
-			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw));
+			if (lock_viewmodel != 1)
+				cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw));
+			
 			cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
 			
-			//Con_Printf("YAW:%f PITCH%f\n", cl.viewent.angles[YAW], cl.viewent.angles[PITCH]);
+			
+			//Con_Printf("YAW:%f PITCH%f\n", cl.viewent.angles[YAW], -cl.viewent.angles[PITCH]);
 			
 			if (cl_weapon_inrollangle.value) {
 				if (cl.stats[STAT_ZOOM] == 0) {	
@@ -684,10 +686,12 @@ void CalcGunAngle (void)
 		else
 		{
 			// ELUTODO: Maybe there are other cases besides demo playback
-			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
+			if (lock_viewmodel != 1)
+				cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
+			
+			
 			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
 		}
-	}
 	/*
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 	cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;

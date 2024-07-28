@@ -488,7 +488,7 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	
 	GL_Bind0 (gl->texnum);
-	
+	GX_SetMinMag (GX_LINEAR, GX_NEAR);
 	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	//GX_SetMaxAniso(GX_MAX_ANISOTROPY);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
@@ -540,7 +540,7 @@ void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float
 	QGX_Blend(true);
 	
 	GL_Bind0 (gl->texnum);
-	//GX_SetMinMag (GX_NEAR, GX_LINEAR);
+	GX_SetMinMag (GX_LINEAR, GX_NEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
 	GX_Position3f32(x, y, 0.0f);
@@ -1131,7 +1131,7 @@ void Draw_Crosshair (void)
 	}
 	
    	if (Hitmark_Time > sv.time) { 
-		if (cl.stats[STAT_ZOOM] == 2)
+		if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
 			Draw_ColoredStretchPic (cl_crossx.value - 12/* - hitmark->width*/, cl_crossy.value - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
 		else
 			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
@@ -1183,7 +1183,7 @@ void Draw_Crosshair (void)
 	if (aimsnap == true)
 			Draw_FillByColor(cl_crossx.value - 2, cl_crossy.value - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 		else
-			Draw_FillByColor((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 2, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
+			Draw_FillByColor(((scr_vrect.x + scr_vrect.width - 2)/2 + cl_crossx.value) * vid.conwidth/vid.width, ((scr_vrect.y + scr_vrect.height - 2)/2 + cl_crossy.value) * vid.conheight/vid.height, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 3)

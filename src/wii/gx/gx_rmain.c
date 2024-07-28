@@ -288,7 +288,7 @@ void R_DrawSpriteModel (entity_t *e)
 	//GL_DisableMultitexture();
 
     GL_Bind0(frame->gl_texturenum);
-	//GX_SetMinMag (GX_LINEAR, GX_NEAR);
+	GX_SetMinMag (GX_LINEAR, GX_NEAR);
 	
 	//Fog_DisableGFog ();
 	//GX_SetZMode(GX_TRUE, GX_GEQUAL, GX_TRUE);
@@ -538,7 +538,7 @@ void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
 
 	if ((frame >= paliashdr->numframes) || (frame < 0))
 	{
-		Con_DPrintf ("R_AliasSetupFrame: no such frame %d for '%s'\n", frame, e->model->name);
+		//Con_DPrintf ("R_AliasSetupFrame: no such frame %d for '%s'\n", frame, e->model->name);
 		frame = 0;
 	}
 
@@ -1147,19 +1147,24 @@ void R_DrawAliasModel (entity_t *e)
 		{
 			case 0:
 				GL_Bind0(zombie_skins[0]);
+				GX_SetMinMag (GX_LINEAR, GX_NEAR);
 				break;
 			case 1:
 				GL_Bind0(zombie_skins[1]);
+				GX_SetMinMag (GX_LINEAR, GX_NEAR);
 				break;
 			case 2:
 				GL_Bind0(zombie_skins[2]);
+				GX_SetMinMag (GX_LINEAR, GX_NEAR);
 				break;
 			case 3:
 				GL_Bind0(zombie_skins[3]);
+				GX_SetMinMag (GX_LINEAR, GX_NEAR);
 				break;
 			default: //out of bounds? assuming 0
 				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
 				GL_Bind0(zombie_skins[0]);
+				GX_SetMinMag (GX_LINEAR, GX_NEAR);
 				break;
 		}
 	}
@@ -1167,6 +1172,7 @@ void R_DrawAliasModel (entity_t *e)
 	{
 		anim = (int)(cl.time*10) & 3;
 		GL_Bind0(paliashdr->gl_texturenum[currententity->skinnum][anim]);
+		GX_SetMinMag (GX_LINEAR, GX_NEAR);
 	}
 
 	// we can't dynamically colormap textures, so they are cached

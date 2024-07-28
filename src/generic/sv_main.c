@@ -1075,7 +1075,7 @@ void SV_SendReconnect (void)
 	char	data[128];
 	sizebuf_t	msg;
 
-	msg.data = data;
+	msg.data = (byte *)data;
 	msg.cursize = 0;
 	msg.maxsize = sizeof(data);
 
@@ -1408,7 +1408,7 @@ waypoint_ai waypoints[MAX_WAYPOINTS];
 //
 void Load_Waypoint_NZPBETA()
 {
-	char temp[64];
+	//char temp[64];
 	int i, p, s;
 	int h = 0;
 
@@ -1437,7 +1437,7 @@ void Load_Waypoint_NZPBETA()
 	Con_DPrintf("Loading BETA waypoints\n");
 
 	vec3_t way_origin;
-	int way_id;
+	int way_id = 0;
 
 	while (1)
 	{
@@ -1500,11 +1500,11 @@ void Load_Waypoint ()
 	h = W_fopen();
 
 	w_string_temp = Z_Malloc(128);
-	if (h == -1)
+	if (h <= 0)
 	{
 		Con_DPrintf("No waypoint file (%s/maps/%s.way) found, trying beta format..\n", com_gamedir, sv.name);
 		Load_Waypoint_NZPBETA();
-		Z_Free (w_string_temp);
+		//Z_Free (w_string_temp);
 		return;
 	}
 	for (i = 0; i < MAX_WAYPOINTS; i++)
@@ -1561,7 +1561,7 @@ void Load_Waypoint ()
 			for (int t = 0; t < 8; t++) {
 				int start = t == 0 ? 9 : 10;
 				strcpy(temp, W_substring (W_fgets (h), start, 20));
-				if (isdigit(temp[0])) {
+				if (isdigit((int)temp[0])) {
 					waypoints[i].target[slot] = atoi (temp);
 					waypoints[i].target_id[slot] = waypoints[i].target[slot];
 					slot++;
