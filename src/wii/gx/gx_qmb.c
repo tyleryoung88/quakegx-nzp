@@ -193,6 +193,8 @@ cvar_t	r_decal_blood		= {"r_decal_blood", "1",true};
 cvar_t	r_decal_bullets	    = {"r_decal_bullets","1",true};
 cvar_t	r_decal_sparks		= {"r_decal_sparks","1",true};
 cvar_t	r_decal_explosions	= {"r_decal_explosions","1",true};
+cvar_t	r_decaltime 		= {"r_decaltime", "12", true};
+cvar_t	r_decal_viewdistance = {"r_decal_viewdistance", "1024"};
 
 int	decals_enabled;
 
@@ -1184,7 +1186,7 @@ void QMB_UpdateParticles(void)
 							VectorCopy(stop, p->org);
 							VectorCopy(normal, p->vel);
 							CrossProduct(normal,p->vel,tangent);
-							#if 0 // naievil -- fixme
+							#if 1 // naievil -- fixme
 							R_SpawnDecal(p->org, normal, tangent, decal_blood3, 12, 0);
 							#endif
 						}
@@ -1241,16 +1243,16 @@ void QMB_UpdateParticles(void)
 							// sBTODO 
 							// Will attempt to fix :)
 							//
-							#if 0// naievil -- fixme
+							#if 1// naievil -- fixme
 							if ((pt->id == p_fire || pt->id == p_dpfire) && r_decal_explosions.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_burn, 32, 0);
 						    else if (pt->id == p_blood1 && r_decal_blood.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_blood1, 12, 0);
 						    else if (pt->id == p_blood2 && r_decal_blood.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_blood2, 12, 0);
-						    else if (pt->id == p_q3blood_trail && r_decal_blood.value)
-							  R_SpawnDecal (p->org, normal, tangent, decal_q3blood, 48, 0);
-							 #endif
+						    //else if (pt->id == p_q3blood_trail && r_decal_blood.value)
+							  //R_SpawnDecal (p->org, normal, tangent, decal_q3blood, 48, 0);
+							#endif
 
 						}
 					}
@@ -1667,7 +1669,10 @@ void QMB_DrawParticles (void)
 				ptex = &particle_textures[pt->texture];
 				//GL_Bind (ptex->texnum);
 				GL_Bind0 (ptex->texnum);
-				GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+				if (vid_retromode.value == 1)
+					GX_SetMinMag (GX_NEAR, GX_NEAR);
+				else
+					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				
 				for (p = pt->start ; p ; p = p->next)
 				{
@@ -1688,7 +1693,7 @@ void QMB_DrawParticles (void)
 					// sBTODO Figure out a similar depth setting for GX
 					
 					//if(pt->texture == ptex_muzzleflash || pt->texture == ptex_muzzleflash2 || pt->texture == ptex_muzzleflash3)
-						//GX_SetZMode(GX_FALSE, GX_LEQUAL, GX_FALSE);
+						//GX_SetZMode(GX_TRUE, GX_GEQUAL, GX_TRUE);
 						//glDepthRange (0, 0.3);
 					
 					DRAW_PARTICLE_BILLBOARD(ptex, p, billboard);

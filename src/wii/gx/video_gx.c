@@ -340,6 +340,7 @@ void VID_Init(unsigned char *palette)
 	vid.recalc_refdef = 1;				// force a surface cache flush
 
 	Cvar_RegisterVariable(&vid_tvborder);
+	Cvar_RegisterVariable(&vid_retromode);
 	Cvar_RegisterVariable(&vid_conmode);
 
 	vidmode_active = true;

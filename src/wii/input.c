@@ -99,8 +99,6 @@ stick_y_st_t stick_y_st = CENTER_Y;
 u16 pad_previous_keys = 0x0000;
 u16 pad_keys = 0x0000;
 
-int last_irx = -1, last_iry = -1;
-
 static float clamp(float value, float minimum, float maximum)
 {
 	if (value > maximum)
@@ -227,9 +225,6 @@ void IN_Init (void)
 	Cbuf_AddText("bind JOY2 +showscores\n");
 	Cbuf_AddText("bind RIGHTARROW \"impulse 10\"\n");	
 #endif
-
-	last_irx = -1;
-	last_iry = -1;
 
 	in_pitchangle = .0f;
 	in_yawangle = .0f;
@@ -497,7 +492,7 @@ void IN_Commands (void)
 			// Send a press event.
 			Key_Event(K_JOY5, ((wpad_keys & WPAD_BUTTON_PLUS) == WPAD_BUTTON_PLUS));
 		}
-		
+		// select:
 		if ((wpad_previous_keys & WPAD_BUTTON_MINUS) != (wpad_keys & WPAD_BUTTON_MINUS))
 		{
 			// Send a press event.
@@ -521,7 +516,7 @@ void IN_Commands (void)
 			
 			//Con_Printf("xge:%f, acy:%f\n", expansion.nunchuk.gforce.x, expansion.nunchuk.accel.y);
 			
-			if(/*expansion.nunchuk.gforce.x > 0.8 && */expansion.nunchuk.gforce.y > 0.35) {
+			if(/*expansion.nunchuk.gforce.x > 0.8 && */expansion.nunchuk.gforce.y > 0.25) {
 				Key_Event(K_SHAKE, true);
 			} else {
 				Key_Event(K_SHAKE, false);
@@ -685,12 +680,12 @@ void IN_Commands (void)
 	wpad_previous_keys = wpad_keys;
 }
 
-extern bool croshhairmoving;
 extern float crosshair_opacity;
 float centerdrift_offset_yaw, centerdrift_offset_pitch;
 extern int zoom_snap;
 int ir_x, ir_y;
 extern kbutton_t in_forward, in_left, in_right;
+extern int crosshairmoving;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
@@ -722,12 +717,6 @@ void IN_Move (usercmd_t *cmd)
 	last_wiimote_ir_x = wiimote_ir_x;
 	last_wiimote_ir_y = wiimote_ir_y;
 
-	if (in_osk || (cls.state == ca_connected && key_dest != key_game))
-	{
-		last_irx = wiimote_ir_x;
-		last_iry = wiimote_ir_y;
-		return;
-	}
 // Movement management of nunchuk stick (x1/y1) and of IR (x2/y2) if the nunchuk is connected
 	if(nunchuk_connected && !nunchuk_stick_as_arrows.value)
 	{
@@ -752,7 +741,7 @@ void IN_Move (usercmd_t *cmd)
 			Cvar_SetValue("cl_crossx", scr_vrect.width / 2 * x2);
 			Cvar_SetValue("cl_crossy", scr_vrect.height / 2 * y2);
 			
-			//Con_Printf ("crossx: %f crossy %f", scr_vrect.width/2 * x2, scr_vrect.height/2 * y2);
+			//Con_Printf ("crossx: %f crossy %f\n", scr_vrect.width / 2 * x2, scr_vrect.height / 2 * y2);
 		}
 	}
 		
@@ -792,9 +781,6 @@ void IN_Move (usercmd_t *cmd)
 		y2 = clamp(sub_stick_y / -80.0f, -1.0f, 1.0f);
 		Cvar_SetValue("cl_crossy", /*(in_vlock.state & 1) ? */scr_vrect.height / 2 * y2/* : 0*/);
 	}
-
-	last_irx = wiimote_ir_x;
-	last_iry = wiimote_ir_y;
 	
 	//non-linear sensitivity based on how
 	//far the IR pointer is from the 
@@ -843,7 +829,12 @@ void IN_Move (usercmd_t *cmd)
 		cmd->sidemove += cl_sidespeed * x1;
 		if (y1>0) cmd->forwardmove += cl_forwardspeed * y1; /* TODO: use cl_backspeed when going backwards? */
 			else cmd->forwardmove += cl_backspeed * y1; 
-
+			
+		if (cmd->forwardmove == 0.0f && cmd->sidemove == 0.0f)
+			crosshairmoving = 0;
+		else 
+			crosshairmoving = 1;
+		/*
 		//if the nunchuk c button is pressed it speeds up
 		if (in_speed.state & 1)
 		{
@@ -855,9 +846,10 @@ void IN_Move (usercmd_t *cmd)
 			else
 			{
 				cmd->forwardmove *= cl_movespeedkey.value;
-				cmd->sidemove *= cl_movespeedkey.value; /* TODO: always seem to be at the max and I'm too sleepy now to figure out why */
+				cmd->sidemove *= cl_movespeedkey.value; // TODO: always seem to be at the max and I'm too sleepy now to figure out why
 			}
 		}
+		*/
 	}
 
 	// TODO: Use yawspeed and pitchspeed
@@ -922,21 +914,6 @@ void IN_Move (usercmd_t *cmd)
 		in_pitchangle = .0f;
 		in_yawangle = .0f;
 		in_rollangle = .0f;
-	}
-	
-	//Con_Printf("%f\n", x2);
-	//Con_Printf ("keystate %f\n", CL_KeyState (&in_forward));
-	// crosshair stuff
-	if (x2 < 0.065f && x2 > -0.065f && y2 < 0.065f && y2 > -0.065f && CL_KeyState (&in_forward) == 0 && CL_KeyState (&in_right) == 0 && CL_KeyState (&in_left) == 0) {
-		croshhairmoving = false;
-		crosshair_opacity += 22;
-		if (crosshair_opacity >= 255)
-			crosshair_opacity = 255;	
-	} else {
-		croshhairmoving = true;
-		crosshair_opacity -= 8;
-		if (crosshair_opacity <= 128)
-			crosshair_opacity = 128;
 	}
 	
 }

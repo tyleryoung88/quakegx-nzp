@@ -281,15 +281,15 @@ void HUD_EndScreen (void)
 
 	l = scoreboardlines;
 
-	Draw_ColoredString((vid.width - 9*12)/2, 40, "GAME OVER", 255, 0, 0, 255, 1.5);
+	Draw_ColoredString((vid.width - 9*12)/2, 65, "GAME OVER", 255, 0, 0, 255, 1.5);
 
 	sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
-	Draw_String ((vid.width - strlen (str)*12)/2, 52, str);
+	Draw_String ((vid.width - strlen (str)*12)/2, 90, str);
 
 	sprintf (str,"Name           Kills     Points");
 	x = (vid.width - strlen (str)*12)/2;
 
-	Draw_String (x, 68, str);
+	Draw_String (x, 115, str);
 	y = 0;
 	for (i=0; i<l ; i++)
 	{
@@ -298,14 +298,14 @@ void HUD_EndScreen (void)
 		if (!s->name[0])
 			continue;
 
-		Draw_String (x, 78 + y, s->name);
+		Draw_String (x, 140 + y, s->name);
 
 		d = strlen (va("%i",s->kills));
-		Draw_String (x + (20 - d)*12, 78 + y, va("%i",s->kills));
+		Draw_String (x + (20 - d)*12, 140 + y, va("%i",s->kills));
 
 		d = strlen (va("%i",s->points));
-		Draw_String (x + (31 - d)*12, 78 + y, va("%i",s->points));
-		y += 10;
+		Draw_String (x + (31 - d)*12, 140 + y, va("%i",s->points));
+		y += 25;
 	}
 
 }
@@ -563,7 +563,7 @@ int maxammoopac;
 void HUD_MaxAmmo(void)
 {
 
-	maxammoy -= cl.time * 0.4;
+	maxammoy -= cl.time * 0.04;
 	maxammoopac -= 5;
 
 	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")*12/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1.5);
@@ -1172,13 +1172,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic((vid.width/2) - 27, 435, x2pic, 36, 36);
-		Draw_StretchPic((vid.width/2) + 3, 435, instapic, 36, 36);
+		Draw_StretchPic((vid.width/2) - 40, 435, x2pic, 36, 36);
+		Draw_StretchPic(vid.width/2, 435, instapic, 36, 36);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic((vid.width/2) - 13, 435, x2pic, 36, 36);
+			Draw_StretchPic((vid.width/2) - 40, 435, x2pic, 36, 36);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic ((vid.width/2) + 26, 435, instapic, 36, 36);
+			Draw_StretchPic ((vid.width/2), 435, instapic, 36, 36);
 	}
 
 }
@@ -1491,11 +1491,11 @@ void HUD_Screenflash (void)
 	else {
 		// Fade In
 		if (percentage_complete < 0.5) {
-			flash_alpha = (float)percentage_complete*2;
+			flash_alpha = (float)percentage_complete;// was *2 but this was far too quick
 		} 
 		// Fade Out
 		else {
-			flash_alpha = invertfloat((float)percentage_complete)*2;
+			flash_alpha = invertfloat((float)percentage_complete);//*2
 		}
 	}
 

@@ -289,7 +289,10 @@ void EmitBothSkyLayers (msurface_t *fa)
 	//GL_DisableMultitexture();
 
 	GL_Bind0 (solidskytexture);
-	//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	if (vid_retromode.value == 1)
+		GX_SetMinMag (GX_NEAR, GX_NEAR);
+	else
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127 ;
 
@@ -297,7 +300,10 @@ void EmitBothSkyLayers (msurface_t *fa)
 
 	QGX_Blend(true);
 	GL_Bind0 (alphaskytexture);
-	//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	if (vid_retromode.value == 1)
+		GX_SetMinMag (GX_NEAR, GX_NEAR);
+	else
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*16;
 	speedscale -= (int)speedscale & ~127 ;
 
@@ -320,7 +326,10 @@ void R_DrawSkyChain (msurface_t *s)
 	//GL_DisableMultitexture();
 
 	GL_Bind0(solidskytexture);
-	//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	if (vid_retromode.value == 1)
+		GX_SetMinMag (GX_NEAR, GX_NEAR);
+	else
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*8;
 	speedscale -= (int)speedscale & ~127 ;
 
@@ -329,7 +338,10 @@ void R_DrawSkyChain (msurface_t *s)
 
 	QGX_Blend(true);
 	GL_Bind0 (alphaskytexture);
-	//GX_SetMinMag (GX_LINEAR, GX_LINEAR);
+	if (vid_retromode.value == 1)
+		GX_SetMinMag (GX_NEAR, GX_NEAR);
+	else
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	speedscale = realtime*16;
 	speedscale -= (int)speedscale & ~127 ;
 
@@ -654,9 +666,10 @@ void R_DrawSkyBox (void)
 		if (dot < -0.25f) continue;
 		
 		GL_Bind0(skyimage[skytexorder[i]]);
-		//GX_SetMinMag (GX_LIN_MIP_LIN, GX_LIN_MIP_LIN);
-		//GX_SetMaxAniso(GX_ANISO_2);
-		//GX_SetMinMag (GX_LINEAR, GX_LINEAR); 
+		if (vid_retromode.value == 1)
+			GX_SetMinMag (GX_NEAR, GX_NEAR);
+		else
+			GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	
 		// if direction is not up, cut "down" vector to zero to only render half cube
 		//float upnegfact = i == 4 ? 1.0f : 0.0f;

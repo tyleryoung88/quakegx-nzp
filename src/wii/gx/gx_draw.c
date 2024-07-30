@@ -488,7 +488,10 @@ void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value
 	//GX_SetTevOp(GX_TEVSTAGE0, GX_MODULATE);
 	
 	GL_Bind0 (gl->texnum);
-	GX_SetMinMag (GX_LINEAR, GX_NEAR);
+	if (vid_retromode.value == 1)
+		GX_SetMinMag (GX_NEAR, GX_NEAR);
+	else
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	//GX_SetMinMag (GX_NEAR, GX_NEAR);
 	//GX_SetMaxAniso(GX_MAX_ANISOTROPY);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
@@ -540,7 +543,10 @@ void Draw_ColorPic (int x, int y, qpic_t *pic, float r, float g , float b, float
 	QGX_Blend(true);
 	
 	GL_Bind0 (gl->texnum);
-	GX_SetMinMag (GX_LINEAR, GX_NEAR);
+	if (vid_retromode.value == 1)
+		GX_SetMinMag (GX_NEAR, GX_NEAR);
+	else
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 	
 	GX_Position3f32(x, y, 0.0f);
@@ -935,7 +941,7 @@ void Draw_Fill (int x, int y, int w, int h, int c)
 //=============================================================================
 
 extern cvar_t crosshair;
-extern qboolean croshhairmoving;
+extern int crosshairmoving;
 //extern cvar_t cl_zoom;
 extern qpic_t *hitmark;
 double Hitmark_Time, crosshair_spread_time;
@@ -1137,7 +1143,6 @@ void Draw_Crosshair (void)
 			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
 					 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
 	}
-	
 				 
 	/*
 	Draw_Character ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width,
@@ -1146,7 +1151,23 @@ void Draw_Crosshair (void)
 
 	if (!crosshair_opacity)
 		crosshair_opacity = 255;
+	
+	//Con_Printf ("cross move: %i\n", crosshairmoving);
+	
+	// crosshair stuff
+	if (crosshairmoving == 1) {
+		//crosshairmoving = true;
+		crosshair_opacity -= 2;
+		if (crosshair_opacity <= 155)
+			crosshair_opacity = 155;
+	} else {
+	// reset crosshair
+		crosshair_opacity += 4;
 
+		if (crosshair_opacity >= 245)
+			crosshair_opacity = 245;
+	}
+	
 	float col;
 
 	if (sv_player->v.facingenemy == 1) {
@@ -1158,16 +1179,16 @@ void Draw_Crosshair (void)
 	// crosshair moving
 	if (crosshair_spread_time > sv.time && crosshair_spread_time)
     {
-        cur_spread = cur_spread + 10;
+        cur_spread = cur_spread + 8;
 		crosshair_opacity = 128;
 
 		if (cur_spread >= CrossHairMaxSpread())
-			cur_spread = CrossHairMaxSpread();
+			cur_spread = CrossHairMaxSpread()*1.5f;
     }
 	// crosshair not moving
     else if (crosshair_spread_time < sv.time && crosshair_spread_time)
     {
-        cur_spread = cur_spread - 4;
+        cur_spread = cur_spread - 12;
 		crosshair_opacity = 255;
 
 		if (cur_spread <= 0) {
@@ -1183,7 +1204,7 @@ void Draw_Crosshair (void)
 	if (aimsnap == true)
 			Draw_FillByColor(cl_crossx.value - 2, cl_crossy.value - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 		else
-			Draw_FillByColor(((scr_vrect.x + scr_vrect.width - 2)/2 + cl_crossx.value) * vid.conwidth/vid.width, ((scr_vrect.y + scr_vrect.height - 2)/2 + cl_crossy.value) * vid.conheight/vid.height, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
+			Draw_FillByColor(((scr_vrect.x + scr_vrect.width - 4)/2 + cl_crossx.value) * vid.conwidth/vid.width, ((scr_vrect.y + scr_vrect.height - 4)/2 + cl_crossy.value) * vid.conheight/vid.height, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 	// Make sure to do this after hitmark drawing.
 	if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2 || cl.stats[STAT_ZOOM] == 3)
@@ -1192,8 +1213,8 @@ void Draw_Crosshair (void)
 	// Standard crosshair (+)
 	if (crosshair.value == 1) {
 		crosshair_offset = CrossHairWeapon() + cur_spread;
-		if (CrossHairMaxSpread() < crosshair_offset || croshhairmoving)
-			crosshair_offset = CrossHairMaxSpread();
+		if (CrossHairMaxSpread() < crosshair_offset || crosshairmoving == 1)
+			crosshair_offset = CrossHairMaxSpread()*1.5f;
 
 		if (sv_player->v.view_ofs[2] == 8) {
 			crosshair_offset *= 0.80;
@@ -1215,27 +1236,27 @@ void Draw_Crosshair (void)
 
 		//x_value = (vid.width - 3)/2 - crosshair_offset_step;
 		//y_value = (vid.height - 1)/2;
-		x_value = ((scr_vrect.x + scr_vrect.width - 15)/2 + cl_crossx.value) * vid.conwidth/vid.width - crosshair_offset_step;
+		x_value = ((scr_vrect.x + scr_vrect.width - 13)/2 + cl_crossx.value) * vid.conwidth/vid.width - crosshair_offset_step;
 		y_value = ((scr_vrect.y + scr_vrect.height - 2)/2 + cl_crossy.value) * vid.conheight/vid.height;
-		Draw_FillByColor(x_value - 20, y_value, 15, 2, 255, (int)col, (int)col, (int)crosshair_opacity);
+		Draw_FillByColor(x_value - 20, y_value, 13, 2, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 3)/2 + crosshair_offset_step;
 		//y_value = (vid.height - 1)/2;
-		x_value = ((scr_vrect.x + scr_vrect.width - 15)/2 + cl_crossx.value) * vid.conwidth/vid.width + crosshair_offset_step;
+		x_value = ((scr_vrect.x + scr_vrect.width - 13)/2 + cl_crossx.value) * vid.conwidth/vid.width + crosshair_offset_step;
 		y_value = ((scr_vrect.y + scr_vrect.height - 2)/2 + cl_crossy.value) * vid.conheight/vid.height;
-		Draw_FillByColor(x_value + 20, y_value, 15, 2, 255, (int)col, (int)col, (int)crosshair_opacity);
+		Draw_FillByColor(x_value + 20, y_value, 13, 2, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 1)/2;
 		//y_value = (vid.height - 3)/2 - crosshair_offset_step;
 		x_value = ((scr_vrect.x + scr_vrect.width - 2)/2 + cl_crossx.value) * vid.conwidth/vid.width;
-		y_value = ((scr_vrect.y + scr_vrect.height - 15)/2 + cl_crossy.value) * vid.conheight/vid.height - crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value - 20, 2, 15, 255, (int)col, (int)col, (int)crosshair_opacity);
+		y_value = ((scr_vrect.y + scr_vrect.height - 13)/2 + cl_crossy.value) * vid.conheight/vid.height - crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value - 20, 2, 13, 255, (int)col, (int)col, (int)crosshair_opacity);
 
 		//x_value = (vid.width - 1)/2;
 		//y_value = (vid.height - 3)/2 + crosshair_offset_step;
 		x_value = ((scr_vrect.x + scr_vrect.width - 2)/2 + cl_crossx.value) * vid.conwidth/vid.width;
-		y_value = ((scr_vrect.y + scr_vrect.height - 15)/2 + cl_crossy.value) * vid.conheight/vid.height + crosshair_offset_step;
-		Draw_FillByColor(x_value, y_value + 20, 2, 15, 255, (int)col, (int)col, (int)crosshair_opacity);
+		y_value = ((scr_vrect.y + scr_vrect.height - 13)/2 + cl_crossy.value) * vid.conheight/vid.height + crosshair_offset_step;
+		Draw_FillByColor(x_value, y_value + 20, 2, 13, 255, (int)col, (int)col, (int)crosshair_opacity);
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {

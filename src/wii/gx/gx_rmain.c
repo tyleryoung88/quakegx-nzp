@@ -288,7 +288,11 @@ void R_DrawSpriteModel (entity_t *e)
 	//GL_DisableMultitexture();
 
     GL_Bind0(frame->gl_texturenum);
-	GX_SetMinMag (GX_LINEAR, GX_NEAR);
+	
+	if (vid_retromode.value == 1)
+		GX_SetMinMag (GX_NEAR, GX_NEAR);
+	else
+		GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	
 	//Fog_DisableGFog ();
 	//GX_SetZMode(GX_TRUE, GX_GEQUAL, GX_TRUE);
@@ -942,7 +946,7 @@ int doZHack;
 void R_DrawAliasModel (entity_t *e)
 {
 	char		specChar;
-	int			i;
+	//int			i;
 	int			lnum;
 	vec3_t		dist;
 	float		add;
@@ -1147,19 +1151,31 @@ void R_DrawAliasModel (entity_t *e)
 		{
 			case 0:
 				GL_Bind0(zombie_skins[0]);
-				GX_SetMinMag (GX_LINEAR, GX_NEAR);
+				if (vid_retromode.value == 1)
+					GX_SetMinMag (GX_NEAR, GX_NEAR);
+				else
+					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 1:
 				GL_Bind0(zombie_skins[1]);
-				GX_SetMinMag (GX_LINEAR, GX_NEAR);
+				if (vid_retromode.value == 1)
+					GX_SetMinMag (GX_NEAR, GX_NEAR);
+				else
+					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 2:
 				GL_Bind0(zombie_skins[2]);
-				GX_SetMinMag (GX_LINEAR, GX_NEAR);
+				if (vid_retromode.value == 1)
+					GX_SetMinMag (GX_NEAR, GX_NEAR);
+				else
+					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			case 3:
 				GL_Bind0(zombie_skins[3]);
-				GX_SetMinMag (GX_LINEAR, GX_NEAR);
+				if (vid_retromode.value == 1)
+					GX_SetMinMag (GX_NEAR, GX_NEAR);
+				else
+					GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 				break;
 			default: //out of bounds? assuming 0
 				Con_Printf("Zombie tex out of bounds: Tex[%i]\n",e->skinnum);
@@ -1172,17 +1188,22 @@ void R_DrawAliasModel (entity_t *e)
 	{
 		anim = (int)(cl.time*10) & 3;
 		GL_Bind0(paliashdr->gl_texturenum[currententity->skinnum][anim]);
-		GX_SetMinMag (GX_LINEAR, GX_NEAR);
+		if (vid_retromode.value == 1)
+			GX_SetMinMag (GX_NEAR, GX_NEAR);
+		else
+			GX_SetMinMag (GX_LINEAR, GX_LINEAR);
 	}
 
 	// we can't dynamically colormap textures, so they are cached
 	// seperately for the players.  Heads are just uncolored.
+	/*
 	if (currententity->colormap != vid.colormap && !gl_nocolors.value)
 	{
 		i = currententity - cl_entities;
 		if (i >= 1 && i<=cl.maxclients)
 		    GL_Bind0(playertextures[i - 1]);
 	}
+	*/
 
 	/* ELUTODO if (gl_smoothmodels.value)
 		glShadeModel (GL_SMOOTH);*/
@@ -1899,6 +1920,7 @@ void R_RenderScene (void)
 	//GL_DisableMultitexture();
 
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
+	R_DrawDecals();
 	R_DrawParticles ();
 }
 

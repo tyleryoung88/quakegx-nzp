@@ -1760,7 +1760,7 @@ again:
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	12
+#define	OPTIONS_ITEMS	13
 
 #define	SLIDER_RANGE	10
 
@@ -1843,6 +1843,9 @@ void M_AdjustSliders (int dir)
 		if (vid_tvborder.value > 0.2)
 			vid_tvborder.value = 0.2;
 		Cvar_SetValue ("vid_tvborder", vid_tvborder.value);
+		break;		
+	case 12:	// retro mode
+		Cvar_SetValue ("vid_retromode", !vid_retromode.value);
 		break;
 	}
 }
@@ -1884,45 +1887,48 @@ void M_Options_Draw (void)
 	if (key_dest != key_menu_pause)
 		Draw_StretchPic (0, 0, menu_bk, vid.width, vid.height);
 
-	M_Print (16, 32, "    Customize controls");
-	M_Print (16, 40, "         Go to console");
-	M_Print (16, 48, "     Reset to defaults");
+	M_Print (16, 40, "    Customize controls");
+	M_Print (16, 52, "         Go to console");
+	M_Print (16, 64, "     Reset to defaults");
 
-	M_Print (16, 56, "           Screen size");
+	M_Print (16, 76, "           Screen size");
 	r = (scr_viewsize.value - 100) / (120 - 100);
-	M_DrawSlider (220, 56, r);
+	M_DrawSlider (220, 76, r);
 
-	M_Print (16, 64, "            Brightness");
+	M_Print (16, 88, "            Brightness");
 	r = (1.0f - v_gamma.value) / 0.5f;
-	M_DrawSlider (220, 64, r);
-
-	M_Print (16, 72, "       Crosshair Speed");
-	r = (sensitivity.value - 1)/10;
-	M_DrawSlider (220, 72, r);
-
-	M_Print (16, 80, "       CD Music Volume");
-	r = bgmvolume.value;
-	M_DrawSlider (220, 80, r);
-
-	M_Print (16, 88, "          Sound Volume");
-	r = volume.value;
 	M_DrawSlider (220, 88, r);
 
-	M_Print (16, 96,"     NK stick as arrows");
-	M_DrawCheckbox (215, 96, nunchuk_stick_as_arrows.value);
+	M_Print (16, 100, "      	 Sensitivity");
+	r = (sensitivity.value - 1)/10;
+	M_DrawSlider (220, 100, r);
+
+	M_Print (16, 112, "      CD Music Volume");
+	r = bgmvolume.value;
+	M_DrawSlider (220, 112, r);
+
+	M_Print (16, 124, "         Sound Volume");
+	r = volume.value;
+	M_DrawSlider (220, 124, r);
+
+	M_Print (16, 136,"    NK stick as arrows");
+	M_DrawCheckbox (215, 136, nunchuk_stick_as_arrows.value);
 	
-	M_Print (16, 104,"     Aim assist toggle");
-	M_DrawCheckbox (215, 104, in_aimassist.value);
+	M_Print (16, 148,"            Aim Assist");
+	M_DrawCheckbox (215, 148, in_aimassist.value);
 
-	M_Print (16, 112, "           Weapon Roll");
-	M_DrawCheckbox (215, 112, cl_weapon_inrollangle.value);
+	M_Print (16, 160, "          Weapon Roll");
+	M_DrawCheckbox (215, 160, cl_weapon_inrollangle.value);
 
-	M_Print (16, 120, "           TV Overscan");
+	M_Print (16, 172, "          TV Overscan");
 	r = vid_tvborder.value / 0.2f;
-	M_DrawSlider (220, 120, r);
+	M_DrawSlider (220, 172, r);
+	
+	M_Print (16, 184, "           Retro Mode");
+	M_DrawCheckbox (215, 184, vid_retromode.value);
 
 // cursor
-	M_DrawCharacter (200, 32 + options_cursor*8, 12+((int)(realtime*4)&1));
+	M_DrawCharacter (200, 40 + options_cursor*12, 12+((int)(realtime*4)&1));
 }
 
 

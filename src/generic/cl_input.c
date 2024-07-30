@@ -114,7 +114,7 @@ void KeyUp (kbutton_t *b)
 	b->state |= 4; 		// impulse up
 }
 
-qboolean croshhairmoving = false;
+int crosshairmoving;
 extern float scr_usetime_off;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
@@ -124,14 +124,14 @@ void IN_VLockDown (void) {
 		KeyDown(&in_vlock);
 }
 void IN_VLockUp (void) {KeyUp(&in_vlock);}
-void IN_UpDown(void) {KeyDown(&in_up);}
-void IN_UpUp(void) {KeyUp(&in_up);}
-void IN_DownDown(void) {KeyDown(&in_down);}
-void IN_DownUp(void) {KeyUp(&in_down);}
-void IN_LeftDown(void) {KeyDown(&in_left);}
-void IN_LeftUp(void) {KeyUp(&in_left);}
-void IN_RightDown(void) {KeyDown(&in_right);}
-void IN_RightUp(void) {KeyUp(&in_right);}
+void IN_UpDown(void) {KeyDown(&in_up);crosshairmoving = 1;}
+void IN_UpUp(void) {KeyUp(&in_up);crosshairmoving = 0;}
+void IN_DownDown(void) {KeyDown(&in_down);crosshairmoving = 1;}
+void IN_DownUp(void) {KeyUp(&in_down);crosshairmoving = 0;}
+void IN_LeftDown(void) {KeyDown(&in_left);crosshairmoving = 1;}
+void IN_LeftUp(void) {KeyUp(&in_left);crosshairmoving = 0;}
+void IN_RightDown(void) {KeyDown(&in_right);crosshairmoving = 1;}
+void IN_RightUp(void) {KeyUp(&in_right);crosshairmoving = 0;}
 void IN_ForwardDown(void) {KeyDown(&in_forward);}
 void IN_ForwardUp(void) {KeyUp(&in_forward);}
 void IN_BackDown(void) {KeyDown(&in_back);}
@@ -322,18 +322,24 @@ void CL_BaseMove (usercmd_t *cmd)
 	
 	memset (cmd, 0, sizeof(*cmd));
 	
-	// crosshair stuff
-	croshhairmoving = true;
-	crosshair_opacity -= 8;
-	if (crosshair_opacity <= 128)
-		crosshair_opacity = 128;
-/*	
+	// cypress - we handle movespeed in QC now.
+	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
+
+	// Throttle side and back speeds
+	cl_sidespeed *= 0.8;
+	cl_backspeed *= 0.7;
+	
+	if (waypoint_mode.value)
+		cl_backspeed = cl_forwardspeed = cl_sidespeed *= 1.5;
+	
+	/*
 	if (in_strafe.state & 1)
 	{
 		cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_right);
 		cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_left);
 	}
-*/
+	*/
+
 	cmd->sidemove += cl_sidespeed * CL_KeyState (&in_moveright);
 	cmd->sidemove -= cl_sidespeed * CL_KeyState (&in_moveleft);
 
@@ -349,23 +355,15 @@ void CL_BaseMove (usercmd_t *cmd)
 //
 // adjust for speed key
 //
+/*
 	if (in_speed.state & 1)
 	{
 		cmd->forwardmove *= cl_movespeedkey.value;
 		cmd->sidemove *= cl_movespeedkey.value;
 		cmd->upmove *= cl_movespeedkey.value;
 	}
+*/	
 	
-	// reset crosshair
-	if (!CL_KeyState (&in_moveright) && !CL_KeyState (&in_moveleft) && !CL_KeyState (&in_forward) && !CL_KeyState (&in_back)) {
-		croshhairmoving = false;
-
-		crosshair_opacity += 22;
-
-		if (crosshair_opacity >= 215)
-			crosshair_opacity = 215;
-	}
-
 #ifdef QUAKE2
 	cmd->lightlevel = cl.light_level;
 #endif
@@ -567,8 +565,8 @@ void CL_SendMove (usercmd_t *cmd)
 	
 	// sB lock crosshair in the center of screen for sniper scopes
 	if(cl.stats[STAT_ZOOM] == 2 || aimsnap == true) {
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/vid.conheight + 1)/* * IR_PITCHRANGE*/);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/vid.conwidth - 2) /* * IR_YAWRANGE*/);
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/scr_vrect.height + 1)/* * IR_PITCHRANGE*/);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/scr_vrect.width - 1) /* * IR_YAWRANGE*/);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
 	} else {
 		
@@ -576,8 +574,8 @@ void CL_SendMove (usercmd_t *cmd)
 		//sBTODO figure out how to make this way more accurate than it is/
 		
 		
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/vid.conheight + 1) * IR_PITCHRANGE);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/vid.conwidth - 2) * IR_YAWRANGE);
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
 		
 		

@@ -32,6 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // ELUTODO: mipmap and texture filters
 
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
+cvar_t 		vid_retromode = {"vid_retromode", "0", false};
 
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int			numgltextures;

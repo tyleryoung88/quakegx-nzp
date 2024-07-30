@@ -218,6 +218,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_flatlightstyles);
 
 	R_InitParticles ();
+	R_InitDecals ();
 	R_InitOtherTextures ();
 	//R_InitParticleTexture ();
 	
@@ -362,6 +363,7 @@ void R_NewMap (void)
 		 	
 	r_viewleaf = NULL;
 	R_ClearParticles ();
+	R_ClearDecals();
 
 	GL_BuildLightmaps ();
 	

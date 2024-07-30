@@ -241,6 +241,7 @@ extern	cvar_t	gl_max_size;
 extern	cvar_t	gl_playermip;
 
 extern cvar_t vid_tvborder;
+extern cvar_t vid_retromode;
 
 extern  cvar_t	r_part_muzzleflash;
 
@@ -408,5 +409,8 @@ void QMB_Q3TorchFlame (vec3_t org, float size);
 
 void R_SpawnDecal (vec3_t center, vec3_t normal, vec3_t tangent, int tex, int size, int isbsp);
 void R_SpawnDecalStatic (vec3_t org, int tex, int size);
+void R_DrawDecals (void);
+void R_InitDecals (void);
+void R_ClearDecals (void);
 
 extern	qboolean	qmb_initialized;
