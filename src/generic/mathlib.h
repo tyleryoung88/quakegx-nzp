@@ -43,6 +43,7 @@ extern	int nanmask;
 
 #define DotProduct(x,y) (x[0]*y[0]+x[1]*y[1]+x[2]*y[2])
 #define DoublePrecisionDotProduct(x,y) ((double)x[0]*y[0]+(double)x[1]*y[1]+(double)x[2]*y[2])
+#define VectorLerp( v1, lerp, v2, c ) ((c)[0] = (v1)[0] + (lerp) * ((v2)[0] - (v1)[0]), (c)[1] = (v1)[1] + (lerp) * ((v2)[1] - (v1)[1]), (c)[2] = (v1)[2] + (lerp) * ((v2)[2] - (v1)[2]))
 #define VectorSubtract(a,b,c) {(c)[0]=(a)[0]-(b)[0];(c)[1]=(a)[1]-(b)[1];(c)[2]=(a)[2]-(b)[2];}
 #define VectorAdd(a,b,c) {c[0]=a[0]+b[0];c[1]=a[1]+b[1];c[2]=a[2]+b[2];}
 #define VectorCopy(a,b) {b[0]=a[0];b[1]=a[1];b[2]=a[2];}
@@ -53,6 +54,8 @@ extern	int nanmask;
 #define DEG2RAD( a ) ( a * M_PI ) / 180.0F
 #define VectorNormalizeFast( v ){float	ilength = (float)rsqrt(DotProduct(v,v));v[0] *= ilength;v[1] *= ilength;v[2] *= ilength; }
 #define VectorDistanceSquared(a,b)((a[0]-b[0])*(a[0]-b[0])+(a[1]-b[1])*(a[1]-b[1])+(a[2]-b[2])*(a[2]-b[2]))
+#define VectorMax(a,b,out) {out[0]=a[0]>b[0]?a[0]:b[0]; out[1]=a[1]>b[1]?a[1]:b[1]; out[2]=a[2]>b[2]?a[2]:b[2];}
+#define VectorMin(a,b,out) {out[0]=a[0]<b[0]?a[0]:b[0]; out[1]=a[1]<b[1]?a[1]:b[1]; out[2]=a[2]<b[2]?a[2]:b[2];}
 
 void VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc);
 
