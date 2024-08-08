@@ -2772,15 +2772,12 @@ Main_Waypoint functin
 This is where the magic happens
 =================
 */
-
-
-#define MaxZombies 12
-
+// sB redefine
+//#define MaxZombies 24
 
 #define WAYPOINT_SET_NONE 	0
 #define WAYPOINT_SET_OPEN 	1
 #define WAYPOINT_SET_CLOSED	2
-
 
 char waypoint_set[MAX_WAYPOINTS]; // waypoint_set[i] contains the set identifier for the i-th waypoint
 unsigned short openset_waypoints[MAX_WAYPOINTS]; // List of waypoints currently in the open set sorted by heuristic cost (index 0 contains lowest cost waypoint)
@@ -2798,7 +2795,6 @@ void sv_way_print_sorted_open_set() {
 	}
 	Con_Printf("\n");
 }
-
 
 
 // 
@@ -2875,7 +2871,11 @@ void sv_way_add_way_to_set(char set, int waypoint_idx) {
 				}
 				openset_waypoints[max] = waypoint_idx;
 				openset_length += 1;
-				// sv_way_print_sorted_open_set(); // For debug only
+				//
+				// debug
+				// sv_way_print_sorted_open_set();
+				//
+				//
 				break;
 			}
 			test = (int)((min + max)/2);

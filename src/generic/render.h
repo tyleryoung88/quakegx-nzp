@@ -59,9 +59,9 @@ typedef struct entity_s
 	
 	
 	// Tomaz - QC Alpha Scale Glow Begin
-    float		renderamt;
-    float		rendermode;
-    float		rendercolor[3];
+    float					renderamt;
+    float					rendermode;
+    float					rendercolor[3];
     //Crow_bar
 	
 	
@@ -99,7 +99,7 @@ typedef struct entity_s
 	vec3_t					previousangles;	//johnfitz -- transform lerping
 	vec3_t					currentangles;	//johnfitz -- transform lerping
 											
-	int		modelindex;
+	int						modelindex;
 
     int                     z_head;
     int                     z_larm;

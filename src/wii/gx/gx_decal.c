@@ -166,7 +166,7 @@ qboolean DecalAddPolygon (decal_t *dec, int vertcount, vec3_t *vertices)
 		dec->triangleArray[dec->triangleCount][0] = count;
 		dec->triangleArray[dec->triangleCount][1] = (count + a - 1);
 		dec->triangleArray[dec->triangleCount][2] = (count + a );
-		Con_Printf ("DecalAddPolygon: %i\n", count);
+		//Con_Printf ("DecalAddPolygon: %i\n", count);
 		dec->triangleCount++;
 	}
 

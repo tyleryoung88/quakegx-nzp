@@ -42,7 +42,7 @@ int			con_current;		// where next message will be printed
 int			con_x;				// offset in current line for next print
 char		*con_text=0;
 
-cvar_t		con_notifytime = {"con_notifytime","3"};		//seconds
+cvar_t		con_notifytime = {"con_notifytime","2"};		//seconds
 
 #define	NUM_CON_TIMES 4
 float		con_times[NUM_CON_TIMES];	// realtime time the line was generated
@@ -387,7 +387,7 @@ void Con_Printf (char *fmt, ...)
 // also echo to debugging console
 	Sys_Printf ("%s", msg);	// also echo to debugging console
 
-// log all messages to file
+	// log all messages to file
 	if (con_debuglog)
 		Con_DebugLog(va("%s/qconsole.log",com_gamedir), "%s", msg);
 
@@ -479,7 +479,7 @@ The input line scrolls horizontally if typing goes beyond the right edge
 */
 void Con_DrawInput (void)
 {
-	int		y;
+	//int		y;
 	int		i;
 	char	*text;
 
@@ -500,10 +500,10 @@ void Con_DrawInput (void)
 		text += 1 + key_linepos - con_linewidth;
 		
 // draw it
-	y = con_vislines-16;
+	//y = con_vislines-16;
 
 	for (i=0 ; i<con_linewidth ; i++)
-		Draw_Character ( (i+1)<<3, con_vislines - 16, text[i]);
+		Draw_Character ( (i+2)<<3, con_vislines - 24, text[i]);
 
 // remove cursor
 	key_lines[edit_line][key_linepos] = 0;
@@ -612,8 +612,8 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 		GX_DrawOSK();
 
 // draw the input prompt, user text, and cursor if desired
-	if (drawinput)
-		Con_DrawInput ();
+	//if (drawinput)
+		//Con_DrawInput ();
 }
 
 

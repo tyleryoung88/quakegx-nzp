@@ -25,6 +25,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 int			num_temp_entities;
 entity_t	cl_temp_entities[MAX_TEMP_ENTITIES];
 beam_t		cl_beams[MAX_BEAMS];
+//sfx_t			*cl_sfx_r_exp3;
+extern sfx_t			*cl_sfx_step[5];
 
 /*
 =================
@@ -46,6 +48,11 @@ void CL_InitTEnts (void)
 	cl_sfx_rail = S_PrecacheSound ("weapons/lstart.wav");
 #endif
 */
+	cl_sfx_step[0] = S_PrecacheSound ("sounds/player/footstep1.wav");
+	cl_sfx_step[1] = S_PrecacheSound ("sounds/player/footstep2.wav");
+	cl_sfx_step[2] = S_PrecacheSound ("sounds/player/footstep3.wav");
+	cl_sfx_step[3] = S_PrecacheSound ("sounds/player/footstep4.wav");
+	cl_sfx_step[4] = S_PrecacheSound ("sounds/player/footstep5.wav");
 }
 
 /*

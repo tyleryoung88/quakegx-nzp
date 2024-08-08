@@ -119,10 +119,7 @@ extern float scr_usetime_off;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
-void IN_VLockDown (void) {
-	if(scr_usetime_off <= 0)	
-		KeyDown(&in_vlock);
-}
+void IN_VLockDown (void) {KeyDown(&in_vlock);
 void IN_VLockUp (void) {KeyUp(&in_vlock);}
 void IN_UpDown(void) {KeyDown(&in_up);crosshairmoving = 1;}
 void IN_UpUp(void) {KeyUp(&in_up);crosshairmoving = 0;}
@@ -154,10 +151,24 @@ void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
 
 void IN_UseDown (void) {
-	if(scr_usetime_off <= 0)	
+	// 
+	// sB this is all hacked in for now.
+	// the real concern is that there are now 
+	// 3 binds all hardcoded to '+ use'
+	// this is not ideal for a number of reasons :/
+	// 
+	KeyDown(&in_use);
+	
+	if (scr_usetime_off <= 0) {
 		KeyDown(&in_vlock);
-	else
-		KeyDown(&in_use);
+	}
+	// if moving HACK
+	if (crosshairmoving == 1) {
+		if (cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2) {
+			KeyUp(&in_vlock);
+			Cbuf_AddText("impulse 23\n"); // sprinting impulse - "impulse 23"
+		}
+	}
 }
 void IN_UseUp (void) {
 	KeyUp(&in_vlock);
@@ -250,6 +261,7 @@ cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
 cvar_t	in_aimassist = {"in_aimassist", "0", true};
+cvar_t	ads_center = {"ads_center", "0", true};
 
 //Shpuld - Porting over lower sens for lower fov
 extern cvar_t scr_fov;
@@ -502,7 +514,7 @@ float angledelta(float a);
 float deltaPitch,deltaYaw;
 void CL_SendMove (usercmd_t *cmd)
 {
-	int		bits/*, i*/;
+	int		bits;
 	sizebuf_t	buf;
 	byte	data[128]; 
 	
@@ -550,6 +562,10 @@ void CL_SendMove (usercmd_t *cmd)
 //
 // send the movement message
 //
+	float xcrossnormal, ycrossnormal;
+	xcrossnormal = (cl_crossx.value / (scr_vrect.width/2)) * IR_YAWRANGE;
+	ycrossnormal = (cl_crossy.value / (scr_vrect.height/2)) * IR_PITCHRANGE;
+
 	MSG_WriteByte (&buf, clc_move);
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
@@ -564,7 +580,7 @@ void CL_SendMove (usercmd_t *cmd)
 	 */
 	
 	// sB lock crosshair in the center of screen for sniper scopes
-	if(cl.stats[STAT_ZOOM] == 2 || aimsnap == true) {
+	if(cl.stats[STAT_ZOOM] == 2 || aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value)) {
 		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/scr_vrect.height + 1)/* * IR_PITCHRANGE*/);
 		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/scr_vrect.width - 1) /* * IR_YAWRANGE*/);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
@@ -572,21 +588,18 @@ void CL_SendMove (usercmd_t *cmd)
 		
 		
 		//sBTODO figure out how to make this way more accurate than it is/
-		
-		
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + cl_crossy.value/scr_vrect.height * IR_PITCHRANGE);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - cl_crossx.value/scr_vrect.width * IR_YAWRANGE);
+			
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + ycrossnormal);
+		MSG_WriteAngle (&buf, cl.viewangles[YAW] - xcrossnormal);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
 		
+		// My first approach will be to point the viewmodel directly at the crosshair at all times 
 		
-		
+		//for (i=0 ; i<3 ; i++)
+			//MSG_WriteAngle (&buf, cl.viewangles[i]);
 		
 	}
 	
-	/*	
-	for (i=0 ; i<3 ; i++)
-		MSG_WriteAngle (&buf, cl.viewangles[i]);
-	*/
 	
 	MSG_WriteShort (&buf, cmd->forwardmove);
 	MSG_WriteShort (&buf, cmd->sidemove);

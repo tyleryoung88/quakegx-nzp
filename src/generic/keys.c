@@ -89,7 +89,7 @@ int osk_coords[2];
 float osk_last_press_time = 0.0f;
 extern cvar_t osk_repeat_delay;
 
-extern int last_irx, last_iry;
+int last_irx, last_iry;
 
 static float clampLine(float value, float minimum, float maximum)
 {
@@ -207,8 +207,6 @@ static keyname_t keynames[] =
 
 ==============================================================================
 */
-
-
 /*
 ====================
 Key_Console
@@ -222,7 +220,6 @@ void Key_Console (int key)
 	
 	if (key == K_JOY17 || key == K_JOY0)
 	{
-	// ELUTODO: we are using the previous frame wiimote position... FIX IT
 		in_osk = 1;
 		int line = (last_iry - OSK_YSTART) / (osk_line_size * (osk_line_size / osk_charsize)) - 1;
 		int col = (last_irx - OSK_XSTART) / (osk_col_size * (osk_col_size / osk_charsize)) - 1;

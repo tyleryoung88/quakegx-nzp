@@ -1370,6 +1370,7 @@ void CL_ParseServerMessage (void)
 			break;
 			
 		case svc_rumble:
+			// this is unneccesary 
 			//IN_StartRumble((int)MSG_ReadShort(), (int)MSG_ReadShort(), (int)MSG_ReadShort());
 			break;
 		}

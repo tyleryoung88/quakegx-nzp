@@ -71,10 +71,11 @@ void SV_CheckAllEnts (void)
 			continue;
 		if (check->v.movetype == MOVETYPE_PUSH
 		|| check->v.movetype == MOVETYPE_NONE
-#ifdef QUAKE2
 		|| check->v.movetype == MOVETYPE_FOLLOW
-#endif
-		|| check->v.movetype == MOVETYPE_NOCLIP)
+		|| check->v.movetype == MOVETYPE_NOCLIP
+		|| check->v.movetype == MOVETYPE_LARM
+		|| check->v.movetype == MOVETYPE_RARM
+		|| check->v.movetype == MOVETYPE_HEAD)
 			continue;
 
 		if (SV_TestEntityPosition (check))
@@ -398,6 +399,24 @@ PUSHMOVE
 ===============================================================================
 */
 
+// sB taken from dquake
+/*
+============
+SV_AllowPushRotate
+Allows to change entity yaw?
+============
+*/
+qboolean SV_AllowPushRotate( edict_t *ent )
+{
+	model_t	*mod;
+
+	mod = sv.models[ (int)ent->v.modelindex ];
+	if(!mod || mod->type != mod_brush)
+		return true;
+
+	return /*(mod->flags & MODEL_HAS_ORIGIN) ? true :*/ false;
+}
+
 /*
 ============
 SV_PushEntity
@@ -405,7 +424,7 @@ SV_PushEntity
 Does not change the entities velocity at all
 ============
 */
-trace_t SV_PushEntity (edict_t *ent, vec3_t push)
+trace_t SV_PushEntity (edict_t *ent, vec3_t push, vec3_t apush)
 {
 	trace_t	trace;
 	vec3_t	end;
@@ -420,7 +439,21 @@ trace_t SV_PushEntity (edict_t *ent, vec3_t push)
 	else
 		trace = SV_Move (ent->v.origin, ent->v.mins, ent->v.maxs, end, MOVE_NORMAL, ent);	
 	
-	VectorCopy (trace.endpos, ent->v.origin);
+	if( trace.fraction != 0.0f )
+	{
+		VectorCopy( trace.endpos, ent->v.origin );
+
+		if( apush[YAW] && ( (int)ent->v.flags & FL_CLIENT ))
+		{
+			ent->v.avelocity[1] += apush[1];
+			ent->v.fixangle = 2;
+		}
+
+		// don't rotate pushables!
+		if( SV_AllowPushRotate( ent ))
+			ent->v.angles[YAW] += trace.fraction * apush[YAW];
+	}
+
 	SV_LinkEdict (ent, true);
 
 	if (trace.ent)
@@ -436,23 +469,23 @@ SV_PushMove
 
 ============
 */
-void SV_PushMove (edict_t *pusher, float movetime)
+edict_t		*moved_edict[MAX_EDICTS];
+vec3_t		moved_from[MAX_EDICTS];
+edict_t * SV_PushMove (edict_t *pusher, float movetime)
 {
-	int			i, e;
+	int			i, e, oldsolid;
 	edict_t		*check, *block;
 	vec3_t		mins, maxs, move;
 	vec3_t		entorig, pushorig;
 	int			num_moved;
-	edict_t		*moved_edict[MAX_EDICTS];
-	vec3_t		moved_from[MAX_EDICTS];
 
 	if (!pusher->v.velocity[0] && !pusher->v.velocity[1] && !pusher->v.velocity[2])
 	{
 		pusher->v.ltime += movetime;
-		return;
+		return NULL;
 	}
 
-	for (i=0 ; i<3 ; i++)
+	for (i = 0; i < 3; i++)
 	{
 		move[i] = pusher->v.velocity[i] * movetime;
 		mins[i] = pusher->v.absmin[i] + move[i];
@@ -460,73 +493,79 @@ void SV_PushMove (edict_t *pusher, float movetime)
 	}
 
 	VectorCopy (pusher->v.origin, pushorig);
-	
-// move the pusher to it's final position
 
+	// move the pusher to it's final position
 	VectorAdd (pusher->v.origin, move, pusher->v.origin);
-	pusher->v.ltime += movetime;
 	SV_LinkEdict (pusher, false);
+	pusher->v.ltime += movetime;
+	oldsolid = pusher->v.solid;
 
+	// non-solid pushers can't push anything
+	if( pusher->v.solid == SOLID_NOT )
+		return NULL;
 
-// see if any solid entities are inside the final position
-	num_moved = 0;
-	check = NEXT_EDICT(sv.edicts);
-	for (e=1 ; e<sv.num_edicts ; e++, check = NEXT_EDICT(check))
+	// see if any solid entities are inside the final position
+    num_moved = 0;
+	check = NEXT_EDICT (sv.edicts);
+
+	for (e = 1; e < sv.num_edicts; e++, check = NEXT_EDICT (check))
 	{
 		if (check->free)
 			continue;
+
 		if (check->v.movetype == MOVETYPE_PUSH
-		|| check->v.movetype == MOVETYPE_NONE
-#ifdef QUAKE2
-		|| check->v.movetype == MOVETYPE_FOLLOW
-#endif
-		|| check->v.movetype == MOVETYPE_NOCLIP)
+				|| check->v.movetype == MOVETYPE_NONE
+				|| check->v.movetype == MOVETYPE_NOCLIP)
 			continue;
 
-	// if the entity is standing on the pusher, it will definately be moved
-		if ( ! ( ((int)check->v.flags & FL_ONGROUND)
-		&& PROG_TO_EDICT(check->v.groundentity) == pusher) )
+		// if the entity is standing on the pusher, it will definately be moved
+		if (!(((int) check->v.flags & FL_ONGROUND)
+				&& PROG_TO_EDICT (check->v.groundentity) == pusher))
 		{
-			if ( check->v.absmin[0] >= maxs[0]
-			|| check->v.absmin[1] >= maxs[1]
-			|| check->v.absmin[2] >= maxs[2]
-			|| check->v.absmax[0] <= mins[0]
-			|| check->v.absmax[1] <= mins[1]
-			|| check->v.absmax[2] <= mins[2] )
+			if (check->v.absmin[0] >= maxs[0]
+					|| check->v.absmin[1] >= maxs[1]
+					|| check->v.absmin[2] >= maxs[2]
+					|| check->v.absmax[0] <= mins[0]
+					|| check->v.absmax[1] <= mins[1]
+					|| check->v.absmax[2] <= mins[2])
 				continue;
 
-		// see if the ent's bbox is inside the pusher's final position
+			// see if the ent's bbox is inside the pusher's final position
 			if (!SV_TestEntityPosition (check))
 				continue;
 		}
 
-	// remove the onground flag for non-players
+		// remove the onground flag for non-players
 		if (check->v.movetype != MOVETYPE_WALK)
-			check->v.flags = (int)check->v.flags & ~FL_ONGROUND;
-		
+			check->v.flags = (int) check->v.flags & ~FL_ONGROUND;
+
 		VectorCopy (check->v.origin, entorig);
 		VectorCopy (check->v.origin, moved_from[num_moved]);
 		moved_edict[num_moved] = check;
 		num_moved++;
 
-		// try moving the contacted entity 
+		// try moving the contacted entity
 		pusher->v.solid = SOLID_NOT;
-		SV_PushEntity (check, move);
-		pusher->v.solid = SOLID_BSP;
+		SV_PushEntity (check, move, vec3_origin);
+		pusher->v.solid = oldsolid;
 
-	// if it is still inside the pusher, block
+		// if it is still inside the pusher, block
 		block = SV_TestEntityPosition (check);
+
 		if (block)
-		{	// fail the move
+		{
+			// fail the move
 			if (check->v.mins[0] == check->v.maxs[0])
 				continue;
+
 			if (check->v.solid == SOLID_NOT || check->v.solid == SOLID_TRIGGER)
-			{	// corpse
+			{
+				// corpse
 				check->v.mins[0] = check->v.mins[1] = 0;
 				VectorCopy (check->v.mins, check->v.maxs);
 				continue;
 			}
-			
+
 			VectorCopy (entorig, check->v.origin);
 			SV_LinkEdict (check, true);
 
@@ -538,34 +577,34 @@ void SV_PushMove (edict_t *pusher, float movetime)
 			// otherwise, just stay in place until the obstacle is gone
 			if (pusher->v.blocked)
 			{
-				pr_global_struct->self = EDICT_TO_PROG(pusher);
-				pr_global_struct->other = EDICT_TO_PROG(check);
+				pr_global_struct->self = EDICT_TO_PROG (pusher);
+				pr_global_struct->other = EDICT_TO_PROG (check);
 				PR_ExecuteProgram (pusher->v.blocked);
+
 			}
-			
-		// move back any entities we already moved
-			for (i=0 ; i<num_moved ; i++)
+
+			// move back any entities we already moved
+			for (i = 0; i < num_moved; i++)
 			{
 				VectorCopy (moved_from[i], moved_edict[i]->v.origin);
-				SV_LinkEdict (moved_edict[i], false);
+				SV_LinkEdict (moved_edict[i], (moved_edict[i] == check) ? true : false);
 			}
-			return;
-		}	
+			return check;
+		}
 	}
-
-	
+	return NULL;
 }
 
-#ifdef QUAKE2
+
 /*
 ============
 SV_PushRotate
 
 ============
 */
-void SV_PushRotate (edict_t *pusher, float movetime)
+edict_t * SV_PushRotate (edict_t *pusher, float movetime)
 {
-	int			i, e;
+	int			i, e, oldsolid;
 	edict_t		*check, *block;
 	vec3_t		move, a, amove;
 	vec3_t		entorig, pushorig;
@@ -578,7 +617,7 @@ void SV_PushRotate (edict_t *pusher, float movetime)
 	if (!pusher->v.avelocity[0] && !pusher->v.avelocity[1] && !pusher->v.avelocity[2])
 	{
 		pusher->v.ltime += movetime;
-		return;
+		return NULL;
 	}
 
 	for (i=0 ; i<3 ; i++)
@@ -594,6 +633,11 @@ void SV_PushRotate (edict_t *pusher, float movetime)
 	VectorAdd (pusher->v.angles, amove, pusher->v.angles);
 	pusher->v.ltime += movetime;
 	SV_LinkEdict (pusher, false);
+	oldsolid = pusher->v.solid;
+	
+	// non-solid pushers can't push anything
+	if( pusher->v.solid == SOLID_NOT )
+		return NULL;
 
 
 // see if any solid entities are inside the final position
@@ -606,7 +650,10 @@ void SV_PushRotate (edict_t *pusher, float movetime)
 		if (check->v.movetype == MOVETYPE_PUSH
 		|| check->v.movetype == MOVETYPE_NONE
 		|| check->v.movetype == MOVETYPE_FOLLOW
-		|| check->v.movetype == MOVETYPE_NOCLIP)
+		|| check->v.movetype == MOVETYPE_NOCLIP
+		|| check->v.movetype == MOVETYPE_LARM
+		|| check->v.movetype == MOVETYPE_RARM
+		|| check->v.movetype == MOVETYPE_HEAD)
 			continue;
 
 	// if the entity is standing on the pusher, it will definately be moved
@@ -644,8 +691,8 @@ void SV_PushRotate (edict_t *pusher, float movetime)
 
 		// try moving the contacted entity 
 		pusher->v.solid = SOLID_NOT;
-		SV_PushEntity (check, move);
-		pusher->v.solid = SOLID_BSP;
+		SV_PushEntity (check, move, amove);
+		pusher->v.solid = oldsolid;
 
 	// if it is still inside the pusher, block
 		block = SV_TestEntityPosition (check);
@@ -681,19 +728,17 @@ void SV_PushRotate (edict_t *pusher, float movetime)
 			{
 				VectorCopy (moved_from[i], moved_edict[i]->v.origin);
 				VectorSubtract (moved_edict[i]->v.angles, amove, moved_edict[i]->v.angles);
-				SV_LinkEdict (moved_edict[i], false);
+				SV_LinkEdict (moved_edict[i], (moved_edict[i] == check) ? true : false);
 			}
-			return;
+			return check;
 		}
 		else
 		{
 			VectorAdd (check->v.angles, amove, check->v.angles);
 		}
 	}
-
-	
+	return NULL;
 }
-#endif
 
 /*
 ================
@@ -721,11 +766,9 @@ void SV_Physics_Pusher (edict_t *ent)
 
 	if (movetime)
 	{
-#ifdef QUAKE2
 		if (ent->v.avelocity[0] || ent->v.avelocity[1] || ent->v.avelocity[2])
 			SV_PushRotate (ent, movetime);
 		else
-#endif
 			SV_PushMove (ent, movetime);	// advances ent->v.ltime if not blocked
 	}
 		
@@ -924,7 +967,7 @@ int SV_TryUnstick (edict_t *ent, vec3_t oldvel)
 			case 7:	dir[0] = -2; dir[1] = -2; break;
 		}
 		
-		SV_PushEntity (ent, dir);
+		SV_PushEntity (ent, dir, vec3_origin);
 
 // retry the original move
 		ent->v.velocity[0] = oldvel[0];
@@ -1004,7 +1047,7 @@ void SV_WalkMove (edict_t *ent)
 	downmove[2] = -STEPSIZE + oldvel[2]*host_frametime;
 
 // move up
-	SV_PushEntity (ent, upmove);	// FIXME: don't link?
+	SV_PushEntity (ent, upmove, vec3_origin);	// FIXME: don't link?
 
 // move forward
 	ent->v.velocity[0] = oldvel[0];
@@ -1028,7 +1071,7 @@ void SV_WalkMove (edict_t *ent)
 		SV_WallFriction (ent, &steptrace);
 
 // move down
-	downtrace = SV_PushEntity (ent, downmove);	// FIXME: don't link?
+	downtrace = SV_PushEntity (ent, downmove, vec3_origin);	// FIXME: don't link?
 
 	if (downtrace.plane.normal[2] > 0.7f)
 	{
@@ -1208,16 +1251,16 @@ void SV_CheckStuck_IgnoreMonsters (edict_t *ent)
 	if (!SV_TestEntityPosition_NOMONSTERS(ent))
 	{
 		VectorCopy (ent->v.origin, ent->v.oldorigin);
-		//ent->v.zoom = 0; // naievil -- fixme
+		ent->v.zoom = 0; // naievil -- fixme
 		return;
 	}
 
 	// naievil -- fixme
-	//if(ent->v.zoom == 1)//if used setorigin
-	//{
-	//	VectorCopy (ent->v.origin, ent->v.oldorigin);
-	//	return;//we don't care to adjust for stuckness, whoever used setorigin in qc better handle that
-	//}
+	if(ent->v.zoom == 1)//if used setorigin
+	{
+		VectorCopy (ent->v.origin, ent->v.oldorigin);
+		return;//we don't care to adjust for stuckness, whoever used setorigin in qc better handle that
+	}
 	VectorCopy (ent->v.origin, org);
 	VectorCopy (ent->v.oldorigin, ent->v.origin);
 	if (!SV_TestEntityPosition_NOMONSTERS(ent))
@@ -1262,11 +1305,11 @@ void SV_PushAwayZombies(edict_t *ent)
 	other_ent = NEXT_EDICT(sv.edicts);
 	for (i=1 ; i<sv.num_edicts ; i++, ent = NEXT_EDICT(other_ent))
 	{	
-		//if (other_ent->free)
-			//continue;
+		if (other_ent->free)
+			continue;
 		//if (ent->v.solid == SOLID_NOT)
 		//	continue;
-		if( other_ent->v.solid != SOLID_CORPSE)
+		if( other_ent->v.solid != SOLID_SLIDEBOX)
 			continue;
 		if( other_ent->v.movetype != MOVETYPE_WALK)
 			continue;
@@ -1280,7 +1323,7 @@ void SV_PushAwayZombies(edict_t *ent)
 		//Process nearby zombie
 		for(j = 0; j < 2; j++)//only x & y
 		{
-			Con_Printf ("Pushing Zombie \n");
+			//Con_Printf ("Pushing Zombie \n");
 			other_ent->v.velocity[j] += (other_ent->v.origin[j] - ent->v.origin[j]) * 0.01;//push away other zombie was 0.001
 			//ent->v.velocity[j] += (ent->v.origin[j] - other_ent->v.origin[j]) * 0.01;//push away self
 		}
@@ -1468,6 +1511,22 @@ void SV_Physics_Follow (edict_t *ent)
 
 /*
 =============
+SV_Physics_Limbs
+
+Entities that are "stuck" to another entity
+=============
+*/
+void SV_Physics_Limbs (edict_t *ent)
+{
+// regular thinking
+	SV_RunThink (ent);
+	//VectorAdd (PROG_TO_EDICT(ent->v.aiment)->v.origin, ent->v.v_angle, ent->v.origin);
+
+	SV_LinkEdict (ent, true);
+}
+
+/*
+=============
 SV_Physics_Noclip
 
 A moving object that doesn't obey physics
@@ -1604,7 +1663,7 @@ void SV_Physics_Toss (edict_t *ent)
 	VectorAdd (ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
 #endif
 	VectorScale (ent->v.velocity, host_frametime, move);
-	trace = SV_PushEntity (ent, move);
+	trace = SV_PushEntity (ent, move, vec3_origin);
 #ifdef QUAKE2
 	VectorSubtract (ent->v.velocity, ent->v.basevelocity, ent->v.velocity);
 #endif
@@ -1771,16 +1830,17 @@ void SV_Physics_Step (edict_t *ent)
 #else
 void SV_Physics_Step (edict_t *ent)
 {
-	qboolean	hitsound;
+	//qboolean	hitsound;
 
 // freefall if not onground
 	if ( ! ((int)ent->v.flags & (FL_ONGROUND | FL_FLY | FL_SWIM) ) )
 	{
+		/*
 		if (ent->v.velocity[2] < sv_gravity.value*-0.1f)
 			hitsound = true;
 		else
 			hitsound = false;
-
+		*/
 		SV_AddGravity (ent);
 		SV_CheckVelocity (ent);
 		SV_FlyMove (ent, host_frametime, NULL);
@@ -1839,6 +1899,8 @@ void SV_Physics (void)
 			SV_Physics_Follow (ent);
 		else if(ent->v.movetype == MOVETYPE_WALK)
 			SV_Physics_Walk(ent);
+		else if (ent->v.movetype == MOVETYPE_HEAD || ent->v.movetype == MOVETYPE_RARM || ent->v.movetype == MOVETYPE_LARM)
+			SV_Physics_Limbs (ent);
 		else if (ent->v.movetype == MOVETYPE_NOCLIP)
 			SV_Physics_Noclip (ent);
 		else if (ent->v.movetype == MOVETYPE_STEP)
@@ -1870,20 +1932,15 @@ void SV_Physics (void)
 }
 
 
-#ifdef QUAKE2
 trace_t SV_Trace_Toss (edict_t *ent, edict_t *ignore)
 {
+	double	save_frametime;
+	vec3_t	move, end;
 	edict_t	tempent, *tent;
 	trace_t	trace;
-	vec3_t	move;
-	vec3_t	end;
-	double	save_frametime;
-//	extern particle_t	*active_particles, *free_particles;
-//	particle_t	*p;
-
 
 	save_frametime = host_frametime;
-	host_frametime = 0.05;
+	host_frametime = 0.05f;
 
 	memcpy(&tempent, ent, sizeof(edict_t));
 	tent = &tempent;
@@ -1895,29 +1952,15 @@ trace_t SV_Trace_Toss (edict_t *ent, edict_t *ignore)
 		VectorMA (tent->v.angles, host_frametime, tent->v.avelocity, tent->v.angles);
 		VectorScale (tent->v.velocity, host_frametime, move);
 		VectorAdd (tent->v.origin, move, end);
-		trace = SV_Move (tent->v.origin, tent->v.mins, tent->v.maxs, end, MOVE_NORMAL, tent);	
+		trace = SV_Move (tent->v.origin, tent->v.mins, tent->v.maxs, end, MOVE_NORMAL, tent);
 		VectorCopy (trace.endpos, tent->v.origin);
-
-//		p = free_particles;
-//		if (p)
-//		{
-//			free_particles = p->next;
-//			p->next = active_particles;
-//			active_particles = p;
-//		
-//			p->die = 256;
-//			p->color = 15;
-//			p->type = pt_static;
-//			VectorCopy (vec3_origin, p->vel);
-//			VectorCopy (tent->v.origin, p->org);
-//		}
 
 		if (trace.ent)
 			if (trace.ent != ignore)
 				break;
 	}
-//	p->color = 224;
 	host_frametime = save_frametime;
+
 	return trace;
 }
-#endif
+
