@@ -360,7 +360,7 @@ void HUD_Points (void)
 	l = scoreboardlines;
 
     x = 15;
-    y = 310;
+    y = 360;
 	for (i=0 ; i<l ; i++)
 	{
 		k = pointsort[i];
@@ -504,7 +504,7 @@ HUD_GetWorldText
 void HUD_WorldText(int alpha)
 {
 	// for parser
-	char key[128], value[4096];
+	char key[128], value[256]; //value was allocated 4096
 	char *data;
 
 	// first, parse worldspawn
@@ -539,15 +539,15 @@ void HUD_WorldText(int alpha)
 
 		if (!strcmp("location", key)) // search for location key
 		{
-			Draw_ColoredString(15, vid.height/2 + 16, value, 255, 255, 255, alpha, 1.5);
+			Draw_ColoredString(17, 300, value, 255, 255, 255, alpha, 1.4);
 		}
 		if (!strcmp("date", key)) // search for date key
 		{
-			Draw_ColoredString(15, vid.height/2 + 26, value, 255, 255, 255, alpha, 1.5);
+			Draw_ColoredString(17, 320, value, 255, 255, 255, alpha, 1.4);
 		}
 		if (!strcmp("person", key)) // search for person key
 		{
-			Draw_ColoredString(15, vid.height/2 + 36, value, 255, 255, 255, alpha, 1.5);
+			Draw_ColoredString(17, 340, value, 255, 255, 255, alpha, 1.4);
 		}
 	}
 }
@@ -563,7 +563,7 @@ int maxammoopac;
 void HUD_MaxAmmo(void)
 {
 
-	maxammoy -= cl.time * 0.04;
+	maxammoy -= cl.time * 0.01;
 	maxammoopac -= 5;
 
 	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")*12/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1.5);
@@ -609,7 +609,7 @@ void HUD_Rounds (void)
 		if (!value)
 			value = 255;
 
-		Draw_ColoredString(vid.width/2 - (strlen("Round")*16)/2, 80, "Round", 255, value, value, 255, 2);
+		Draw_ColoredString(vid.width/2 - (strlen("Round")*24)/2, 80, "Round", 255, value, value, 255, 3);
 		
 		value -= cl.time * 0.4;
 
@@ -623,10 +623,10 @@ void HUD_Rounds (void)
 	// Now, fade out, and start fading worldtext in
 	// ~3s for fade out, 
 	else if (textstate == 1) {
-		Draw_ColoredString(vid.width/2 - (strlen("Round")*16)/2, 80, "Round", 255, 0, 0, value, 2);
+		Draw_ColoredString(vid.width/2 - (strlen("Round")*24)/2, 80, "Round", 255, 0, 0, value, 3);
 
 		HUD_WorldText(value2);
-		Draw_ColoredString(4, vid.height/2 + 6, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+		Draw_ColoredString(17, 275, "'Nazi Zombies'", 255, 255, 255, value2, 1.4);
 		
 		value -= cl.time * 0.4;
 		value2 += cl.time * 0.4;
@@ -640,7 +640,7 @@ void HUD_Rounds (void)
 	// Hold world text for a few seconds
 	else if (textstate == 2) {
 		HUD_WorldText(255);
-		Draw_ColoredString(4, vid.height/2 + 6, "'Nazi Zombies'", 255, 255, 255, 255, 1);
+		Draw_ColoredString(17, 275, "'Nazi Zombies'", 255, 255, 255, 255, 1.4);
 
 		value2 += cl.time * 0.4;
 
@@ -652,7 +652,7 @@ void HUD_Rounds (void)
 	// Fade worldtext out, finally.
 	else if (textstate == 3) {
 		HUD_WorldText(value2);
-		Draw_ColoredString(4, vid.height/2 + 6, "'Nazi Zombies'", 255, 255, 255, value2, 1);
+		Draw_ColoredString(17, 275, "'Nazi Zombies'", 255, 255, 255, value2, 1.4);
 
 		value2 -= cl.time * 0.4;
 
@@ -1437,7 +1437,7 @@ void HUD_PlayerName (void)
 	if (nameprint_time - sv.time < 1)
 		alpha = (int)((nameprint_time - sv.time)*255);
 
-	Draw_ColoredString(118, 315, player_name, 255, 255, 255, alpha, 1.4);
+	Draw_ColoredString(118, 365, player_name, 255, 255, 255, alpha, 1.4);
 }
 
 /*
@@ -1577,8 +1577,8 @@ void HUD_Draw (void)
 	if (domaxammo == true) {
 		if (maxammoopac <= 0) {
 			maxammoopac = 255;
-			maxammoy = 100;
 		}
+		maxammoy = 100;
 		HUD_MaxAmmo();
 	}
 
