@@ -1532,13 +1532,13 @@ void HUD_Draw (void)
 
 	if (waypoint_mode.value)
 	{
-		Draw_String (vid.width - 112, 0, "WAYPOINTMODE");
-		Draw_String (vid.width - 240, 8, "Press fire to create waypoint");
-		Draw_String (vid.width - 232, 16, "Press use to select waypoint");
-		Draw_String (vid.width - 216, 24, "Press aim to link waypoint");
-		Draw_String (vid.width - 248, 32, "Press knife to remove waypoint");
-		Draw_String (vid.width - 272, 40, "Press switch to move waypoint here");
-		Draw_String (vid.width - 304, 48, "Press reload to make special waypoint");
+		Draw_String (vid.width - 112, 8, "WAYPOINTMODE");
+		Draw_String (vid.width - 240, 20, "Press fire to create waypoint");
+		Draw_String (vid.width - 232, 32, "Press use to select waypoint");
+		Draw_String (vid.width - 216, 44, "Press aim to link waypoint");
+		Draw_String (vid.width - 248, 56, "Press knife to remove waypoint");
+		Draw_String (vid.width - 272, 68, "Press switch to move waypoint here");
+		Draw_String (vid.width - 304, 80, "Press reload to make special waypoint");
 		return;
 	}
 

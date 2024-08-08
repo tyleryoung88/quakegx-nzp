@@ -1243,7 +1243,7 @@ void QMB_UpdateParticles(void)
 							// sBTODO 
 							// Will attempt to fix :)
 							//
-							#if 1// naievil -- fixme
+							#if 0// naievil -- fixme
 							if ((pt->id == p_fire || pt->id == p_dpfire) && r_decal_explosions.value)
 							  R_SpawnDecal (p->org, normal, tangent, decal_burn, 32, 0);
 						    else if (pt->id == p_blood1 && r_decal_blood.value)

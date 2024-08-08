@@ -322,39 +322,39 @@ static void M_Paused_Menu_Draw ()
 	Draw_FillByColor(0, 0, 680, 340, 0, 0, 0, 80);
 
 	// Header
-	Draw_ColoredString(10, 10, "PAUSED", 255, 255, 255, 255, 3);
+	Draw_ColoredString(30, 20, "PAUSED", 255, 255, 255, 255, 3);
 
 	if ((M_Paused_Cusor == 0))
-		Draw_ColoredString(10, 135, "Resume", 255, 0, 0, 255, 1.5);
+		Draw_ColoredString(30, 200, "Resume", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 135, "Resume", 255, 255, 255, 255, 1.5);
+		Draw_ColoredString(30, 200, "Resume", 255, 255, 255, 255, 1.5);
 
 	if ((M_Paused_Cusor == 1))
-		Draw_ColoredString(10, 145, "Restart", 255, 0, 0, 255, 1.5);
+		Draw_ColoredString(30, 220, "Restart", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 145, "Restart", 255, 255, 255, 255, 1.5);
+		Draw_ColoredString(30, 220, "Restart", 255, 255, 255, 255, 1.5);
 
 	if ((M_Paused_Cusor == 2))
-		Draw_ColoredString(10, 155, "Settings", 255, 0, 0, 255, 1.5);
+		Draw_ColoredString(30, 240, "Settings", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 155, "Settings", 255, 255, 255, 255, 1.5);
+		Draw_ColoredString(30, 240, "Settings", 255, 255, 255, 255, 1.5);
 
 	if (waypoint_mode.value) {
 		if ((M_Paused_Cusor == 3))
-			Draw_ColoredString(10, 165, "Save Waypoints", 255, 0, 0, 255, 1.5);
+			Draw_ColoredString(30, 260, "Save Waypoints", 255, 0, 0, 255, 1.5);
 		else
-			Draw_ColoredString(10, 165, "Save Waypoints", 255, 255, 255, 255, 1.5);
+			Draw_ColoredString(30, 260, "Save Waypoints", 255, 255, 255, 255, 1.5);
 	} else {
 		if ((M_Paused_Cusor == 3))
-			Draw_ColoredString(10, 165, "Achievements", 255, 0, 0, 255, 1.5);
+			Draw_ColoredString(30, 260, "Achievements", 255, 0, 0, 255, 1.5);
 		else
-			Draw_ColoredString(10, 165, "Achievements", 255, 255, 255, 255, 1.5);
+			Draw_ColoredString(30, 260, "Achievements", 255, 255, 255, 255, 1.5);
 	}
 
 	if ((M_Paused_Cusor == 4))
-		Draw_ColoredString(10, 175, "Main Menu", 255, 0, 0, 255, 1.5);
+		Draw_ColoredString(30, 280, "Main Menu", 255, 0, 0, 255, 1.5);
 	else
-		Draw_ColoredString(10, 175, "Main Menu", 255, 255, 255, 255, 1.5);
+		Draw_ColoredString(30, 280, "Main Menu", 255, 255, 255, 255, 1.5);
 }
 
 static void M_Paused_Menu_Key (int key)
@@ -2010,6 +2010,7 @@ char *bindnames[][2] =
 {"+knife", 			"Knife"},
 {"+grenade", 		"Grenade"},
 {"+jump", 			"Jump"},
+{"impulse 30",		"Change Stance"},
 {"impulse 33", 		"Place Betty"},
 {"+forward", 		"Walk Forward"},
 {"+back", 			"Walk Backward"},
