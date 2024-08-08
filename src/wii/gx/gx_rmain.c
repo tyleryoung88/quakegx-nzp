@@ -166,14 +166,13 @@ qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 guVector axis2 = {0,0,1};
 guVector axis1 = {0,1,0};
 guVector axis0 = {1,0,0};
-
 void R_RotateForEntity (entity_t *e, unsigned char scale)
 {
 	Mtx temp;
 
 	// ELUTODO: change back to asm when ALL functions have been corrected
 	
-	// sB changed back to asm. We will see how this plays out 
+	// sB changed back to asm.
 	
 	guMtxTrans(temp, e->origin[0],  e->origin[1],  e->origin[2]);
 	guMtxConcat(model, temp, model);
@@ -546,58 +545,57 @@ void R_SetupAliasFrame (aliashdr_t *paliashdr, int frame, lerpdata_t *lerpdata)
 		frame = 0;
 	}
 
-		posenum = paliashdr->frames[frame].firstpose;
-		numposes = paliashdr->frames[frame].numposes;
+	posenum = paliashdr->frames[frame].firstpose;
+	numposes = paliashdr->frames[frame].numposes;
 
-		if (numposes > 1)
-		{
-			e->lerptime = paliashdr->frames[frame].interval;
-			posenum += (int)(cl.time / e->lerptime) % numposes;
-		}
-		else
-			e->lerptime = 0.1;
+	if (numposes > 1)
+	{
+		e->lerptime = paliashdr->frames[frame].interval;
+		posenum += (int)(cl.time / e->lerptime) % numposes;
+	}
+	else
+		e->lerptime = 0.1;
 
-		if (e->lerpflags & LERP_RESETANIM) //kill any lerp in progress
+	if (e->lerpflags & LERP_RESETANIM) //kill any lerp in progress
+	{
+		e->lerpstart = 0;
+		e->previouspose = posenum;
+		e->currentpose = posenum;
+		e->lerpflags -= LERP_RESETANIM;
+	}
+	else if (e->currentpose != posenum) // pose changed, start new lerp
+	{
+		if (e->lerpflags & LERP_RESETANIM2) //defer lerping one more time
 		{
 			e->lerpstart = 0;
 			e->previouspose = posenum;
 			e->currentpose = posenum;
-			e->lerpflags -= LERP_RESETANIM;
+			e->lerpflags -= LERP_RESETANIM2;
 		}
-		else if (e->currentpose != posenum) // pose changed, start new lerp
+		else
 		{
-			if (e->lerpflags & LERP_RESETANIM2) //defer lerping one more time
-			{
-				e->lerpstart = 0;
-				e->previouspose = posenum;
-				e->currentpose = posenum;
-				e->lerpflags -= LERP_RESETANIM2;
-			}
-			else
-			{
-				e->lerpstart = cl.time;
-				e->previouspose = e->currentpose;
-				e->currentpose = posenum;
-			}
+			e->lerpstart = cl.time;
+			e->previouspose = e->currentpose;
+			e->currentpose = posenum;
 		}
+	}
 
-		//set up values
-		if (r_lerpmodels.value && !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2))
-		{
-			if (e->lerpflags & LERP_FINISH && numposes == 1)
-				lerpdata->blend = CLAMP (0, (cl.time - e->lerpstart) / (e->lerpfinish - e->lerpstart), 1);
-			else
-				lerpdata->blend = CLAMP (0, (cl.time - e->lerpstart) / e->lerptime, 1);
-			lerpdata->pose1 = e->previouspose;
-			lerpdata->pose2 = e->currentpose;
-		}
-		else //don't lerp
-		{
-			lerpdata->blend = 1;
-			lerpdata->pose1 = posenum;
-			lerpdata->pose2 = posenum;
-		}
-	//}
+	//set up values
+	if (r_lerpmodels.value && !(e->model->flags & MOD_NOLERP && r_lerpmodels.value != 2))
+	{
+		if (e->lerpflags & LERP_FINISH && numposes == 1)
+			lerpdata->blend = CLAMP (0, (cl.time - e->lerpstart) / (e->lerpfinish - e->lerpstart), 1);
+		else
+			lerpdata->blend = CLAMP (0, (cl.time - e->lerpstart) / e->lerptime, 1);
+		lerpdata->pose1 = e->previouspose;
+		lerpdata->pose2 = e->currentpose;
+	}
+	else //don't lerp
+	{
+		lerpdata->blend = 1;
+		lerpdata->pose1 = posenum;
+		lerpdata->pose2 = posenum;
+	}
 }
 
 /*
@@ -1113,7 +1111,7 @@ void R_DrawAliasModel (entity_t *e)
 	guMtxIdentity(model);
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
-	if ((e == &cl.viewent || e == &cl.viewent2) && scr_fov_viewmodel.value) {
+	if ((e == &cl.viewent || e == &cl.viewent2)/* && scr_fov_viewmodel.value*/) {
 		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
 		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
 			scale *= ENTSCALE_DECODE(e->scale);
@@ -1142,7 +1140,7 @@ void R_DrawAliasModel (entity_t *e)
 	c_guMtxConcat(model, temp, model);
 	*/
 
-	c_guMtxConcat(view,model,modelview);
+	guMtxConcat(view,model,modelview);
 	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
 	if (specChar == '%')//Zombie body
@@ -1920,7 +1918,8 @@ void R_RenderScene (void)
 	//GL_DisableMultitexture();
 
 	GX_LoadPosMtxImm(view, GX_PNMTX0);
-	R_DrawDecals();
+	// sBTODO: Fix TexCoord mapping for decals 
+	//R_DrawDecals();
 	R_DrawParticles ();
 }
 
