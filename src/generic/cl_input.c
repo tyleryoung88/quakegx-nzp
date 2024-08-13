@@ -119,7 +119,7 @@ extern float scr_usetime_off;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
-void IN_VLockDown (void) {KeyDown(&in_vlock);
+void IN_VLockDown (void) {KeyDown(&in_vlock);}
 void IN_VLockUp (void) {KeyUp(&in_vlock);}
 void IN_UpDown(void) {KeyDown(&in_up);crosshairmoving = 1;}
 void IN_UpUp(void) {KeyUp(&in_up);crosshairmoving = 0;}
@@ -421,7 +421,7 @@ int EN_Find(int num,char *string)
 	return 0;
 }
 qboolean aimsnap = false;
-extern int ir_x, ir_y;
+//extern int ir_x, ir_y;
 int zoom_snap = 0;
 void CL_Aim_Snap(void)
 {

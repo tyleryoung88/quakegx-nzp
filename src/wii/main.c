@@ -382,7 +382,9 @@ static u32		real_heap_size;
 static void* main_thread_function(void* dummy)
 {
 	// hope the parms are all set by now
-	COM_InitArgv(parms_number, parms_array);
+	if (parms_number > 0 ) {
+		COM_InitArgv(parms_number, parms_array);
+	}
 
 	// Initialise the Host module.
 	quakeparms_t parms;
@@ -474,6 +476,8 @@ int main(int argc, char* argv[])
 	//check_pak_file_exists();
 
 	//frontend();
+	//TODO
+	//add_parm("-noudp");
 	
 	VIDEO_SetBlack(true);
 	

@@ -90,7 +90,7 @@ cvar_t	r_dynamic = {"r_dynamic","1"};
 cvar_t	r_novis = {"r_novis","0"};
 cvar_t	r_lerpmodels = {"r_lerpmodels", "1"};
 cvar_t  r_lerpmove = {"r_lerpmove", "1"};
-cvar_t 	r_skyfog = {"r_skyfog", "0"};
+cvar_t 	r_skyfog = {"r_skyfog", "0"}; // sB sky is fogged naturally
 
 cvar_t	gl_finish = {"gl_finish","0"};
 cvar_t	gl_clear = {"gl_clear","0"};
@@ -100,7 +100,7 @@ cvar_t	gl_affinemodels = {"gl_affinemodels","0"};
 cvar_t	gl_polyblend = {"gl_polyblend","1"};
 cvar_t	gl_playermip = {"gl_playermip","0"};
 cvar_t	gl_nocolors = {"gl_nocolors","0"};
-cvar_t	gl_keeptjunctions = {"gl_keeptjunctions","0"};
+cvar_t	gl_keeptjunctions = {"gl_keeptjunctions","1"}; // sB was 0, but this caused white dots in world geo
 cvar_t	gl_reporttjunctions = {"gl_reporttjunctions","0"};
 cvar_t	gl_doubleeyes = {"gl_doubleeys", "1"};
 

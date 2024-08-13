@@ -29,10 +29,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <malloc.h>
 
 // ELUTODO: GL_Upload32 and GL_Update32 could use some optimizations
-// ELUTODO: mipmap and texture filters
+// ELUTODO: mipmap
 
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
-cvar_t 		vid_retromode = {"vid_retromode", "0", false};
+cvar_t 		vid_retromode = {"vid_retromode", "1", false};
 
 gltexture_t	gltextures[MAX_GLTEXTURES];
 int			numgltextures;
@@ -43,6 +43,7 @@ u32 texture_heap_size;
 
 void R_InitTextureHeap (void)
 {
+	
 	u32 level, size;
 
 	_CPU_ISR_Disable(level);
@@ -64,6 +65,7 @@ void R_InitTextureHeap (void)
 	size = __lwp_heap_init(&texture_heap, texture_heap_ptr, texture_heap_size, PPC_CACHE_ALIGNMENT);
 
 	Con_Printf("Allocated %dM texture heap.\n", size / (1024 * 1024));
+	
 }
 
 /*
@@ -233,6 +235,55 @@ void GL_ResampleTexture (unsigned *in, int inwidth, int inheight, unsigned *out,
 	}
 }
 
+/*
+================
+GL_MipMap
+
+Operates in place, quartering the size of the texture
+================
+*/
+void GX_MipMap (byte *in, int width, int height)
+{
+	int		i, j;
+	byte	*out;
+
+	width <<=2;
+	height >>= 1;
+	out = in;
+	for (i=0 ; i<height ; i++, in+=width)
+	{
+		for (j=0 ; j<width ; j+=8, out+=4, in+=8)
+		{
+			out[0] = (in[0] + in[4] + in[width+0] + in[width+4])>>2;
+			out[1] = (in[1] + in[5] + in[width+1] + in[width+5])>>2;
+			out[2] = (in[2] + in[6] + in[width+2] + in[width+6])>>2;
+			out[3] = (in[3] + in[7] + in[width+3] + in[width+7])>>2;
+		}
+	}
+}
+
+void GX_DeleteTexData(int texnum)
+{
+	if (gltextures[texnum].data != NULL) {
+		__lwp_heap_free(&texture_heap, gltextures[texnum].data);
+		gltextures[texnum].data = NULL;
+	}
+}
+
+void GX_ReallocTextureCache(int texnum, u32 newmem, int width, int height)
+{
+	GX_DeleteTexData(texnum);
+	__lwp_heap_allocate(&texture_heap, newmem);
+	if(gltextures[texnum].data == NULL)
+	{
+		Sys_Error("GX_ReallocTextureCache: allocation failed on %i bytes", newmem);
+	};
+		
+	gltextures[texnum].width = width;
+	gltextures[texnum].height = height;
+	//GX_InvalidateTexAll();
+}
+
 // FIXME, temporary
 static	unsigned	scaled[640*480];
 static	unsigned	trans[640*480];
@@ -270,10 +321,11 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	}
 	else
 	{
-		memcpy(scaled, data, scaled_width * scaled_height * sizeof(data));
+		memcpy(scaled, data, scaled_width * scaled_height * 4/*sizeof(data)*/);
 	}
-
-	destination->data = __lwp_heap_allocate(&texture_heap, scaled_width * scaled_height * sizeof(data));
+	
+	destination->data = __lwp_heap_allocate(&texture_heap, scaled_width * scaled_height * 4/*sizeof(data)*/);
+	
 	if (!destination->data)
 		Sys_Error("GL_Upload32: Out of memory.");
 
@@ -386,10 +438,56 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 			}
 		}
 	}
-
+	
 	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
-
-	DCFlushRange(destination->data, scaled_width * scaled_height * sizeof(data));
+	DCFlushRange(destination->data, scaled_width * scaled_height * 4/*sizeof(data)*/);
+	
+	// sBTODO finish mipmap implementation 
+	// need to verify if the new memory takes up more space
+	// if so reallocate tex
+	/*
+	if (mipmap == true) {
+		int mip_level;
+		int texnum;
+		int sw;
+		int sh;
+		u32 mip_mem;
+		
+		mip_level = 0;
+		texnum = gltextures[currenttexture0].texnum;
+		sw = scaled_width;
+		sh = scaled_height;
+		while (sw > 4 && sh > 4)
+		{
+			sw >>= 1;
+			sh >>= 1;
+			mip_level++;
+		};
+		
+		mip_mem = GX_GetTexBufferSize(scaled_width, scaled_height, GX_TF_RGBA8, GX_TRUE, mip_level);
+		GX_ReallocTextureCache(texnum, mip_mem, scaled_width, scaled_height);
+		
+		while (scaled_width > 4 || scaled_height > 4) {
+			GX_MipMap ((byte *)destination->data, scaled_width, scaled_height);
+			
+			scaled_width >>= 1;
+			scaled_height >>= 1;
+			
+			destination->width = scaled_width;
+			destination->height = scaled_height;
+			
+			GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, GX_TRUE);
+			DCFlushRange(destination->data, mip_mem);
+		
+			if (vid_retromode.value == 1) {
+				GX_InitTexObjFilterMode(&destination->gx_tex, GX_NEAR_MIP_NEAR, GX_NEAR_MIP_NEAR);
+			} else {
+				GX_InitTexObjFilterMode(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN);
+			}
+			
+		}
+	}
+	*/
 }
 
 /*
@@ -492,11 +590,12 @@ int GL_LoadTexture (char *identifier, int width, int height, byte *data, qboolea
 			if (glt->used)
 			{
 				// ELUTODO: causes problems if we compare to a texture with NO name?
+				// sBTODO we definitely have issues with identifier strings. will investigate later..
 				if (!strcmp (identifier, glt->identifier))
 				{
 					if (width != glt->width || height != glt->height)
 					{
-						//Con_DPrintf ("GL_LoadTexture: cache mismatch, reloading");
+						Con_Printf ("GL_LoadTexture: cache mismatch, reloading");
 						if (!__lwp_heap_free(&texture_heap, glt->data))
 							Sys_Error("GL_ClearTextureCache: Error freeing data.");
 						goto reload; // best way to do it
@@ -573,7 +672,7 @@ int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data)
 	glt->keep = false;
 	glt->used = true;
 
-	GL_Upload32 (glt, (unsigned *)data, width, height, true, false, false);
+	GL_Upload32 (glt, (unsigned *)data, width, height, false /*mipmap?*/, false, false);
 
 	if (width != glt->scaled_width || height != glt->scaled_height)
 		Sys_Error("GL_LoadLightmapTexture: Tried to scale lightmap\n");
@@ -618,7 +717,7 @@ void GL_UpdateLightmapTextureRegion32 (gltexture_t *destination, unsigned *data,
 		}
 	}
 	
-	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * sizeof(unsigned));
+	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * 4/*sizeof(data)*/);
 	//GX_InvalidateTexAll();
 }
 extern int lightmap_textures;
@@ -698,12 +797,12 @@ void GL_ClearTextureCache(void)
 			{
 				numgltextures = i + 1;
 
-				newdata = __lwp_heap_allocate(&texture_heap, gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(unsigned));
+				newdata = __lwp_heap_allocate(&texture_heap, gltextures[i].scaled_width * gltextures[i].scaled_height * 4/*sizeof(data)*/);
 				if (!newdata)
 					Sys_Error("GL_ClearTextureCache: Out of memory.");
 
 				// ELUTODO Pseudo-defragmentation that helps a bit :)
-				memcpy(newdata, gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(unsigned));
+				memcpy(newdata, gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * 4/*sizeof(data)*/);
 
 				if (!__lwp_heap_free(&texture_heap, gltextures[i].data))
 					Sys_Error("GL_ClearTextureCache: Error freeing data.");
@@ -711,7 +810,7 @@ void GL_ClearTextureCache(void)
 				gltextures[i].data = newdata;
 				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
 
-				DCFlushRange(gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(unsigned));
+				DCFlushRange(gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * 4/*sizeof(data)*/);
 			}
 			else
 			{
@@ -904,7 +1003,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 {
 	int	f = 0;
 	int texnum;
-	char basename[128], name[132];
+	char basename[128], name[128]/*, texname[32]*/;
 	byte* data;
 	byte *c;
 	
@@ -921,6 +1020,11 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		c++;
 	}
 	
+	// sBTODO
+	// leaking memory somewhere
+	// first I need to find a better way to pass texture names 
+	// so they don't overflow. (increased identifier[to 128] temporarily)
+	
 	//Try PCX	
 	sprintf (name, "%s.pcx", basename);
 	COM_FOpenFile (name, &f);
@@ -930,8 +1034,15 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		if (data == 0) {
 			Con_Printf("PCX: can't load %s\n", name);	
 			return 0; //Sys_Error ("PCX: can't load %s", name);
-		}		
-		texnum = GL_LoadTexture (basename, image_width, image_height, data, false, true, true, 4);		
+		}
+		// sBTODO find a better way to store texture names :/
+		// don't overflow texture names
+		// hack
+		//COM_StripExtension (name + (strlen(basename) - 16), texname);
+
+		//Con_Printf("pcx %s\n", basename);
+		//Con_Printf("p name:%s\n", texname);
+		texnum = GL_LoadTexture (basename, image_width, image_height, data, true, true, true, 4);		
 		free(data);
 		return texnum;
 	}	
@@ -945,12 +1056,15 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 			Con_Printf("TGA: can't load %s\n", name);	
 			return 0;
 		}
+		//Con_Printf("tga: %s\n", basename);
+		//Con_Printf("t name:%s\n", texname);
 		texnum = GL_LoadTexture (basename, image_width, image_height, data, mipmap, true, keep, 4);
 		free(data);
 		return texnum;
 	}
 	//Try PNG
 	sprintf (name, "%s.png", basename);
+	//Con_Printf("png: %s\n", name);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
@@ -965,6 +1079,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	//Try JPEG
 	sprintf (name, "%s.jpeg", basename);
+	//Con_Printf("jpeg %s\n", name);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);
@@ -978,6 +1093,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		return texnum;
 	}
 	sprintf (name, "%s.jpg", basename);
+	//Con_Printf("jpg %s\n", name);
 	COM_FOpenFile (name, &f);
 	if (f > 0){
 		COM_CloseFile (f);

@@ -231,7 +231,7 @@ void Draw_Init (void)
 	draw_chars = loadimagepixels ("gfx/charset.tga", false, 0, 0, 4);
 
 	// now turn them into textures
-	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, true, true, true, 4);
+	char_texture = GL_LoadTexture ("charset", 128, 128, draw_chars, false, true, true, 4);
 /*
 	start = Hunk_LowMark();
 

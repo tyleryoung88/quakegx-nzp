@@ -83,7 +83,7 @@ void *Mod_Extradata (model_t *mod)
 Mod_PointInLeaf
 ===============
 */
-mleaf_t *Mod_PointInLeaf (vec3_t p, model_t *model)
+mleaf_t *Mod_PointInLeaf (float *p, model_t *model)
 {
 	mnode_t		*node;
 	float		d;
@@ -344,17 +344,90 @@ byte	*mod_base;
 
 /*
 =================
+Mod_ParseWadsFromEntityLump
+For Half-life maps
+=================
+*/
+#if 0
+static void Mod_ParseWadsFromEntityLump(char *data)
+{
+	char *s, key[1024], value[1024];
+	int i, j, k;
+
+	if (!data || !(data = COM_Parse(data)))
+		return;
+
+	if (com_token[0] != '{')
+		return; // error
+
+	while (1)
+	{
+		if (!(data = COM_Parse(data)))
+			return; // error
+
+		if (com_token[0] == '}')
+			break; // end of worldspawn
+
+		Q_strncpyz(key, (com_token[0] == '_') ? com_token + 1 : com_token, sizeof(key));
+
+		for (s = key + strlen(key) - 1; s >= key && *s == ' '; s--)		// remove trailing spaces
+			*s = 0;
+
+		if (!(data = COM_Parse(data)))
+			return; // error
+
+		Q_strncpyz(value, com_token, sizeof(value));
+
+		if (!strcmp("MaxRange", key))
+            Cvar_Set("r_maxrange", value);
+
+		if (!strcmp("wad", key))
+		{
+			j = 0;
+			for (i = 0; i < strlen(value); i++)
+			{
+				if (value[i] != ';' && value[i] != '\\' && value[i] != '/' && value[i] != ':')
+					break;
+			}
+			if (!value[i])
+				continue;
+			for ( ; i < sizeof(value); i++)
+			{
+				// ignore path - the \\ check is for HalfLife... stupid windoze 'programmers'...
+				if (value[i] == '\\' || value[i] == '/' || value[i] == ':')
+				{
+					j = i + 1;
+				}
+                else if (value[i] == ';' || value[i] == 0)
+				{
+					k = value[i];
+					value[i] = 0;
+					if (value[j])
+						WAD3_LoadTextureWadFile (value + j);
+					j = i + 1;
+					if (!k)
+						break;
+				}
+			}
+		}
+    }
+}
+#endif
+/*
+=================
 Mod_LoadTextures
 =================
 */
 void Mod_LoadTextures (lump_t *l)
 {
-	int		i, j, pixels, num, max, altmax;
+	int		i, j,/* pixels, */num, max, altmax;
 	miptex_t	*mt;
 	texture_t	*tx, *tx2;
 	texture_t	*anims[10];
 	texture_t	*altanims[10];
 	dmiptexlump_t *m;
+	char		filename[MAX_OSPATH], mapname[64];
+	int			data_ext;
 	
 	byte		*data;
 
@@ -371,6 +444,9 @@ void Mod_LoadTextures (lump_t *l)
 	loadmodel->textures = Hunk_AllocName (m->nummiptex * sizeof(*loadmodel->textures) , loadname);
 	
 	loading_num_step = loading_num_step + m->nummiptex;
+	
+	//if (loadmodel->bspversion == HL_BSPVERSION)
+		//Mod_ParseWadsFromEntityLump(loadmodel->entities);
 
 	for (i=0 ; i<m->nummiptex ; i++)
 	{
@@ -385,7 +461,7 @@ void Mod_LoadTextures (lump_t *l)
 		
 		if ( (mt->width & 15) || (mt->height & 15) )
 			Sys_Error ("Texture %s is not 16 aligned", mt->name);
-		pixels = mt->width*mt->height/64*85;
+		//pixels = mt->width*mt->height/64*85;
 		tx = Hunk_AllocName (sizeof(texture_t)/* +pixels*/, loadname );
 		loadmodel->textures[i] = tx;
 
@@ -406,9 +482,32 @@ void Mod_LoadTextures (lump_t *l)
 					data = WAD3_LoadTexture(mt);
 					
 					bool choosealpha = mt->name[0] == '{' ? true : false; // naievil -- need to choose alpha mode for certain textures
-					if(!data)
+					if(data == NULL)
 					{
-						Sys_Error ("No texture data found for: %s", mt->name); //sB TODO
+						//external textures -- first look in "textures/mapname/" then look in "textures/"
+						
+						// sB WIP and still undecided if we want this feature on Wii.
+						// if it is included, maybe it should only be a backup to maps
+						// which weren't compiled with -nowadtextures
+						// this does work as a backup option ATM anyways..//
+						
+
+						//mark = Hunk_LowMark ();
+						COM_StripExtension (loadmodel->name + 5, mapname);
+						//sprintf (filename, "textures/%s/%s", mapname, tx->name);
+						data_ext = loadtextureimage (filename, 0, 0, true, false, true);
+						if (data_ext <= 0)
+						{
+							//Con_Printf ("mpath %s\n", filename);
+							sprintf (filename, "textures/%s", tx->name);
+							data_ext = loadtextureimage (filename, 0, 0, true, false, true);
+							if (data_ext <= 0) {
+								//Con_Printf ("mpath %s\n", filename);
+								//Con_Printf("no texture found, replacing with white (fixme) %s\n", tx->name);
+								tx->gl_texturenum = white_texturenum;
+							}
+						}
+						//Hunk_FreeToLowMark (mark);
 					} else {
 						tx->gl_texturenum = GL_LoadTexture (mt->name, tx->width, tx->height, (byte *)(data), true, choosealpha, false, 4);
 						free(data);
@@ -530,7 +629,7 @@ void Mod_LoadLighting (lump_t *l)
 	int i;
 	byte *in, *out, *data;
 	byte d;
-	char litfilename[1024];
+	char litfilename[128]; //1024??
 	loadmodel->lightdata = NULL;
 	
 	// Diabolickal HLBSP
@@ -605,7 +704,6 @@ void Mod_LoadVisibility (lump_t *l)
 	loadmodel->visdata = Hunk_AllocName ( l->filelen, loadname);	
 	memcpy (loadmodel->visdata, mod_base + l->fileofs, l->filelen);
 }
-
 
 /*
 =================
@@ -1612,7 +1710,7 @@ Mod_LoadAllSkins
 void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
-	char	name[128], model[64], model2[64];
+	char	name[128], model[128], model2[256];
 	int		s;
 	byte	*skin;
 	byte	*texels;
@@ -1632,6 +1730,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	//
 	
 	// Mustang & Sally // v_biatch
+	/*
 	if (strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_left.mdl") == 0 ||
 	strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_right.mdl") == 0) {
 		pheader->gl_texturenum[0][0] = 
@@ -1647,6 +1746,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
 	}
+	*/
 	
 #if 1
 	for (i=0 ; i<numskins ; i++)
@@ -1661,6 +1761,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 			// HACK HACK HACK
 			sprintf(model2, "%s.mdl_%i", model, i);
+			//Con_Printf("extex %s\n", model2);
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
@@ -1669,6 +1770,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
+				//Con_Printf("NO EXTERNAL %s\n", model2);
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
@@ -1942,10 +2044,10 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 {
 	dspriteframe_t		*pinframe;
 	mspriteframe_t		*pspriteframe;
-	int					i, width, height, size, origin[2];
-	unsigned short		*ppixout;
-	byte				*ppixin;
-	char				name[64], sprite[64], sprite2[64];
+	int					/*i, */width, height, size, origin[2];
+	//unsigned short		*ppixout;
+	//byte				*ppixin;
+	char				/*name[128], */sprite[128], sprite2[256];
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -1978,15 +2080,15 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	COM_StripExtension(loadmodel->name, sprite);
 	sprintf(sprite2, "%s.spr_%i", sprite, framenum);
 	pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
-
+	
 	if (pspriteframe->gl_texturenum <= 0) // did not find a matching TGA...
 	{
-		COM_StripExtension(loadmodel->name, sprite);
-		sprintf(sprite2, "%s.spr", sprite, framenum);
-		pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
+		//COM_StripExtension(loadmodel->name, sprite);
+		//sprintf(sprite2, "%s.spr", sprite);
+		//pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
 		
 		if (pspriteframe->gl_texturenum <= 0) {
-			pspriteframe->gl_texturenum = GL_LoadTexture (name, width, height, (byte *)(pinframe + 1), true, true, true, 1);
+			pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), false, true, true, 1);
 		}
 	} 
 

@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 
-sfx_t			*cl_sfx_step[4];
+sfx_t			*cl_sfx_step[5];
 
 /*
 
@@ -140,7 +140,8 @@ float V_CalcBob (float speed,float which)//0 = regular, 1 = side bobbing
 	// Normal walk/sprint bob.
 	else {
 		if(cl.stats[STAT_ZOOM] == 3)
-			sprint = 1.8; //this gets sprinting speed in comparison to walk speed per weapon
+			// sB was 1.8. just testing a slightly less exagerated value for preference sake :)
+			sprint = 1.6; //this gets sprinting speed in comparison to walk speed per weapon
 
 		//12.048 -> 4.3 = 100 -> 36ish, so replace 100 with 36
 		if(which == 0)
@@ -161,20 +162,22 @@ float PlayStepSound(void)
 	while(1)
 	{
 		num = (rand ()&0x7fff) / ((float)0x7fff);
-		sound = (int)(num * 4);
+		sound = (int)(num * 5);
 		sound++;
 		if(sound != lastSound)
 			break;
 	}
 
 	if(sound == 1)
-        S_StartSound (cl.viewentity, 4, cl_sfx_step[0], vec3_origin, 1, 1);
+        S_StartSound (cl.viewentity, 0, cl_sfx_step[0], vec3_origin, 1.0f, 1.0f);
 	else if(sound == 2)
-        S_StartSound (cl.viewentity, 4, cl_sfx_step[1], vec3_origin, 1, 1);
+        S_StartSound (cl.viewentity, 0, cl_sfx_step[1], vec3_origin, 1.0f, 1.0f);
 	else if(sound == 3)
-        S_StartSound (cl.viewentity, 4, cl_sfx_step[2], vec3_origin, 1, 1);
+        S_StartSound (cl.viewentity, 0, cl_sfx_step[2], vec3_origin, 1.0f, 1.0f);
 	else if(sound == 4)
-        S_StartSound (cl.viewentity, 4, cl_sfx_step[3], vec3_origin, 1, 1);
+        S_StartSound (cl.viewentity, 0, cl_sfx_step[3], vec3_origin, 1.0f, 1.0f);
+	else if(sound == 5)
+        S_StartSound (cl.viewentity, 0, cl_sfx_step[4], vec3_origin, 1.0f, 1.0f);
 
 	lastSound = sound;
 	return sound;
@@ -587,6 +590,13 @@ float angledelta (float a)
 		a -= 360;
 	return a;
 }
+// in in_rollangle
+// out last_roll
+// amt 0.01
+
+float lin_lerp (float lerp_in, float lerp_out, float smooth_amt) {
+	return lerp_in + (smooth_amt * (lerp_in/lerp_out));
+}
 
 /*
 ==================
@@ -601,7 +611,6 @@ int lock_viewmodel;
 extern float centerdrift_offset_yaw;
 extern float centerdrift_offset_pitch;
 extern qboolean aimsnap;
-
 static vec3_t cADSOfs;
 void CalcGunAngle (void)
 {	
@@ -609,15 +618,17 @@ void CalcGunAngle (void)
 	static float oldyaw = 0;
 	static float oldpitch = 0;
 	
+	//Mtx	temp;
+	
 	yaw = r_refdef.viewangles[YAW];
 	pitch = -r_refdef.viewangles[PITCH];
 
-	yaw = angledelta(yaw - r_refdef.viewangles[YAW]) * 0.5f;
+	yaw = angledelta(yaw - r_refdef.viewangles[YAW]) * 0.4f;
 	if (yaw > 10)
 		yaw = 10;
 	if (yaw < -10)
 		yaw = -10;
-	pitch = angledelta(-pitch - r_refdef.viewangles[PITCH]) * 0.5f;
+	pitch = angledelta(-pitch - r_refdef.viewangles[PITCH]) * 0.4f;
 	if (pitch > 10)
 		pitch = 10;
 	if (pitch < -10)
@@ -653,32 +664,66 @@ void CalcGunAngle (void)
 	CWeaponRot[PITCH] = cl.viewent.angles[PITCH] * -1;
 	CWeaponRot[YAW] = cl.viewent.angles[YAW] * -1;
 	CWeaponRot[ROLL] = cl.viewent.angles[ROLL] * -1;
-
+	/*
+	vec3_t	vieworgrest;
+	
+	vieworgrest[0] = cl.viewent.origin[0];
+	vieworgrest[1] = cl.viewent.origin[1];
+	vieworgrest[2] = cl.viewent.origin[2];
+	
+	guMtxIdentity(model);
+	//&cl.viewent
+	guMtxTrans(temp, cl.viewent.origin[0] - 10.0f, cl.viewent.origin[1], cl.viewent.origin[2]);
+	guMtxConcat(model, temp, model);
+	
+	Con_Printf ("origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
+	*/
 	float side;
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
 	cl.viewent.angles[ROLL] = angledelta(cl.viewent.angles[ROLL] - ((cl.viewent.angles[ROLL] - (side * 5)) * 0.5));
 	
-	if (aimsnap == false)
+	float xcrossnormal;
+	float ycrossnormal;
+	
+	xcrossnormal = (cl_crossx.value / (scr_vrect.width/2));
+	ycrossnormal = (cl_crossy.value / (scr_vrect.height/2));
+	
+	//Con_Printf ("x: %f", xcrossnormal);
+	//Con_Printf ("  y: %f", ycrossnormal);
+	
+	float roll_og_pos;
+	float inroll_smooth;
+	float last_roll = 0.0f;
+	static float smooth_amt = 0.001f;
+	
+	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value))
 	{
 		if (lock_viewmodel != 1)
-			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw));
+			cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]/* + yaw*/) - (xcrossnormal * IR_YAWRANGE);
+			//cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw) - OldYawTheta);
 		
-		cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
+		//cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
+		cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal * IR_PITCHRANGE)*-1;
+		//guMtxTrans(temp, viewmod->origin[0] - (r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal * scr_vrect.width)*-1, viewmod->origin[1], viewmod->origin[2]);
+		
 		
 		//Con_Printf("YAW:%f PITCH%f\n", cl.viewent.angles[YAW], -cl.viewent.angles[PITCH]);
 		
 		if (cl_weapon_inrollangle.value) {
 			if (cl.stats[STAT_ZOOM] == 0) {	
-				if(in_rollangle <= 1.5f && in_rollangle >= -1.5f)
-					return;
 				
-				if(in_rollangle > 12.5f)
-					in_rollangle = 12.5;
-				else if(in_rollangle < -12.5f)
-					in_rollangle = -12.5f;
+				roll_og_pos = in_rollangle;
 				
-				//Con_Printf("roll: %f\n", in_rollangle);
-				cl.viewent.angles[ROLL] = in_rollangle;
+				inroll_smooth = lin_lerp (in_rollangle, last_roll, smooth_amt);	
+				
+				if(inroll_smooth > 24.5f)
+					inroll_smooth = 24.5f;
+				else if(inroll_smooth < -24.5f)
+					inroll_smooth = -24.5f;
+				
+				//Con_Printf("roll: %f\n", inroll_smooth);
+				cl.viewent.angles[ROLL] = inroll_smooth;
+				last_roll = roll_og_pos;
 			}
 		}
 	}
@@ -690,7 +735,14 @@ void CalcGunAngle (void)
 		
 		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
 	}
+	/*
+	guMtxConcat(view,model,modelview);
+	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
+	cl.viewent.origin[0] = vieworgrest[0];
+	cl.viewent.origin[1] = vieworgrest[1];
+	cl.viewent.origin[2] = vieworgrest[2];
+	*/
 /*
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 	cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
@@ -920,7 +972,6 @@ void V_CalcRefdef (void)
 	view->angles[YAW] = view->angles[YAW] + cl.gun_kick[YAW];
 	VectorCopy (ent->origin, view->origin);
 	view->origin[2] += cl.viewheight;
-	//view->origin[2] -= 2; //sB doing something//
 	
 	//Storing base location, later to calculate total offset
 		CWeaponOffset[0]= view->origin[0] * -1;

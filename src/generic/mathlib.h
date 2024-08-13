@@ -35,7 +35,12 @@ struct mplane_s;
 extern vec3_t vec3_origin;
 extern	int nanmask;
 
-#define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
+//#define	IS_NAN(x) (((*(int *)&x)&nanmask)==nanmask)
+static inline int IS_NAN (float x) {
+	union { float f; int i; } num;
+	num.f = x;
+	return ((num.i & nanmask) == nanmask);
+}
 
 #define Q_rint(x) ((x) > 0 ? (int)((x) + 0.5) : (int)((x) - 0.5)) //johnfitz -- from joequake
 

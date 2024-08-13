@@ -272,7 +272,7 @@ typedef struct
 {
 	int			texnum;
 	GXTexObj	gx_tex;
-	char		identifier[64];
+	char		identifier[128]; //MAXOSPATH for now.. 
 	int			width, height;
 	qboolean	mipmap;
 	unsigned	*data;

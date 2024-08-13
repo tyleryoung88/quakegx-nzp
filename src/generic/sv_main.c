@@ -1409,7 +1409,7 @@ int n_waypoints;
 // Waypoint file.
 //
 void Load_Waypoint_NZPBETA() {
-	char temp[64];
+	//char temp[64];
 	int i, p, s;
 	int h = 0;
 
@@ -1441,7 +1441,7 @@ void Load_Waypoint_NZPBETA() {
 	Con_DPrintf("Loading BETA waypoints\n");
 
 	vec3_t way_origin;
-	int way_id = 0;
+	//int way_id = 0;
 
 	while (1) {
 		// End of file.
@@ -1495,7 +1495,7 @@ void Load_Waypoint_NZPBETA() {
 			if(waypoints[i].target[p] < 0) {
 				continue;
 			}
-			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
+			float dist = VecLength2(way_origin, waypoints[i].origin);
 			waypoints[i].dist[p] = dist;
 		}
 		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
@@ -1674,7 +1674,7 @@ void Load_Waypoint () {
 			if(waypoints[i].target[p] < 0) {
 				continue;
 			}
-			float dist = VecLength2(waypoints[s].origin, waypoints[i].origin);
+			float dist = VecLength2(d, waypoints[i].origin);
 			waypoints[i].dist[p] = dist;
 		}
 		Con_DPrintf("Waypoint (%i)\n target1: (%i, %f),\n target2: (%i, %f),\n target3: (%i, %f),\n target4: (%i, %f),\n target5: (%i, %f),\n target6: (%i, %f),\n target7: (%i, %f),\n target8: (%i, %f)\n",
