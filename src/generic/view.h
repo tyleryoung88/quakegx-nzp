@@ -27,7 +27,7 @@ extern float v_blend[4];
 
 extern cvar_t lcd_x;
 
-#define IR_YAWRANGE	100.0f
+#define IR_YAWRANGE	60.0f
 #define IR_PITCHRANGE	60.0f
 
 extern vec3_t CWeaponRot;
