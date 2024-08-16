@@ -1140,7 +1140,7 @@ void M_Menu_CustomMaps_Draw (void)
 	Draw_ColoredString(6, 6, "CUSTOM MAPS", 255, 255, 255, 255, 3);
 	
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)) - 10, 6, game_build_date, 255, 255, 255, 255, 1.5);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)) - 5, 6, game_build_date, 255, 255, 255, 255, 1.5);
 
 	int 	line_increment;
 	line_increment = 0;
