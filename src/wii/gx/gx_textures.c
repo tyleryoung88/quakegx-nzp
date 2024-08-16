@@ -48,7 +48,7 @@ void R_InitTextureHeap (void)
 
 	_CPU_ISR_Disable(level);
 	texture_heap_ptr = SYS_GetArena2Lo();
-	texture_heap_size = 21 * 1024 * 1024;
+	texture_heap_size = 18 * 1024 * 1024;
 	if ((u32)texture_heap_ptr + texture_heap_size > (u32)SYS_GetArena2Hi())
 	{
 		_CPU_ISR_Restore(level);
@@ -441,10 +441,12 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	
 	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
 	DCFlushRange(destination->data, scaled_width * scaled_height * 4/*sizeof(data)*/);
-	
+	//
 	// sBTODO finish mipmap implementation 
 	// need to verify if the new memory takes up more space
 	// if so reallocate tex
+	// also, I'll need to switch to malloc/free instead of individual memory threads
+	// 
 	/*
 	if (mipmap == true) {
 		int mip_level;

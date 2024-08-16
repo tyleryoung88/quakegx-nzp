@@ -268,6 +268,10 @@ void GL_EndRendering (void)
 		// Keep framerate
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
+		if (rmode->viTVMode & VI_NON_INTERLACE)
+		{
+			VIDEO_WaitVSync();
+		}
 		
 		fb ^= 1;
 }
