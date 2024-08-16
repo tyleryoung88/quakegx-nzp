@@ -434,8 +434,6 @@ void CL_Aim_Snap(void)
 	
 	bz = sv.edicts;
 	
-	aimsnap = false;
-	
 	int vofs = 32;//32 is actual v_ofs num
 	int aimOfs = -10;//30 is top of bbox, 20 is our goal, so -10
 	//Zombie body bbox vert max = 30
@@ -498,9 +496,10 @@ void CL_Aim_Snap(void)
 
 		if(distVec[0] < -70 || distVec[0] > 80)
 			return;
-	
-		VectorCopy(distVec,cl.viewangles);
+		
 		aimsnap = true;
+		VectorCopy(distVec,cl.viewangles);
+		aimsnap = false;
 	}
 }
 
