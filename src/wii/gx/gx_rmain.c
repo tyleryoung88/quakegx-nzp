@@ -840,6 +840,11 @@ void R_DrawTransparentAliasModel (entity_t *e)
 		if(lightcolor[g] > 125)
 			lightcolor[g] = 125;
 	}
+	
+	if(e->effects & EF_FULLBRIGHT)
+	{
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
+	}
 
 	// clamp lighting so it doesn't overbright as much
 	/*
@@ -1104,9 +1109,12 @@ void R_DrawAliasModel (entity_t *e)
 	
 	// HACK HACK HACK -- no fullbright colors, so make torches full light
 	if (!strcmp (clmodel->name, "progs/flame2.mdl")
-		|| !strcmp (clmodel->name, "progs/flame.mdl") )
+		|| !strcmp (clmodel->name, "progs/flame.mdl")
+		|| !strcmp (clmodel->name, "progs/lavaball.mdl") 
+		|| !strcmp (clmodel->name, "progs/bolt.mdl")
+	    || !strcmp (clmodel->name, "models/misc/bolt2.mdl")
+	    || !strcmp (clmodel->name, "progs/bolt3.mdl") )
 		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
-		//ambientlight = shadelight = 192;
 
 	guMtxIdentity(model);
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
