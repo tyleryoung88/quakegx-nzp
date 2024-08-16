@@ -35,6 +35,7 @@ qpic_t		*draw_disc;
 qpic_t		*draw_backtile;
 
 qpic_t		*sniper_scope;
+qpic_t		*sniper_scope_nb;
 
 int			translate_texture;
 int			char_texture;
@@ -72,8 +73,6 @@ cachepic_t	cachepics[MAX_CACHED_PICS];
 cachepic_t	menu_cachepics[MAX_CACHED_PICS];
 int			menu_numcachepics;
 int			numcachepics;
-
-byte		menuplyr_pixels[4096];
 
 int		pic_texels;
 int		pic_count;
@@ -286,8 +285,8 @@ void Draw_Init (void)
 	Hunk_FreeToLowMark(start);
 */
 	white_texturenum = GL_LoadTexture("white_texturenum", 8, 8, white_texture, false, false, true, 1);
-	
 	sniper_scope = Draw_CachePic ("gfx/hud/scope");
+	sniper_scope_nb = Draw_CachePic ("gfx/hud/scope_256");
 	
 	//Clear_LoadingFill ();
 }
@@ -1140,8 +1139,10 @@ extern cvar_t cl_crosshair_debug;
 extern qboolean crosshair_pulse_grenade;
 extern cvar_t cl_crossx, cl_crossy;
 extern qboolean aimsnap;
+extern cvar_t sniper_center;
 void Draw_Crosshair (void)
 {	
+	int scopex, scopey;
 
 	if (cl_crosshair_debug.value) {
 		Draw_FillByColor(vid.width/2, 0, 1, 240, 255, 0, 0, 255);
@@ -1153,15 +1154,33 @@ void Draw_Crosshair (void)
 		return;
 
 	if (cl.stats[STAT_ZOOM] == 2) {
-		Draw_StretchPic (0, 0, sniper_scope, vid.width, vid.height);
+		scopex = ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 156;
+		scopey = ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 156;
+		
+		if (sniper_center.value) {
+			Draw_StretchPic (0, 0, sniper_scope, vid.width, vid.height);
+		} else {
+			Draw_StretchPic (scopex, scopey, sniper_scope_nb, 312, 312);
+			//left screen
+			Draw_FillByColor (0, 0, scopex, scr_vrect.height, 0, 0, 0, 255);
+			//right screen
+			Draw_FillByColor (scopex + 312, 0, scr_vrect.width - scopex, scr_vrect.height, 0, 0, 0, 255);
+			//top screen
+			Draw_FillByColor (0, 0, scr_vrect.width, scopey, 0, 0, 0, 255);
+			//bottom screen
+			Draw_FillByColor (0, scopey + 312, scr_vrect.width, scr_vrect.height - scopey, 0, 0, 0, 255);
+		}
 	}
 	
-   	if (Hitmark_Time > sv.time) { 
+   	if (Hitmark_Time > sv.time) {
+		/*
 		if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
-			Draw_ColoredStretchPic (cl_crossx.value - 12/* - hitmark->width*/, cl_crossy.value - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
-		else
-			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
-					 ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
+			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12, 
+					((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12, hitmark, 24, 24, 255, 255, 255, 225);
+		else*/
+		// no need to do this seperately since cl_crossx.value updates approprietly 
+		Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
+				((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
 	}
 				 
 	/*

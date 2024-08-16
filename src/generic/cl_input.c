@@ -262,6 +262,7 @@ cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
 cvar_t	in_aimassist = {"in_aimassist", "0", true};
 cvar_t	ads_center = {"ads_center", "0", true};
+cvar_t	sniper_center = {"sniper_center", "0", true};
 
 //Shpuld - Porting over lower sens for lower fov
 extern cvar_t scr_fov;
@@ -578,16 +579,13 @@ void CL_SendMove (usercmd_t *cmd)
 	 * It's also possible to bypass the client-side PITCH limits. Beware, this may be considered cheating!
 	 */
 	
-	// sB lock crosshair in the center of screen for sniper scopes
-	if(cl.stats[STAT_ZOOM] == 2 || aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value)) {
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/scr_vrect.height + 1)/* * IR_PITCHRANGE*/);
+	// sB lock crosshair in the center of screen
+	if(aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || sniper_center.value) {
+		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/scr_vrect.height)/* * IR_PITCHRANGE*/);
 		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/scr_vrect.width - 1) /* * IR_YAWRANGE*/);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
 	} else {
-		
-		
 		//sBTODO figure out how to make this way more accurate than it is/
-			
 		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + ycrossnormal);
 		MSG_WriteAngle (&buf, cl.viewangles[YAW] - xcrossnormal);
 		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);

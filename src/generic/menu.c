@@ -1817,7 +1817,7 @@ again:
 //=============================================================================
 /* OPTIONS MENU */
 
-#define	OPTIONS_ITEMS	14
+#define	OPTIONS_ITEMS	15
 
 #define	SLIDER_RANGE	10
 
@@ -1888,15 +1888,17 @@ void M_AdjustSliders (int dir)
 		
 	case 9:	// Aim assist
 		Cvar_SetValue ("in_aimassist", !in_aimassist.value);
-		break;
-		
+		break;	
 	case 10: // ADS Always Centered
 		Cvar_SetValue ("ads_center", !ads_center.value);
 		break;
-	case 11:	// weapon roll by input
+	case 11: // Sniper Scope Always Centered
+		Cvar_SetValue ("sniper_center", !sniper_center.value);
+		break;
+	case 12:	// weapon roll by input
 		Cvar_SetValue ("cl_weapon_inrollangle", !cl_weapon_inrollangle.value);
 		break;
-	case 12:	// tv border
+	case 13:	// tv border
 		vid_tvborder.value += dir * 0.005f;
 		if (vid_tvborder.value < 0)
 			vid_tvborder.value = 0;
@@ -1904,7 +1906,7 @@ void M_AdjustSliders (int dir)
 			vid_tvborder.value = 0.2;
 		Cvar_SetValue ("vid_tvborder", vid_tvborder.value);
 		break;		
-	case 13:	// retro mode
+	case 14:	// retro mode
 		Cvar_SetValue ("vid_retromode", !vid_retromode.value);
 		break;
 	}
@@ -1979,16 +1981,19 @@ void M_Options_Draw (void)
 	
 	M_Print (16, 160,"   ADS Always Centered");
 	M_DrawCheckbox (215, 160, ads_center.value);
-
-	M_Print (16, 172, "          Weapon Roll");
-	M_DrawCheckbox (215, 172, cl_weapon_inrollangle.value);
-
-	M_Print (16, 184, "          TV Overscan");
-	r = vid_tvborder.value / 0.2f;
-	M_DrawSlider (220, 184, r);
 	
-	M_Print (16, 196, "           Retro Mode");
-	M_DrawCheckbox (215, 196, vid_retromode.value);
+	M_Print (16, 172," Scope Always Centered");
+	M_DrawCheckbox (215, 172, sniper_center.value);
+
+	M_Print (16, 184, "          Weapon Roll");
+	M_DrawCheckbox (215, 184, cl_weapon_inrollangle.value);
+
+	M_Print (16, 196, "          TV Overscan");
+	r = vid_tvborder.value / 0.2f;
+	M_DrawSlider (220, 196, r);
+	
+	M_Print (16, 208, "           Retro Mode");
+	M_DrawCheckbox (215, 208, vid_retromode.value);
 
 // cursor
 	M_DrawCharacter (200, 40 + options_cursor*12, 12+((int)(realtime*4)&1));

@@ -275,6 +275,7 @@ extern	cvar_t	lookstrafe;
 extern	cvar_t	sensitivity;
 extern 	cvar_t 	in_aimassist;
 extern 	cvar_t 	ads_center;
+extern 	cvar_t 	sniper_center;
 
 extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;

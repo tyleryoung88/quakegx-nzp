@@ -698,7 +698,7 @@ void CalcGunAngle (void)
 	float last_roll = 0.0f;
 	static float smooth_amt = 0.001f;
 	
-	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1)
+	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1 && !(cl.stats[STAT_ZOOM] == 2 && sniper_center.value))
 	{
 		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]/* + yaw*/) - (xcrossnormal * IR_YAWRANGE);
 		//cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw) - OldYawTheta);

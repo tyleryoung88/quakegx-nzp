@@ -687,6 +687,7 @@ int ir_x, ir_y;
 extern kbutton_t in_forward, in_left, in_right;
 extern int crosshairmoving;
 extern cvar_t ads_center;
+extern cvar_t sniper_center;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
 void IN_Move (usercmd_t *cmd)
 {
@@ -737,9 +738,9 @@ void IN_Move (usercmd_t *cmd)
 		// seems impossible in my mind
 		
 		if (key_dest != key_menu_pause) {
-			if (cl.stats[STAT_ZOOM] == 2 || aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value)) {
-				Cvar_SetValue("cl_crossx", vid.conwidth/2);
-				Cvar_SetValue("cl_crossy", vid.conheight/2);
+			if (aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
+				Cvar_SetValue("cl_crossx", scr_vrect.width / 2);
+				Cvar_SetValue("cl_crossy", scr_vrect.height / 2);
 			} else {
 				Cvar_SetValue("cl_crossx", scr_vrect.width / 2 * x2);
 				Cvar_SetValue("cl_crossy", scr_vrect.height / 2 * y2);

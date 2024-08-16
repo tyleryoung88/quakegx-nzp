@@ -1112,8 +1112,9 @@ void R_DrawAliasModel (entity_t *e)
 		|| !strcmp (clmodel->name, "progs/lavaball.mdl") 
 		|| !strcmp (clmodel->name, "progs/bolt.mdl")
 	    || !strcmp (clmodel->name, "models/misc/bolt2.mdl")
-	    || !strcmp (clmodel->name, "progs/bolt3.mdl") )
-		lightcolor[0] = lightcolor[1] = lightcolor[2] = 256;
+	    || !strcmp (clmodel->name, "progs/bolt3.mdl") ) {
+			lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
+		}
 
 	guMtxIdentity(model);
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);

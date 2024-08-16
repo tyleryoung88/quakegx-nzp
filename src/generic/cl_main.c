@@ -1017,6 +1017,7 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&sensitivity);
 	Cvar_RegisterVariable (&in_aimassist);
 	Cvar_RegisterVariable (&ads_center);
+	Cvar_RegisterVariable (&sniper_center);
 
 	Cvar_RegisterVariable (&m_pitch);
 	Cvar_RegisterVariable (&m_yaw);
