@@ -666,17 +666,19 @@ void CalcGunAngle (void)
 	CWeaponRot[ROLL] = cl.viewent.angles[ROLL] * -1;
 	/*
 	vec3_t	vieworgrest;
+	entity_t *vieworg;
 	
-	vieworgrest[0] = cl.viewent.origin[0];
-	vieworgrest[1] = cl.viewent.origin[1];
-	vieworgrest[2] = cl.viewent.origin[2];
+	vieworg = &cl_entities[cl.viewentity];
 	
-	guMtxIdentity(model);
-	//&cl.viewent
-	guMtxTrans(temp, cl.viewent.origin[0] - 10.0f, cl.viewent.origin[1], cl.viewent.origin[2]);
-	guMtxConcat(model, temp, model);
+	// sBTODO test refdef vieworg
+	vieworgrest[0] = vieworg->origin[0];
+	vieworgrest[1] = vieworg->origin[1];
+	vieworgrest[2] = vieworg->origin[2];
 	
-	Con_Printf ("origin: %f %f %f\n", cl.viewent.origin[0], cl.viewent.origin[1], cl.viewent.origin[2]);
+	vieworg->origin[0] = vieworg->origin[0] - 50.0f;
+	vieworg->origin[1] = vieworg->origin[1] - 30.0f;
+	
+	//Con_Printf ("old: %f %f %f new: %f %f %f\n", vieworgrest[0], vieworgrest[1], vieworgrest[2], vieworg->origin[0], vieworg->origin[1], vieworg->origin[2]);
 	*/
 	float side;
 	side = V_CalcRoll (cl_entities[cl.viewentity].angles, cl.velocity);
@@ -696,16 +698,14 @@ void CalcGunAngle (void)
 	float last_roll = 0.0f;
 	static float smooth_amt = 0.001f;
 	
-	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value))
+	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1)
 	{
-		if (lock_viewmodel != 1)
-			cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]/* + yaw*/) - (xcrossnormal * IR_YAWRANGE);
-			//cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw) - OldYawTheta);
+		cl.viewent.angles[YAW] = (r_refdef.viewangles[YAW]/* + yaw*/) - (xcrossnormal * IR_YAWRANGE);
+		//cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw - ((cl_crossx.value/scr_vrect.width * IR_YAWRANGE) * (centerdrift_offset_yaw) - OldYawTheta);
 		
 		//cl.viewent.angles[PITCH] = - r_refdef.viewangles[PITCH] + pitch + ((cl_crossy.value/scr_vrect.height * IR_PITCHRANGE) * (centerdrift_offset_pitch*-1));
 		cl.viewent.angles[PITCH] = -(r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal * IR_PITCHRANGE)*-1;
 		//guMtxTrans(temp, viewmod->origin[0] - (r_refdef.viewangles[PITCH]/* + pitch*/) + (ycrossnormal * scr_vrect.width)*-1, viewmod->origin[1], viewmod->origin[2]);
-		
 		
 		//Con_Printf("YAW:%f PITCH%f\n", cl.viewent.angles[YAW], -cl.viewent.angles[PITCH]);
 		
@@ -730,19 +730,15 @@ void CalcGunAngle (void)
 	else
 	{
 		// ELUTODO: Maybe there are other cases besides demo playback
-		if (lock_viewmodel != 1)
+		if (lock_viewmodel != 1) {
 			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW] + yaw;
-		
-		cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
+			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH] + pitch);
+		} else {
+			cl.viewent.angles[YAW] = r_refdef.viewangles[YAW];
+			cl.viewent.angles[PITCH] = - (r_refdef.viewangles[PITCH]);
+		}	
 	}
-	/*
-	guMtxConcat(view,model,modelview);
-	GX_LoadPosMtxImm(modelview, GX_PNMTX0);
 	
-	cl.viewent.origin[0] = vieworgrest[0];
-	cl.viewent.origin[1] = vieworgrest[1];
-	cl.viewent.origin[2] = vieworgrest[2];
-	*/
 /*
 	cl.viewent.angles[ROLL] -= v_idlescale.value * sinf(cl.time*v_iroll_cycle.value) * v_iroll_level.value;
 	cl.viewent.angles[PITCH] -= v_idlescale.value * sinf(cl.time*v_ipitch_cycle.value) * v_ipitch_level.value;
@@ -775,6 +771,12 @@ void CalcGunAngle (void)
 	CWeaponRot[PITCH] -= cl.viewent.angles[PITCH];
 	CWeaponRot[YAW] += cl.viewent.angles[YAW];
 	CWeaponRot[ROLL] += cl.viewent.angles[ROLL];
+	
+	//reset vieworg after rotation
+	/*
+	vieworg->origin[0] = vieworgrest[0];
+	vieworg->origin[1] = vieworgrest[1];
+	*/
 }
 
 /*
