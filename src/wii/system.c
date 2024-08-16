@@ -91,7 +91,7 @@ void Sys_Init_Logfile(void)
 {
 
 #ifdef LOGFILE	
- logfile= fopen("/apps/nzport/logfile.txt", "w");
+ logfile= fopen("/apps/nzportable/logfile.txt", "w");
 #endif
 }
 

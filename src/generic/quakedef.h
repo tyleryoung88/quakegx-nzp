@@ -29,7 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	VERSION				1.09
 #define WIIGX_VERSION			0.09
 
-#define QUAKE_WII_BASEDIR "/apps/nzport"
+#define QUAKE_WII_BASEDIR "/apps/nzportable"
 
 //define	PARANOID			// speed sapping error checking
 
