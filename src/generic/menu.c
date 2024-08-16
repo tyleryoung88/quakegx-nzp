@@ -2012,6 +2012,7 @@ char *bindnames[][2] =
 {"+jump", 			"Jump"},
 {"impulse 30",		"Change Stance"},
 {"impulse 33", 		"Place Betty"},
+{"showscores", 		"Show Scoreboard"},
 {"+forward", 		"Walk Forward"},
 {"+back", 			"Walk Backward"},
 {"+moveleft", 		"Step Left"},
@@ -3193,7 +3194,6 @@ void M_Video_Key (int key)
 void M_Init (void)
 {
 	Cmd_AddCommand ("togglemenu", M_ToggleMenu_f);
-
 	Cmd_AddCommand ("menu_main", M_Menu_Main_f);
 	Cmd_AddCommand ("menu_singleplayer", M_Menu_SinglePlayer_f);
 	Cmd_AddCommand ("menu_options", M_Menu_Options_f);

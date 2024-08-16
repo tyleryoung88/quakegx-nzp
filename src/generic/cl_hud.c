@@ -65,6 +65,8 @@ qboolean 	doubletap_has_damage_buff;
 int  x_value, y_value;
 
 void M_DrawPic (int x, int y, qpic_t *pic);
+void HUD_Scoreboard_Down (void);
+void HUD_Scoreboard_Up (void);
 
 double HUD_Change_time;//hide hud when not chagned
 double bettyprompt_time;
@@ -151,6 +153,9 @@ void HUD_Init (void)
 	b_two = Draw_CachePic ("gfx/butticons/2button");
 
     fx_blood_lu = Draw_CachePic ("gfx/hud/blood");
+	
+	Cmd_AddCommand ("+showscores", HUD_Scoreboard_Down);
+	Cmd_AddCommand ("-showscores", HUD_Scoreboard_Up);
 
     // naievil -- fixme
 	//Achievement_Init();
@@ -265,6 +270,18 @@ void HUD_Sortpoints (void)
 			}
 }
 
+qboolean showscoreboard = false;
+void HUD_Scoreboard_Down (void) 
+{
+	if (key_dest == key_game)
+		showscoreboard = true;
+}
+
+void HUD_Scoreboard_Up (void) 
+{
+	showscoreboard = false;
+}
+
 /*
 ===============
 HUD_EndScreen
@@ -272,43 +289,43 @@ HUD_EndScreen
 */
 void HUD_EndScreen (void)
 {
-
 	scoreboard_t	*s;
 	char			str[80];
 	int				i, k, l;
 	int				y, x, d;
-
+	
 	HUD_Sortpoints ();
 
 	l = scoreboardlines;
+	
+	if (!showscoreboard) {
+		Draw_ColoredString((vid.width - 9*12)/2, 140, "GAME OVER", 255, 0, 0, 255, 1.5);
 
-	Draw_ColoredString((vid.width - 9*12)/2, 65, "GAME OVER", 255, 0, 0, 255, 1.5);
+		sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
+		Draw_String ((vid.width - strlen (str)*12)/2, 165, str);
+	} else {
+		sprintf (str,"Name           Kills     Points");
+		x = (vid.width - strlen (str)*12)/2;
 
-	sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
-	Draw_String ((vid.width - strlen (str)*12)/2, 90, str);
+		Draw_String (x, 190, str);
+		y = 0;
+		for (i=0; i<l ; i++)
+		{
+			k = pointsort[i];
+			s = &cl.scores[k];
+			if (!s->name[0])
+				continue;
 
-	sprintf (str,"Name           Kills     Points");
-	x = (vid.width - strlen (str)*12)/2;
+			Draw_String (x, 215 + y, s->name);
 
-	Draw_String (x, 115, str);
-	y = 0;
-	for (i=0; i<l ; i++)
-	{
-		k = pointsort[i];
-		s = &cl.scores[k];
-		if (!s->name[0])
-			continue;
+			d = strlen (va("%i",s->kills));
+			Draw_String (x + (20 - d)*12, 215 + y, va("%i",s->kills));
 
-		Draw_String (x, 140 + y, s->name);
-
-		d = strlen (va("%i",s->kills));
-		Draw_String (x + (20 - d)*12, 140 + y, va("%i",s->kills));
-
-		d = strlen (va("%i",s->points));
-		Draw_String (x + (31 - d)*12, 140 + y, va("%i",s->points));
-		y += 25;
+			d = strlen (va("%i",s->points));
+			Draw_String (x + (31 - d)*12, 215 + y, va("%i",s->points));
+			y += 25;
+		}
 	}
-
 }
 
 //=============================================================================
@@ -564,8 +581,8 @@ int maxammoopac;
 void HUD_MaxAmmo(void)
 {
 
-	maxammoy -= cl.time * 0.01;
-	maxammoopac -= 5;
+	maxammoy -= cl.time * 0.03;
+	maxammoopac -= 3;
 
 	Draw_ColoredString(vid.width/2 - strlen("MAX AMMO!")*12/2, maxammoy, "MAX AMMO!", 255, 255, 255, maxammoopac, 1.5);
 
@@ -1543,14 +1560,16 @@ void HUD_Draw (void)
 		return;
 	}
 
-	if (cl.stats[STAT_HEALTH] <= 0)
+	if (cl.stats[STAT_HEALTH] <= 0 || showscoreboard == true)
 	{
 		HUD_EndScreen ();
 
 		// Make sure we still draw the screen flash.
 		if (screenflash_duration > sv.time)
 			HUD_Screenflash();
-		return;
+		
+		if (cl.stats[STAT_HEALTH] <= 0)
+			return;
 	}
 
 	if (bettyprompt_time > sv.time)
