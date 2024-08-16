@@ -1280,7 +1280,7 @@ The filename will be prefixed by the current game directory
 */
 void COM_WriteFile (char *filename, void *data, int len)
 {
-	int             handle;
+	int     handle;
 	char    name[MAX_OSPATH];
 	
 	sprintf (name, "%s/%s", com_gamedir, filename);
@@ -1686,10 +1686,10 @@ then loads and adds pak1.pak pak2.pak ...
 */
 void COM_AddGameDirectory (char *dir)
 {
-	int                             i;
+	//int             i;
 	searchpath_t    *search;
-	pack_t                  *pak;
-	char                    pakfile[MAX_OSPATH];
+	//pack_t        *pak;
+	//char          pakfile[MAX_OSPATH];
 
 	strcpy (com_gamedir, dir);
 

@@ -459,7 +459,6 @@ extern	vec3_t			lightspot;
 
 void GL_DrawAliasShadow (aliashdr_t *paliashdr, int posenum)
 {
-	
 	//float	s, t, l;
 	//int		i, j;
 	//int		index;

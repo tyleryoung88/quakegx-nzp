@@ -28,7 +28,7 @@ key up events are sent even if in console mode
 
 
 #define		MAXCMDLINE	256
-char	key_lines[32][MAXCMDLINE];
+char	key_lines[64][MAXCMDLINE];
 int		key_linepos;
 int		shift_down=false;
 int		key_lastpress;
@@ -59,10 +59,11 @@ typedef struct
 } keyname_t;
 
 // Are we inside the on-screen keyboard?
-int in_osk = 0;
+qboolean in_osk = false;
 
 // \0 means not mapped...
 // 5 * 15
+/*
 char osk_normal[75] =
 {
 	'\'', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '-', '=', ']', K_BACKSPACE,
@@ -88,9 +89,9 @@ int osk_coords[2];
 
 float osk_last_press_time = 0.0f;
 extern cvar_t osk_repeat_delay;
-
-int last_irx, last_iry;
-
+*/
+//int last_irx, last_iry;
+/*
 static float clampLine(float value, float minimum, float maximum)
 {
 	if (value > maximum)
@@ -106,7 +107,7 @@ static float clampLine(float value, float minimum, float maximum)
 		return value;
 	}
 }
-
+*/
 static keyname_t keynames[] =
 {
 	{"TAB", K_TAB},
@@ -207,6 +208,26 @@ static keyname_t keynames[] =
 
 ==============================================================================
 */
+#define MAX_Y 8
+#define MAX_X 12
+#define MAX_CHAR_LINE 35
+extern int  osk_pos_x;
+extern int  osk_pos_y;
+extern char osk_buffer[128];
+
+// naievil -- quick hack to make everything work properly
+char *osk_text2 [] =
+{
+	" 1 2 3 4 5 6 7 8 9 0 - = ` ",
+	" q w e r t y u i o p [ ]   ",
+	"   a s d f g h j k l ; ' \\ ",
+	"     z x c v b n m   , . / ",
+	"                           ",
+	" ! @ # $ % ^ & * ( ) _ + ~ ",
+	" Q W E R T Y U I O P { }   ",
+	"   A S D F G H J K L : \" | ",
+	"     Z X C V B N M   < > ? "
+};
 /*
 ====================
 Key_Console
@@ -217,39 +238,70 @@ Interactive line editing and console scrollback
 void Key_Console (int key)
 {
 	char	*cmd;
+	//static	char current[MAXCMDLINE] = "";
+	//int	history_line_last;
+	//size_t		len;
+	char *workline = key_lines[edit_line];
 	
-	if (key == K_JOY17 || key == K_JOY0)
-	{
-		in_osk = 1;
-		int line = (last_iry - OSK_YSTART) / (osk_line_size * (osk_line_size / osk_charsize)) - 1;
-		int col = (last_irx - OSK_XSTART) / (osk_col_size * (osk_col_size / osk_charsize)) - 1;
+	// dpad left is to open console
+	if (in_osk)
+	{	
+		switch(key) {
+			case K_JOY0:
+				if (MAX_CHAR_LINE > strlen(osk_buffer)) {
+					char *selected_line = osk_text2[osk_pos_y];
+					char selected_char[2];
 
-		osk_coords[0] = last_irx;
-		osk_coords[1] = last_iry;
+					selected_char[0] = selected_line[1+(2*osk_pos_x)];
 
-		line = clampLine(line, 0, osk_num_lines);
-		col = clampLine(col, 0, osk_num_col);
+					if (selected_char[0] == '\t')
+						selected_char[0] = ' ';
 
-		if (nunchuk_connected && (wpad_keys & WPAD_NUNCHUK_BUTTON_Z))
-			osk_set = osk_shifted;
-		else
-			osk_set = osk_normal;
+					selected_char[1] = '\0';
+					strcat(osk_buffer,selected_char);
+				}
+				break;
 
-		osk_selected = osk_set[line * osk_num_col + col];
+			case K_JOY17:
+				strncpy(workline,osk_buffer,MAX_CHAR_LINE);
+				//strcpy(key_lines[edit_line],workline);
+				in_osk = false;
+				break;
 
-		if ((wpad_keys & WPAD_BUTTON_B) && osk_selected && (Sys_FloatTime() >= osk_last_press_time + osk_repeat_delay.value || osk_selected != osk_last_selected))
-		{
-			Key_Event((osk_selected), true);
-			Key_Event((osk_selected), false);
-			osk_last_selected = osk_selected;
-			osk_last_press_time = Sys_FloatTime();
+			case K_JOY1:
+				if (strlen(osk_buffer) > 1) {
+					osk_buffer[strlen(osk_buffer)-1] = '\0';
+				}
+				break;
+
+			case K_RIGHTARROW:
+				osk_pos_x++;
+				if (osk_pos_x > MAX_X)
+					osk_pos_x = 0;//MAX_X
+				break;
+
+			case K_LEFTARROW:
+				osk_pos_x--;
+				if (osk_pos_x < 0)
+					osk_pos_x = MAX_X;//0
+				break;
+
+			case K_DOWNARROW:
+				osk_pos_y++;
+				if (osk_pos_y > MAX_Y)
+					osk_pos_y = 0;//MAX_Y
+				break;
+			case K_UPARROW:
+				osk_pos_y--;
+				if (osk_pos_y < 0)
+					osk_pos_y = MAX_Y;//0
+				break;
+
+			default:
+				break;
 		}
-		
-		if (key == K_JOY1)
-			in_osk = 0;
 	} else {
-	
-		if (key == K_ENTER)
+		if (key == K_JOY0)
 		{
 			Cbuf_AddText (key_lines[edit_line]+1);	// skip the >
 			Cbuf_AddText ("\n");
@@ -280,7 +332,13 @@ void Key_Console (int key)
 			}
 		}
 		
-		if (key == K_BACKSPACE || key == K_LEFTARROW)
+		if (key == K_JOY17) {
+			in_osk = !in_osk;
+			strcpy(osk_buffer, workline);
+			return;
+		}
+		
+		if (key == K_BACKSPACE)
 		{
 			if (key_linepos > 1)
 				key_linepos--;
@@ -359,6 +417,9 @@ void Key_Console (int key)
 			key_lines[edit_line][key_linepos] = key;
 			key_linepos++;
 			key_lines[edit_line][key_linepos] = 0;
+		}
+		if (key == K_JOY1) {
+			
 		}
 	
 	}
@@ -636,6 +697,11 @@ void Key_Init (void)
 	consolekeys[K_SHIFT] = true;
 	consolekeys[K_MWHEELUP] = true;
 	consolekeys[K_MWHEELDOWN] = true;
+	// sB -- Wii bindings start
+	consolekeys[K_JOY0] = true;
+	consolekeys[K_JOY1] = true;
+	consolekeys[K_JOY17] = true;
+	// end 
 	consolekeys['`'] = false;
 	consolekeys['~'] = false;
 
@@ -723,21 +789,15 @@ void Key_Event (key_id_t key, qboolean down)
 //
 // handle escape specialy, so the user can never unbind it
 //
-/*
-	if (key == K_ESCAPE)
+	/*
+	if (key == K_JOY1)
 	{
 		if (!down)
 			return;
 		switch (key_dest)
 		{
-		case key_message:
-			Key_Message (key);
-			break;
-		case key_menu:
-		case key_menu_pause:
-			M_Keydown (key);
-			break;
-		case key_game:
+		//case key_game:
+		// always able to break out of console
 		case key_console:
 			M_ToggleMenu_f ();
 			break;
@@ -746,7 +806,7 @@ void Key_Event (key_id_t key, qboolean down)
 		}
 		return;
 	}
-*/
+	*/
 //
 // key up events only generate commands if the game key binding is
 // a button command (leading + sign).  These will occur even in console mode,
@@ -786,9 +846,9 @@ void Key_Event (key_id_t key, qboolean down)
 //
 // if not a consolekey, send to the interpreter no matter what mode is
 //
-	if ( ((key_dest == key_menu || key_dest == key_menu_pause) && menubound[key])
-	|| (key_dest == key_console && !consolekeys[key])
-	|| (key_dest == key_game && ( !con_forcedup || !consolekeys[key] ) ) )
+	if ((key_dest == key_menu && menubound[key]) ||
+	    (key_dest == key_console && !consolekeys[key]) ||
+	    (key_dest == key_game && (!con_forcedup || !consolekeys[key])))
 	{
 		kb = keybindings[key];
 		if (kb)
@@ -806,7 +866,7 @@ void Key_Event (key_id_t key, qboolean down)
 		}
 		return;
 	}
-
+	
 	if (!down)
 		return;		// other systems only care about key down events
 
@@ -814,23 +874,23 @@ void Key_Event (key_id_t key, qboolean down)
 	{
 		key = keyshift[key];
 	}
-
 	switch (key_dest)
 	{
-	case key_message:
-		Key_Message (key);
-		break;
-	case key_menu:
-	case key_menu_pause:
-		M_Keydown (key);
-		break;
+		case key_message:
+			Key_Message (key);
+			break;
+		case key_menu:
+		case key_menu_pause:
+			M_Keydown (key);
+			break;
 
-	case key_game:
-	case key_console:
-		Key_Console (key);
-		break;
-	default:
-		Sys_Error ("Bad key_dest");
+		case key_game:
+		case key_console: {
+			Key_Console (key);
+			break;
+		}
+		default:
+			Sys_Error ("Bad key_dest");
 	}
 }
 

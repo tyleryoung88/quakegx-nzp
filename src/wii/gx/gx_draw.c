@@ -69,6 +69,8 @@ typedef struct cachepic_s
 
 #define	MAX_CACHED_PICS		128
 cachepic_t	cachepics[MAX_CACHED_PICS];
+cachepic_t	menu_cachepics[MAX_CACHED_PICS];
+int			menu_numcachepics;
 int			numcachepics;
 
 byte		menuplyr_pixels[4096];
@@ -140,34 +142,51 @@ qpic_t	*Draw_CachePic (char *path)
 		return &pic->pic;
 	}
 	
-	// sB NZ:P does not use lmps 
-	// might as well not even check
-
-	/*else {
-		
-		//strcat (str, ".lmp");
-		dat = (qpic_t *)COM_LoadTempFile (str);
-		if (!dat)
-		{
-			Con_Printf ("Draw_CachePic: failed to load file %s\n", str);
-			return 0;
-		}
-		//SwapPic (dat);
-
-		pic->pic.width = dat->width;
-		pic->pic.height = dat->height;
-
-		gl = (glpic_t *)pic->pic.data;
-		gl->texnum = GL_LoadPicTexture (dat);
-		gl->sl = 0;
-		gl->sh = 1;
-		gl->tl = 0;
-		gl->th = 1;
-		gltextures[gl->texnum].islmp = true;
-
-		return &pic->pic;
-	}*/
+	// sB NZ:P only uses lmps for console.
+	// seperated logic.
 	return NULL;
+}
+
+/*
+================
+Draw_CachePic
+================
+*/
+qpic_t	*Draw_LMP (char *path)
+{
+	cachepic_t	*pic;
+	int			i;
+	qpic_t		*dat;
+	glpic_t		*gl;
+
+	for (pic=menu_cachepics, i=0 ; i<menu_numcachepics ; pic++, i++)
+		if (!strcmp (path, pic->name))
+			return &pic->pic;
+
+	if (menu_numcachepics == MAX_CACHED_PICS)
+		Sys_Error ("menu_numcachepics == MAX_CACHED_PICS");
+	menu_numcachepics++;
+	strcpy (pic->name, path);
+
+//
+// load the pic from disk
+//
+	dat = (qpic_t *)COM_LoadTempFile (path);	
+	if (!dat)
+		Sys_Error ("Draw_CachePic: failed to load %s", path);
+	SwapPic (dat);
+
+	pic->pic.width = dat->width;
+	pic->pic.height = dat->height;
+
+	gl = (glpic_t *)pic->pic.data;
+	gl->texnum = GL_LoadPicTexture (dat);
+	gl->sl = 0;
+	gl->sh = 1;
+	gl->tl = 0;
+	gl->th = 1;
+
+	return &pic->pic;
 }
 
 /*

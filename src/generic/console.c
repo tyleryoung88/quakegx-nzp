@@ -84,8 +84,9 @@ void Con_ToggleConsole_f (void)
 			M_Menu_Main_f ();
 		}
 	}
-	else
+	else {
 		key_dest = key_console;
+	}
 	
 	SCR_EndLoadingPlaque ();
 	memset (con_times, 0, sizeof(con_times));
@@ -577,7 +578,8 @@ Draws the console with the solid background
 The typing input line at the bottom should only be drawn if typing is allowed
 ================
 */
-extern int in_osk;
+extern qboolean in_osk;
+void M_OSK_Draw (void);
 void Con_DrawConsole (int lines, qboolean drawinput)
 {
 	int				i, x, y;
@@ -608,8 +610,10 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 			Draw_Character ( (x+1)<<3, y, text[x]);
 	}
 	
-	if (in_osk == 1)
-		GX_DrawOSK();
+	if (in_osk == true) {
+		//GX_DrawOSK();
+		M_OSK_Draw ();
+	}
 
 // draw the input prompt, user text, and cursor if desired
 	//if (drawinput)

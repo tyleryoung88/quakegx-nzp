@@ -43,6 +43,7 @@ void Draw_String (int x, int y, char *str);
 void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, float a, float scale);
 qpic_t *Draw_PicFromWad (char *name);
 qpic_t *Draw_CachePic (char *path);
+qpic_t *Draw_LMP (char *path);
 
 extern float loading_cur_step;
 extern int loading_step;

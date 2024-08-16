@@ -376,7 +376,7 @@ void frontend(void)
 }
 */
 // Set up the heap.
-static size_t	heap_size	= 33 * 1024 * 1024;
+static size_t	heap_size	= 30 * 1024 * 1024;
 static char		*heap;
 static u32		real_heap_size;
 static void* main_thread_function(void* dummy)

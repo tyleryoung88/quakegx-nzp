@@ -252,6 +252,63 @@ void M_DrawTransPicTranslate (int x, int y, qpic_t *pic)
 	Draw_TransPicTranslate (x + ((vid.conwidth - 320)>>1), y, pic, translationTable);
 }
 
+void M_DrawTextBox (int x, int y, int width, int lines)
+{
+	
+	qpic_t	*p;
+	int		cx, cy;
+	int		n;
+
+	// draw left side
+	cx = x;
+	cy = y;
+	p = Draw_LMP ("gfx/box_tl.lmp");
+	M_DrawTransPic (cx, cy, p);
+	p = Draw_LMP ("gfx/box_ml.lmp");
+	for (n = 0; n < lines; n++)
+	{
+		cy += 8;
+		M_DrawTransPic (cx, cy, p);
+	}
+	p = Draw_LMP ("gfx/box_bl.lmp");
+	M_DrawTransPic (cx, cy+8, p);
+
+	// draw middle
+	cx += 8;
+	while (width > 0)
+	{
+		cy = y;
+		p = Draw_LMP ("gfx/box_tm.lmp");
+		M_DrawTransPic (cx, cy, p);
+		p = Draw_LMP ("gfx/box_mm.lmp");
+		for (n = 0; n < lines; n++)
+		{
+			cy += 8;
+			if (n == 1)
+				p = Draw_LMP ("gfx/box_mm2.lmp");
+			M_DrawTransPic (cx, cy, p);
+		}
+		p = Draw_LMP ("gfx/box_bm.lmp");
+		M_DrawTransPic (cx, cy+8, p);
+		width -= 2;
+		cx += 16;
+	}
+
+	// draw right side
+	cy = y;
+	p = Draw_LMP ("gfx/box_tr.lmp");
+	M_DrawTransPic (cx, cy, p);
+	p = Draw_LMP ("gfx/box_mr.lmp");
+	for (n = 0; n < lines; n++)
+	{
+		cy += 8;
+		M_DrawTransPic (cx, cy, p);
+	}
+	p = Draw_LMP ("gfx/box_br.lmp");
+	M_DrawTransPic (cx, cy+8, p);
+
+	return;
+}
 
 //=============================================================================
 
@@ -2195,6 +2252,104 @@ void M_Keys_Key (int k)
 		break;
 	}
 }
+
+//=============================================================================
+/* CONSOLE OSK */
+
+#define CHAR_SIZE 8
+#define MAX_Y 8
+#define MAX_X 12
+
+#define MAX_CHAR_LINE 36
+#define MAX_CHAR      72
+
+int  osk_pos_x = 0;
+int  osk_pos_y = 0;
+int  max_len   = 0;
+int  m_old_state = 0;
+
+char* osk_out_buff = NULL;
+char  osk_buffer[128];
+
+char *osk_help [] =
+{
+	"ADD:   ",
+	"A      ",
+	"       ",
+	"DELETE:",
+	"B      ",
+	"       ",
+	"CLOSE: ",
+	"MINUS  ",
+	"       "
+};
+
+char *osk_text [] =
+{
+	" 1 2 3 4 5 6 7 8 9 0 - = ` ",
+	" q w e r t y u i o p [ ]   ",
+	"   a s d f g h j k l ; ' \\ ",
+	"     z x c v b n m   , . / ",
+	"                           ",
+	" ! @ # $ % ^ & * ( ) _ + ~ ",
+	" Q W E R T Y U I O P { }   ",
+	"   A S D F G H J K L : \" | ",
+	"     Z X C V B N M   < > ? "
+};
+
+void M_OSK_Draw (void) {
+
+	int x,y;
+	int i;
+
+	char *selected_line = osk_text[osk_pos_y];
+	char selected_char[2];
+
+	//GL_SetCanvas(CANVAS_MENU);
+
+	selected_char[0] = selected_line[1+(2*osk_pos_x)];
+	selected_char[1] = '\0';
+	if (selected_char[0] == ' ' || selected_char[0] == '\t')
+		selected_char[0] = 'X';
+
+	y = 150;
+	x = 150;
+
+	M_DrawTextBox (x-3, y-10, 		     26, 10);
+	M_DrawTextBox ((x-3)+(26*CHAR_SIZE),    y-10,  10, 10);
+	M_DrawTextBox (x-3, (y-10)+(10*CHAR_SIZE),36,  3);
+
+	for(i=0;i<=MAX_Y;i++)
+	{
+		M_PrintWhite (x, y+(CHAR_SIZE*i), osk_text[i]);
+		if (i == 1 || i == 4 || i == 7)
+			M_Print      (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+		else
+			M_PrintWhite (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+	}
+
+	int text_len = strlen(osk_buffer);
+	if (text_len > MAX_CHAR_LINE) {
+
+		char oneline[MAX_CHAR_LINE+1];
+		strncpy(oneline,osk_buffer,MAX_CHAR_LINE);
+		oneline[MAX_CHAR_LINE] = '\0';
+
+		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), oneline );
+
+		strncpy(oneline,osk_buffer+MAX_CHAR_LINE, text_len - MAX_CHAR_LINE);
+		oneline[text_len - MAX_CHAR_LINE] = '\0';
+
+		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+3)), oneline );
+		M_PrintWhite (x+4+(CHAR_SIZE*(text_len - MAX_CHAR_LINE)), y+4+(CHAR_SIZE*(MAX_Y+3)),"_");
+	}
+	else {
+		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), osk_buffer );
+		M_PrintWhite (x+4+(CHAR_SIZE*(text_len)), y+4+(CHAR_SIZE*(MAX_Y+2)),"_");
+	}
+	M_Print      (x+((((osk_pos_x)*2)+1)*CHAR_SIZE), y+(osk_pos_y*CHAR_SIZE), selected_char);
+}
+
 
 //=============================================================================
 /* HELP MENU */

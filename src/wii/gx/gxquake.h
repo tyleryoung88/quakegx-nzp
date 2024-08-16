@@ -355,19 +355,19 @@ void GL_ClearTextureCache(void);
 void Clear_LoadingFill (void);
 
 // OSK
-void GX_DrawOSK(void);
-extern int in_osk;
-extern char *osk_set;
-extern int osk_selected;
-extern int osk_coords[2];
-#define osk_charsize 8
+extern qboolean in_osk;
+//void GX_DrawOSK(void);
+//extern char *osk_set;
+//extern int osk_selected;
+//extern int osk_coords[2];
+//#define osk_charsize 8
 // ELUTODO: use glwidth/height or wiimote_ir_res_x/y?
-#define osk_num_lines 5
-#define osk_line_size 16
-#define osk_num_col 15
-#define osk_col_size 16
-#define OSK_XSTART (((glwidth) - ((glwidth) / (osk_col_size) * (osk_num_col))) / 2)
-#define OSK_YSTART (((glheight) - ((glheight) / (osk_line_size) * (osk_num_lines))) / 2)
+//#define osk_num_lines 5
+//#define osk_line_size 16
+//#define osk_num_col 15
+//#define osk_col_size 16
+//#define OSK_XSTART (((glwidth) - ((glwidth) / (osk_col_size) * (osk_num_col))) / 2)
+//#define OSK_YSTART (((glheight) - ((glheight) / (osk_line_size) * (osk_num_lines))) / 2)
 
 // Draw.c extensions
 extern void Draw_TransAlphaPic (int x, int y, qpic_t *pic, float alpha);
