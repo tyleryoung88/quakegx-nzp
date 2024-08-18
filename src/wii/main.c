@@ -50,7 +50,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../generic/quakedef.h"
 
-u32 MALLOC_MEM2 = 0;
+//u32 MALLOC_MEM2 = 0;
 
 extern void Sys_Reset(void);
 extern void Sys_Shutdown(void);
@@ -376,7 +376,7 @@ void frontend(void)
 }
 */
 // Set up the heap.
-static size_t	heap_size	= 30 * 1024 * 1024;
+static size_t	heap_size	= 39 * 1024 * 1024;
 static char		*heap;
 static u32		real_heap_size;
 static void* main_thread_function(void* dummy)

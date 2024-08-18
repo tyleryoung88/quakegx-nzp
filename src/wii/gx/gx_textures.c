@@ -28,7 +28,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <gccore.h>
 #include <malloc.h>
 
-// ELUTODO: GL_Upload32 and GL_Update32 could use some optimizations
 // ELUTODO: mipmap
 
 cvar_t		gl_max_size = {"gl_max_size", "1024"};
@@ -43,12 +42,11 @@ u32 texture_heap_size;
 
 void R_InitTextureHeap (void)
 {
-	
 	u32 level, size;
 
 	_CPU_ISR_Disable(level);
 	texture_heap_ptr = SYS_GetArena2Lo();
-	texture_heap_size = 21 * 1024 * 1024;
+	texture_heap_size = 12 * 1024 * 1024;
 	if ((u32)texture_heap_ptr + texture_heap_size > (u32)SYS_GetArena2Hi())
 	{
 		_CPU_ISR_Restore(level);
@@ -75,17 +73,15 @@ R_InitTextures
 */
 void	R_InitTextures (void)
 {
-	/*
 	int		x,y, m;
 	byte	*dest;
-	*/
 
 	R_InitTextureHeap();
 
 	Cvar_RegisterVariable (&gl_max_size);
 
 	numgltextures = 0;
-	/*
+	
 // create a simple checkerboard texture for the default
 	r_notexture_mip = Hunk_AllocName (sizeof(texture_t) + 16*16+8*8+4*4+2*2, "notexture");
 	
@@ -107,7 +103,7 @@ void	R_InitTextures (void)
 					*dest++ = 0xff;
 			}
 	}	
-	*/
+	
 }
 
 void GL_Bind0 (int texnum)
@@ -235,6 +231,98 @@ void GL_ResampleTexture (unsigned *in, int inwidth, int inheight, unsigned *out,
 	}
 }
 
+int GX_RGBA_To_RGB5A3(u32 srccolor, qboolean flip)
+{
+	u16 color;
+
+	u32 r, g, b, a;
+	if (flip){
+		r = srccolor & 0xFF;
+		srccolor >>= 8;
+		g = srccolor & 0xFF;
+		srccolor >>= 8;
+		b = srccolor & 0xFF;
+		srccolor >>= 8;
+		a = srccolor & 0xFF;
+	} else {
+		a = srccolor & 0xFF;
+		srccolor >>= 8;
+		b = srccolor & 0xFF;
+		srccolor >>= 8;
+		g = srccolor & 0xFF;
+		srccolor >>= 8;
+		r = srccolor & 0xFF;
+	}
+	
+	if (a > 0xe0)
+	{
+		r = r >> 3;
+		g = g >> 3;
+		b = b >> 3;
+
+		color = (r << 10) | (g << 5) | b;
+		color |= 0x8000;
+	}
+	else
+	{
+		r = r >> 4;
+		g = g >> 4;
+		b = b >> 4;
+		a = a >> 5;
+
+		color = (a << 12) | (r << 8) | (g << 4) | b;
+	}
+
+	return color;
+}
+
+int GX_LinearToTiled(int x, int y, int width)
+{
+	int x0, x1, y0, y1;
+	int offset;
+
+	x0 = x & 3;
+	x1 = x >> 2;
+	y0 = y & 3;
+	y1 = y >> 2;
+	offset = x0 + 4 * y0 + 16 * x1 + 4 * width * y1;
+
+	return offset;
+}
+
+
+/*
+===============
+GL_CopyRGB5A3
+
+Converts from linear to tiled during copy
+===============
+*/
+void GX_CopyRGB5A3(u16 *dest, u16 *src, int x1, int y1, int x2, int y2, int src_width)
+{
+	int i, j;
+
+	for (i = y1; i < y2; i++)
+		for (j = x1; j < x2; j++)
+			dest[GX_LinearToTiled(j, i, src_width)] = src[j + i * src_width];
+}
+
+/*
+===============
+GL_CopyRGB5A3
+
+Converts from linear RGBA8 to tiled RGB5A3 during copy
+===============
+*/
+void GX_CopyRGBA8_To_RGB5A3(u16 *dest, u32 *src, int x1, int y1, int x2, int y2, int src_width, qboolean flip)
+{
+	int i, j;
+
+	for (i = y1; i < y2; i++)
+		for (j = x1; j < x2; j++)
+			dest[GX_LinearToTiled(j, i, src_width)] = GX_RGBA_To_RGB5A3(src[j + i * src_width], flip);
+}
+
 /*
 ================
 GL_MipMap
@@ -295,9 +383,10 @@ GL_Upload32
 */
 void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha, qboolean flipRGBA)
 {
-	int			i, x, y, s;
-	u8			*pos;
+	int			s;
 	int			scaled_width, scaled_height;
+	//u32 texbuffs;
+	//heap_iblock info;
 
 	for (scaled_width = 1 << 5 ; scaled_width < width ; scaled_width<<=1)
 		;
@@ -324,7 +413,7 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 		memcpy(scaled, data, scaled_width * scaled_height * 4/*sizeof(data)*/);
 	}
 	
-	destination->data = __lwp_heap_allocate(&texture_heap, scaled_width * scaled_height * 4/*sizeof(data)*/);
+	destination->data = __lwp_heap_allocate(&texture_heap, scaled_width * scaled_height * 2/*sizeof(data)*/);
 	
 	if (!destination->data)
 		Sys_Error("GL_Upload32: Out of memory.");
@@ -338,109 +427,15 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 
 	if ((int)destination->data & 31)
 		Sys_Error ("GL_Upload32: destination->data&31");
-
-	// sB: barfoo34 kindly pointed out that this appears to be 
-	// expecting ARGB, when it actually expects ABGR
-	// thus causing my texture profiling confusion.
-	// So now I am reordering this to store the textures
-	// as RGBA in order to restore compatability.
 	
-	if (flipRGBA) {
-		pos = (u8 *)destination->data;
-		for (y = 0; y < scaled_height; y += 4)
-		{
-			u8* row1 = (u8 *)&(scaled[scaled_width * (y + 0)]);
-			u8* row2 = (u8 *)&(scaled[scaled_width * (y + 1)]);
-			u8* row3 = (u8 *)&(scaled[scaled_width * (y + 2)]);
-			u8* row4 = (u8 *)&(scaled[scaled_width * (y + 3)]);
-
-			for (x = 0; x < scaled_width; x += 4)
-			{
-				u8 AR[32];
-				u8 GB[32];
-
-				for (i = 0; i < 4; i++)
-				{
-					u8* ptr1 = &(row1[(x + i) * 4]);
-					u8* ptr2 = &(row2[(x + i) * 4]);
-					u8* ptr3 = &(row3[(x + i) * 4]);
-					u8* ptr4 = &(row4[(x + i) * 4]);
-
-					AR[(i * 2) +  0] = ptr1[0];
-					AR[(i * 2) +  1] = ptr1[3];
-					AR[(i * 2) +  8] = ptr2[0];
-					AR[(i * 2) +  9] = ptr2[3];
-					AR[(i * 2) + 16] = ptr3[0];
-					AR[(i * 2) + 17] = ptr3[3];
-					AR[(i * 2) + 24] = ptr4[0];
-					AR[(i * 2) + 25] = ptr4[3];
-
-					GB[(i * 2) +  0] = ptr1[2];
-					GB[(i * 2) +  1] = ptr1[1];
-					GB[(i * 2) +  8] = ptr2[2];
-					GB[(i * 2) +  9] = ptr2[1];
-					GB[(i * 2) + 16] = ptr3[2];
-					GB[(i * 2) + 17] = ptr3[1];
-					GB[(i * 2) + 24] = ptr4[2];
-					GB[(i * 2) + 25] = ptr4[1];
-				}
-
-				memcpy(pos, AR, sizeof(AR));
-				pos += sizeof(AR);
-				memcpy(pos, GB, sizeof(GB));
-				pos += sizeof(GB);
-			}
-		}
-	} else {
-		pos = (u8 *)destination->data;
-		for (y = 0; y < scaled_height; y += 4)
-		{
-			u8* row1 = (u8 *)&(scaled[scaled_width * (y + 0)]);
-			u8* row2 = (u8 *)&(scaled[scaled_width * (y + 1)]);
-			u8* row3 = (u8 *)&(scaled[scaled_width * (y + 2)]);
-			u8* row4 = (u8 *)&(scaled[scaled_width * (y + 3)]);
-
-			for (x = 0; x < scaled_width; x += 4)
-			{
-				u8 RG[32];
-				u8 BA[32];
-
-				for (i = 0; i < 4; i++)
-				{
-					u8* ptr1 = &(row1[(x + i) * 4]);
-					u8* ptr2 = &(row2[(x + i) * 4]);
-					u8* ptr3 = &(row3[(x + i) * 4]);
-					u8* ptr4 = &(row4[(x + i) * 4]);
-
-					RG[(i * 2) +  0] = ptr1[3];
-					RG[(i * 2) +  1] = ptr1[0];
-					RG[(i * 2) +  8] = ptr2[3];
-					RG[(i * 2) +  9] = ptr2[0];
-					RG[(i * 2) + 16] = ptr3[3];
-					RG[(i * 2) + 17] = ptr3[0];
-					RG[(i * 2) + 24] = ptr4[3];
-					RG[(i * 2) + 25] = ptr4[0];
-
-					BA[(i * 2) +  0] = ptr1[1];
-					BA[(i * 2) +  1] = ptr1[2];
-					BA[(i * 2) +  8] = ptr2[1];
-					BA[(i * 2) +  9] = ptr2[2];
-					BA[(i * 2) + 16] = ptr3[1];
-					BA[(i * 2) + 17] = ptr3[2];
-					BA[(i * 2) + 24] = ptr4[1];
-					BA[(i * 2) + 25] = ptr4[2];
-				}
-
-				memcpy(pos, RG, sizeof(RG));
-				pos += sizeof(RG);
-				memcpy(pos, BA, sizeof(BA));
-				pos += sizeof(BA);
-			}
-		}
-	}
+	//texbuffs = GX_GetTexBufferSize	(scaled_width, scaled_height, GX_TF_RGB5A3, GX_FALSE, 1);
+    //__lwp_heap_getinfo(&texture_heap, &info);
+    //Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
 	
-	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
-	DCFlushRange(destination->data, scaled_width * scaled_height * 4/*sizeof(data)*/);
+	GX_CopyRGBA8_To_RGB5A3((u16 *)destination->data, scaled, 0, 0, scaled_width, scaled_height, scaled_width, flipRGBA);	
+	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
+	DCFlushRange(destination->data, scaled_width * scaled_height * 2/*sizeof(data)*/);
+	
 	//
 	// sBTODO finish mipmap implementation 
 	// need to verify if the new memory takes up more space
@@ -631,6 +626,7 @@ reload:
 	glt->keep = keep;
 	glt->used = true;
 	
+	//Con_Printf ("tex %s w%i h%i bpp%i\n", identifier, width, height, bytesperpixel);
 	if (bytesperpixel == 1) {
 			GL_Upload8 (glt, data, width, height, mipmap, alpha);
 		}
@@ -684,11 +680,6 @@ int GL_LoadLightmapTexture (char *identifier, int width, int height, byte *data)
 	return glt->texnum;
 }
 
-const int lightblock_datamap[128*128*4] =
-{
-#include "128_128_datamap.h"
-};
-
 /*
 ================================
 GL_UpdateLightmapTextureRegion32
@@ -696,10 +687,10 @@ GL_UpdateLightmapTextureRegion32
 */
 void GL_UpdateLightmapTextureRegion32 (gltexture_t *destination, unsigned *data, int width, int height, int xoffset, int yoffset, qboolean mipmap, qboolean alpha)
 {
-	int			x, y, pos;
+	int			x, y;
 	int			realwidth = width + xoffset;
 	int			realheight = height + yoffset;
-	u8			*dest = (u8 *)destination->data, *src = (u8 *)data;
+	u16			*dest = (u16 *)destination->data;
 
 	// ELUTODO: mipmaps
 	// ELUTODO samples = alpha ? GX_TF_RGBA8 : GX_TF_RGBA8;
@@ -708,21 +699,13 @@ void GL_UpdateLightmapTextureRegion32 (gltexture_t *destination, unsigned *data,
 		Sys_Error ("GL_Update32: destination->data&31");
 	
 	for (y = yoffset; y < realheight; y++)
-	{
 		for (x = xoffset; x < realwidth; x++)
-		{
-			pos = (x + y * realwidth) * 4;
-			dest[lightblock_datamap[pos + 0]] = src[pos + 3];
-			dest[lightblock_datamap[pos + 1]] = src[pos + 2];
-			dest[lightblock_datamap[pos + 2]] = src[pos + 1];
-			dest[lightblock_datamap[pos + 3]] = src[pos + 0];
-		}
-	}
+			dest[GX_LinearToTiled(x, y, width)] = GX_RGBA_To_RGB5A3(data[x + y * realwidth], false);
 	
-	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * 4/*sizeof(data)*/);
+	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * 2/*sizeof(data)*/);
 	//GX_InvalidateTexAll();
 }
-extern int lightmap_textures;
+
 /*
 ==============================
 GL_UpdateLightmapTextureRegion
@@ -799,20 +782,20 @@ void GL_ClearTextureCache(void)
 			{
 				numgltextures = i + 1;
 
-				newdata = __lwp_heap_allocate(&texture_heap, gltextures[i].scaled_width * gltextures[i].scaled_height * 4/*sizeof(data)*/);
+				newdata = __lwp_heap_allocate(&texture_heap, gltextures[i].scaled_width * gltextures[i].scaled_height * 2/*sizeof(data)*/);
 				if (!newdata)
 					Sys_Error("GL_ClearTextureCache: Out of memory.");
 
 				// ELUTODO Pseudo-defragmentation that helps a bit :)
-				memcpy(newdata, gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * 4/*sizeof(data)*/);
+				memcpy(newdata, gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * 2/*sizeof(data)*/);
 
 				if (!__lwp_heap_free(&texture_heap, gltextures[i].data))
 					Sys_Error("GL_ClearTextureCache: Error freeing data.");
 
 				gltextures[i].data = newdata;
-				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGBA8, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
+				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
 
-				DCFlushRange(gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * 4/*sizeof(data)*/);
+				DCFlushRange(gltextures[i].data, gltextures[i].scaled_width * gltextures[i].scaled_height * 2/*sizeof(data)*/);
 			}
 			else
 			{
@@ -835,8 +818,6 @@ void GL_ClearTextureCache(void)
 */
 int		image_width;
 int		image_height;
-
-int COM_OpenFile (char *filename, int *hndl);
 /*
 =================================================================
 
@@ -907,10 +888,8 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 	
 	image_rgba = &pcx->data;
 
-	out = malloc ((pcx->ymax+1)*(pcx->xmax+1)*4);
-	
+	out = malloc ((pcx->ymax+1)*(pcx->xmax+1)*4);	
 	pic = out;
-
 	pix = out;
 
 	if (matchwidth && (pcx->xmax+1) != matchwidth)
@@ -944,13 +923,10 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 				pix[3] = 255;
 				pix += 4;
 				x++;
-				
 			}
 		}
-
 	}
 	
-
 	image_width = pcx->xmax+1;
 	image_height = pcx->ymax+1;
 	
@@ -1023,9 +999,8 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 	}
 	
 	// sBTODO
-	// leaking memory somewhere
-	// first I need to find a better way to pass texture names 
-	// so they don't overflow. (increased identifier[to 128] temporarily)
+	// I need to find a better way to pass texture names 
+	// increased identifier[to 128] temporarily
 	
 	//Try PCX	
 	sprintf (name, "%s.pcx", basename);
@@ -1108,8 +1083,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 		free(data);
 		return texnum;
 	}
-
-	//Con_Printf("Cannot load image %s\n", filename);
+	
 	return 0;
 }
 
