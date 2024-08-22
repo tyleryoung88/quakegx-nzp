@@ -303,6 +303,28 @@ void HUD_EndScreen (void)
 
 		sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
 		Draw_String ((vid.width - strlen (str)*12)/2, 165, str);
+		
+		sprintf (str,"Name           Kills     Points");
+		x = (vid.width - strlen (str)*12)/2;
+
+		Draw_String (x, 190, str);
+		y = 0;
+		for (i=0; i<l ; i++)
+		{
+			k = pointsort[i];
+			s = &cl.scores[k];
+			if (!s->name[0])
+				continue;
+
+			Draw_String (x, 215 + y, s->name);
+
+			d = strlen (va("%i",s->kills));
+			Draw_String (x + (20 - d)*12, 215 + y, va("%i",s->kills));
+
+			d = strlen (va("%i",s->points));
+			Draw_String (x + (31 - d)*12, 215 + y, va("%i",s->points));
+			y += 25;
+		}
 	} else {
 		sprintf (str,"Name           Kills     Points");
 		x = (vid.width - strlen (str)*12)/2;
