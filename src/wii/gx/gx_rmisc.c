@@ -56,7 +56,7 @@ void R_InitParticleTexture (void)
 		}
 	}
 
-	particletexture = GL_LoadTexture("", 8, 8, (byte *)data, false, true, true, 1);
+	particletexture = GL_LoadTexture("particletex", 8, 8, (byte *)data, false, true, true, 1);
 }
 
 /*
@@ -418,7 +418,7 @@ void R_TimeRefresh_f (void)
 	Con_Printf ("%f seconds (%f fps)\n", time, 128/time);
 
 	// ELUTODO glDrawBuffer  (GL_BACK);
-	GL_EndRendering ();
+	//GL_EndRendering ();
 }
 
 void D_FlushCaches (void)

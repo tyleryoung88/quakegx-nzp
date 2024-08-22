@@ -44,6 +44,8 @@ static int scr_width, scr_height;
 
 static bool vidmode_active = false;
 
+int texture_extension_number = 1;
+
 /*-----------------------------------------------------------------------*/
 
 unsigned		d_8to24table[256];
@@ -82,7 +84,7 @@ void VID_Shutdown(void)
 
 void VID_ShiftPalette(unsigned char *p)
 {
-//	VID_SetPalette(p);
+	VID_SetPalette(p);
 }
 
 void	VID_SetPalette (unsigned char *palette)
@@ -211,11 +213,6 @@ void GL_Init (void)
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
 	GX_SetVtxAttrFmt(GX_VTXFMT0, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
  
-	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_POS, GX_POS_XYZ, GX_F32, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_CLR0, GX_CLR_RGBA, GX_RGBA8, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX0, GX_TEX_ST, GX_F32, 0);
-	GX_SetVtxAttrFmt(GX_VTXFMT1, GX_VA_TEX1, GX_TEX_ST, GX_F32, 0);
- 
 	GX_SetNumChans(1);
 	GX_SetNumTexGens(1);
 	GX_SetTevOrder(GX_TEVSTAGE0, GX_TEXCOORD0, GX_TEXMAP0, GX_COLOR0A0);
@@ -244,12 +241,9 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 	GX_SetScissor(*x,*y,*width,*height);
 	
-	//GX_SetDstAlpha(GX_ENABLE, 0);
-	
 	// ELUTODO: really necessary?
 	//GX_InvVtxCache();
 	//GX_InvalidateTexAll();
-	//Sbar_Changed(); // force status bar redraw every frame
 }
 
 void GL_EndRendering (void)
@@ -257,24 +251,25 @@ void GL_EndRendering (void)
 		// Finish up any graphics operations.
 		GX_Flush();
 		GX_DrawDone();
+		
+		fb ^= 1;
 
-		//GX_SetDstAlpha(GX_DISABLE, 0xFF); // 0xFF
 		// Start copying the frame buffer every vsync.
-		GX_CopyDisp(framebuffer[fb & 1], GX_TRUE);
+		GX_CopyDisp(framebuffer[fb], GX_TRUE);
 		GX_SetColorUpdate(GX_TRUE);
 		GX_SetAlphaUpdate(GX_TRUE);
-		VIDEO_SetNextFramebuffer(framebuffer[fb & 1]);
-
-		// Keep framerate
+		VIDEO_SetNextFramebuffer(framebuffer[fb]);
+		
+		// Keep framerate		
 		VIDEO_Flush();
 		VIDEO_WaitVSync();
+		/*
 		if (rmode->viTVMode & VI_NON_INTERLACE)
 		{
 			VIDEO_WaitVSync();
-		}
-		
-		fb ^= 1;
-}
+		}	
+		*/
+}	
 
 // This is not the "v_gamma/gamma" cvar
 static void Check_Gamma (unsigned char *pal)
@@ -334,7 +329,7 @@ void VID_Init(unsigned char *palette)
 	vid.aspect = ((float)vid.height / (float)vid.width) * (640.0 / 480.0); //640.0/480.0
 	vid.numpages = 2;
 
-	GL_Init();
+	//GL_Init();
 
 	Check_Gamma(palette);
 	VID_SetPalette(palette);

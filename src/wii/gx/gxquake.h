@@ -254,7 +254,6 @@ extern	mplane_t	*mirror_plane;
 extern	float	r_world_matrix[16];
 
 void GL_Bind0 (int texnum);
-void GL_Bind1 (int texnum);
 
 extern vrect_t scr_vrect;
 
@@ -272,7 +271,7 @@ typedef struct
 {
 	int			texnum;
 	GXTexObj	gx_tex;
-	char		identifier[128]; //MAXOSPATH for now.. 
+	char		identifier[64];
 	int			width, height;
 	qboolean	mipmap;
 	unsigned	*data;

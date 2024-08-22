@@ -1464,19 +1464,20 @@ void GL_BuildLightmaps (void)
 {
 	int		i, j;
 	model_t	*m;
+	char	name[32];
 
 	memset (allocated, 0, sizeof(allocated));
 
 	r_framecount = 1;		// no dlightcache
 
 	lightmap_textures = numgltextures;
-/*	
+	/*
 	if (!lightmap_textures)
 	{
-		lightmap_textures = numgltextures;
-		numgltextures += MAX_LIGHTMAPS;
+		lightmap_textures = texture_extension_number;
+		texture_extension_number += MAX_LIGHTMAPS;
 	}	
-*/	
+	*/
 	lightmap_bytes = 4;
 
 	for (j=1 ; j<MAX_MODELS ; j++)
@@ -1506,7 +1507,7 @@ void GL_BuildLightmaps (void)
 	//
 	for (i=0 ; i<MAX_LIGHTMAPS ; i++)
 	{
-		
+		sprintf (name, "%d", i);
 		
 		if (!allocated[i][0])
 			break;		// no more used
@@ -1515,6 +1516,7 @@ void GL_BuildLightmaps (void)
 		lightmap_rectchange[i].t = BLOCK_HEIGHT;
 		lightmap_rectchange[i].w = 0;
 		lightmap_rectchange[i].h = 0;
-		GL_LoadLightmapTexture ("", BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
+		// sB load lightmaps with an identifier
+		GL_LoadLightmapTexture (name, BLOCK_WIDTH, BLOCK_HEIGHT, lightmaps+i*BLOCK_WIDTH*BLOCK_HEIGHT*lightmap_bytes);
 	}
 }

@@ -495,12 +495,13 @@ void Mod_LoadTextures (lump_t *l)
 						//mark = Hunk_LowMark ();
 						COM_StripExtension (loadmodel->name + 5, mapname);
 						//sprintf (filename, "textures/%s/%s", mapname, tx->name);
-						data_ext = loadtextureimage (filename, 0, 0, true, false, true);
+						// don't keep map textures
+						data_ext = loadtextureimage (filename, 0, 0, true, true, false);
 						if (data_ext <= 0)
 						{
 							//Con_Printf ("mpath %s\n", filename);
 							sprintf (filename, "textures/%s", tx->name);
-							data_ext = loadtextureimage (filename, 0, 0, true, false, true);
+							data_ext = loadtextureimage (filename, 0, 0, true, true, false);
 							if (data_ext <= 0) {
 								//Con_Printf ("mpath %s\n", filename);
 								//Con_Printf("no texture found, replacing with white (fixme) %s\n", tx->name);
@@ -1711,6 +1712,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 {
 	int		i, j, k;
 	char	name[128], model[128], model2[256];
+	char 	*texname = malloc(32);
 	int		s;
 	byte	*skin;
 	byte	*texels;
@@ -1730,7 +1732,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 	//
 	
 	// Mustang & Sally // v_biatch
-	/*
+	
 	if (strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_left.mdl") == 0 ||
 	strcmp(loadmodel->name, "models/weapons/m1911/v_biatch_right.mdl") == 0) {
 		pheader->gl_texturenum[0][0] = 
@@ -1746,9 +1748,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 		pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
 		return (void *)pskintype;
 	}
-	*/
 	
-#if 1
 	for (i=0 ; i<numskins ; i++)
 	{
 		if (pskintype->type == ALIAS_SKIN_SINGLE) {
@@ -1761,7 +1761,6 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 
 			// HACK HACK HACK
 			sprintf(model2, "%s.mdl_%i", model, i);
-			//Con_Printf("extex %s\n", model2);
 			pheader->gl_texturenum[i][0] =
 			pheader->gl_texturenum[i][1] =
 			pheader->gl_texturenum[i][2] =
@@ -1770,11 +1769,12 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 			if (pheader->gl_texturenum[i][0] == 0) // did not find a matching TGA...
 			{
 				sprintf(name, "%s_%i", loadmodel->name, i);
-				//Con_Printf("NO EXTERNAL %s\n", model2);
+				int len = strlen(name);
+				texname = name + len - 20;
 				pheader->gl_texturenum[i][0] =
 				pheader->gl_texturenum[i][1] =
 				pheader->gl_texturenum[i][2] =
-				pheader->gl_texturenum[i][3] = GL_LoadTexture (name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype + 1), false, false, true, 1);
+				pheader->gl_texturenum[i][3] = GL_LoadTexture (texname, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype + 1), false, false, true, 1);
 			}
 			
 			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
@@ -1796,7 +1796,9 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 						memcpy (texels, (byte *)(pskintype), s);
 					}
 					sprintf (name, "%s_%i_%i", loadmodel->name, i,j);
-					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (name, pheader->skinwidth, 
+					int len = strlen(name);
+					texname = name + len - 20;
+					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (texname, pheader->skinwidth, 
 						pheader->skinheight, (byte *)(pskintype), false, false, true, 1);
 					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
 			}
@@ -1806,54 +1808,7 @@ void *Mod_LoadAllSkins (int numskins, daliasskintype_t *pskintype)
 				pheader->gl_texturenum[i][j - k]; 
 		}
 	}
-#else
-	for (i=0 ; i<numskins ; i++)
-	{
-		if (pskintype->type == ALIAS_SKIN_SINGLE) {
-			Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
 
-			// save 8 bit texels for the player model to remap
-	//		if (!strcmp(loadmodel->name,"progs/player.mdl")) {
-				texels = Hunk_AllocName(s, loadname);
-				pheader->texels[i] = texels - (byte *)pheader;
-				memcpy (texels, (byte *)(pskintype + 1), s);
-	//		}
-			sprintf (name, "%s_%i", loadmodel->name, i);
-			pheader->gl_texturenum[i][0] =
-			pheader->gl_texturenum[i][1] =
-			pheader->gl_texturenum[i][2] =
-			pheader->gl_texturenum[i][3] =
-			GL_LoadTexture (name, pheader->skinwidth, pheader->skinheight, (byte *)(pskintype + 1), false, false, true, 1);
-			pskintype = (daliasskintype_t *)((byte *)(pskintype+1) + s);
-		} else {
-			// animating skin group.  yuck.
-			pskintype++;
-			pinskingroup = (daliasskingroup_t *)pskintype;
-			groupskins = LittleLong (pinskingroup->numskins);
-			pinskinintervals = (daliasskininterval_t *)(pinskingroup + 1);
-
-			pskintype = (void *)(pinskinintervals + groupskins);
-
-			for (j=0 ; j<groupskins ; j++)
-			{
-					Mod_FloodFillSkin( skin, pheader->skinwidth, pheader->skinheight );
-					if (j == 0) {
-						texels = Hunk_AllocName(s, loadname);
-						pheader->texels[i] = texels - (byte *)pheader;
-						memcpy (texels, (byte *)(pskintype), s);
-					}
-					sprintf (name, "%s_%i_%i", loadmodel->name, i,j);
-					pheader->gl_texturenum[i][j&3] = GL_LoadTexture (name, pheader->skinwidth, 
-						pheader->skinheight, (byte *)(pskintype), false, false, true, 1);
-					pskintype = (daliasskintype_t *)((byte *)(pskintype) + s);
-			}
-			k = j;
-			for (/* */; j < 4; j++)
-				pheader->gl_texturenum[i][j&3] = 
-				pheader->gl_texturenum[i][j - k]; 
-		}
-	}
-#endif
 	return (void *)pskintype;
 }
 
@@ -2048,6 +2003,7 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 	//unsigned short		*ppixout;
 	//byte				*ppixin;
 	char				/*name[128], */sprite[128], sprite2[256];
+	char				*texname = malloc(32);
 
 	pinframe = (dspriteframe_t *)pin;
 
@@ -2086,9 +2042,10 @@ void * Mod_LoadSpriteFrame (void * pin, mspriteframe_t **ppframe, int framenum)
 		//COM_StripExtension(loadmodel->name, sprite);
 		//sprintf(sprite2, "%s.spr", sprite);
 		//pspriteframe->gl_texturenum = loadtextureimage(sprite2, 0, 0, true, false, true);
-		
+		int len = strlen(sprite2);
+		texname = sprite2 + len - 20;
 		if (pspriteframe->gl_texturenum <= 0) {
-			pspriteframe->gl_texturenum = GL_LoadTexture (sprite2, width, height, (byte *)(pinframe + 1), false, true, true, 1);
+			pspriteframe->gl_texturenum = GL_LoadTexture (texname, width, height, (byte *)(pinframe + 1), false, true, true, 1);
 		}
 	} 
 
