@@ -26,39 +26,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "../generic/quakedef.h"
 
-cvar_t	osk_repeat_delay = {"osk_repeat_delay","0.25"};
-cvar_t	kb_repeat_delay = {"kb_repeat_delay","0.1"};
 cvar_t	nunchuk_stick_as_arrows = {"nunchuk_stick_as_arrows","0"};
 cvar_t  rumble = {"rumble","1"};
-
-char keycode_normal[256] = { 
-	'\0', '\0', '\0', '\0', //0-3
-	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', //4-29
-	'1', '2', '3', '4', '5', '6', '7', '8', '9', '0', //30-39
-	K_ENTER, K_ESCAPE, K_BACKSPACE, K_TAB, K_SPACE, //40-44
-	'-', '=', '[', ']', '\0', '\\', ';', '\'', '`', ',', '.', '/', '\0', //45-57
-	K_F1, K_F2, K_F3, K_F4, K_F5, K_F6, K_F7, K_F8, K_F9, K_F10, K_F11, K_F12, '\0', '\0', K_PAUSE, //58-72
-	'\0', '\0', '\0', '\0', '\0', '\0',//73-78
-	K_RIGHTARROW, K_LEFTARROW, K_DOWNARROW, K_UPARROW, //79-82
-	K_NUMLOCK, '/', '*', '-', '+', K_ENTER, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '\\', //83-100
-	K_MENU
-};
-
-char keycode_shifted[256] = { 
-	'\0', '\0', '\0', '\0', 
-	'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', 
-	'!', '@', '#', '$', '%', '^', '&', '*', '(', ')',
-	K_ENTER, K_ESCAPE, K_BACKSPACE, K_TAB, K_SPACE,
-	'_', '+', '{', '}', '\0', '|', ':', '"', '~', '<', '>', '?', '\0',
-	K_F1, K_F2, K_F3, K_F4, K_F5, K_F6, K_F7, K_F8, K_F9, K_F10, K_F11, K_F12, '\0', '\0', K_PAUSE,
-	'\0', '\0', '\0', '\0', '\0', '\0', //73-78
-	K_RIGHTARROW, K_LEFTARROW, K_DOWNARROW, K_UPARROW, //79-82
-	K_NUMLOCK, '/', '*', '-', '+', K_ENTER, '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', '\\', //83-100
-	K_MENU
-};
-
-bool keyboard_shifted = false;
-u8 kb_last_selected = 0x0;
 
 // pass these values to whatever subsystem wants it
 float in_pitchangle;
@@ -216,34 +185,15 @@ static s8 WPAD_StickY(u8 which)
 
 void IN_Init (void)
 {
-#if FORCE_KEY_BINDINGS
-	// Set up the key bindings.
-	Cbuf_AddText("bind JOY0 +jump\n");
-	Cbuf_AddText("bind JOY1 +attack\n");
-	Cbuf_AddText("bind JOY8 +speed\n");
-	Cbuf_AddText("bind JOY7 +mlook\n");
-	Cbuf_AddText("bind JOY2 +showscores\n");
-	Cbuf_AddText("bind RIGHTARROW \"impulse 10\"\n");	
-#endif
-
 	in_pitchangle = .0f;
 	in_yawangle = .0f;
 	in_rollangle = .0f;
 
 	WPAD_SetDataFormat(WPAD_CHAN_ALL, WPAD_FMT_BTNS_ACC_IR);
 	WPAD_SetVRes(WPAD_CHAN_ALL, wiimote_ir_res_x, wiimote_ir_res_y);
-
-	Cvar_RegisterVariable(&osk_repeat_delay);
-	Cvar_RegisterVariable(&kb_repeat_delay);
 	
 	Cvar_RegisterVariable (&nunchuk_stick_as_arrows);
 	Cvar_RegisterVariable (&rumble);
-
-	keycode_normal[225] = K_LSHIFT;
-	keycode_normal[229] = K_RSHIFT;
-
-	keycode_shifted[225] = K_LSHIFT;
-	keycode_shifted[229] = K_RSHIFT;
 }
 
 void IN_Shutdown (void)
@@ -255,47 +205,6 @@ void IN_Commands (void)
 	// Fetch the pad state.
 	PAD_ScanPads();
 	WPAD_ScanPads();
-
-	keyboard_event KB_event;
-
-	// Usb keyboard managment 
-	while(KEYBOARD_GetEvent(&KB_event) > 0)
-	{
-		switch(KB_event.type)
-		{
-			case KEYBOARD_CONNECTED:
-				keyboard_connected = true;
-				break;
-
-			case KEYBOARD_DISCONNECTED:
-				keyboard_connected = false;
-				break;
-	
-			case KEYBOARD_PRESSED:
-				if(!keyboard_shifted)
-					Key_Event(keycode_normal[KB_event.keycode], true);
-
-				else
-					Key_Event(keycode_shifted[KB_event.keycode], true);
-
-				if(keycode_normal[KB_event.keycode] == K_LSHIFT || keycode_normal[KB_event.keycode] == K_RSHIFT)
-					keyboard_shifted = true;
-
-				break;
-
-			case KEYBOARD_RELEASED:
-				if(!keyboard_shifted)
-					Key_Event(keycode_normal[KB_event.keycode], false);
-
-				else
-					Key_Event(keycode_shifted[KB_event.keycode], false);
-
-				if(keycode_normal[KB_event.keycode] == K_LSHIFT || keycode_normal[KB_event.keycode] == K_RSHIFT)
-					keyboard_shifted = false;
-
-				break;
-		}
-	}
 
 	//It manages the nunchunk or classic controller connection
 	//It assigns the pressed buttons to wpad_keys and to pad_keys
@@ -514,9 +423,9 @@ void IN_Commands (void)
 				Key_Event(K_JOY8, ((wpad_keys & WPAD_NUNCHUK_BUTTON_C) == WPAD_NUNCHUK_BUTTON_C));
 			}
 			
-			//Con_Printf("xge:%f, acy:%f\n", expansion.nunchuk.gforce.x, expansion.nunchuk.accel.y);
+			//Con_Printf("oriy:%f, acy:%f\n", expansion.nunchuk.orient.pitch, expansion.nunchuk.gforce.y);
 			
-			if(/*expansion.nunchuk.gforce.x > 0.8 && */expansion.nunchuk.gforce.y > 0.25) {
+			if(expansion.nunchuk.orient.pitch <= 15 && expansion.nunchuk.gforce.y > 0.25) {
 				Key_Event(K_SHAKE, true);
 			} else {
 				Key_Event(K_SHAKE, false);

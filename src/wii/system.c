@@ -167,20 +167,33 @@ void Sys_Shutdown (void)
 	SYS_ResetSystem(SYS_POWEROFF, 0, 0);
 }
 
+extern GXRModeObj		*rmode;
+static volatile unsigned long	frames = 0;
+static void increment_frame_counter(u32 nothing)
+{
+	++frames;
+}
+
 //Current time in seconds
 double Sys_FloatTime (void)
 {
-	static u64	base;
 	static qboolean	initialized = false;
-	u64 ms;
 
-	ms = ticks_to_millisecs(gettime());
 	if (!initialized)
 	{
-		base = ms;
+		VIDEO_SetPreRetraceCallback(increment_frame_counter);
 		initialized = true;
 	}
-	return ((double)(ms - base)) / 1000.0;
+	/*
+	// ELUTODO
+	if ((rmode == &TVPal528IntDf) || (rmode == &TVPal264Int))
+	{
+		return frames * (1.0f / 50.0f);
+	}
+	else
+	{*/
+		return frames * (1.0f / 60.0f);
+	//}
 }
 
 char *Sys_ConsoleInput (void)
