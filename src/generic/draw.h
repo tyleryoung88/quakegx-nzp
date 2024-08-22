@@ -41,7 +41,6 @@ void Draw_FillByColor (int x, int y, int w, int h, float r, float g, float b, fl
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
 void Draw_ColoredString(int x, int y, char *text, float r, float g, float b, float a, float scale);
-qpic_t *Draw_PicFromWad (char *name);
 qpic_t *Draw_CachePic (char *path);
 qpic_t *Draw_LMP (char *path);
 

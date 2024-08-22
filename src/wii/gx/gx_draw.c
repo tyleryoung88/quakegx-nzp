@@ -77,24 +77,7 @@ int			numcachepics;
 int		pic_texels;
 int		pic_count;
 
-int GL_LoadPicTexture (qpic_t *pic);
-
-qpic_t *Draw_PicFromWad (char *name)
-{
-	qpic_t	*p;
-	glpic_t	*gl;
-
-	p = W_GetLumpName (name);
-	gl = (glpic_t *)p->data;
-
-	gl->texnum = GL_LoadPicTexture (p);
-	gl->sl = 0;
-	gl->sh = 1;
-	gl->tl = 0;
-	gl->th = 1;
-
-	return p;
-}
+int GL_LoadPicTexture (qpic_t *pic, char *name);
 
 /*
 ================
@@ -124,7 +107,7 @@ qpic_t	*Draw_CachePic (char *path)
 // load the pic from disk
 //
 	//Con_Printf ("Attempting to load: %s\n", str);
-	index = loadtextureimage (str, 0, 0, true, true, true);
+	index = loadtextureimage (str, 0, 0, true, false, true);
 	if(index > 0)
 	{
 		pic->pic.width  = gltextures[index].width;
@@ -179,7 +162,7 @@ qpic_t	*Draw_LMP (char *path)
 	pic->pic.height = dat->height;
 
 	gl = (glpic_t *)pic->pic.data;
-	gl->texnum = GL_LoadPicTexture (dat);
+	gl->texnum = GL_LoadPicTexture (dat, pic->name);
 	gl->sl = 0;
 	gl->sh = 1;
 	gl->tl = 0;
