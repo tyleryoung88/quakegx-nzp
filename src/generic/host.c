@@ -863,6 +863,8 @@ void Host_InitVCR (quakeparms_t *parms)
 Host_Init
 ====================
 */
+void M_Start_Menu_f (void);
+extern qpic_t *menu_bk;
 void Host_Init (quakeparms_t *parms)
 {
 
@@ -883,6 +885,7 @@ void Host_Init (quakeparms_t *parms)
 	com_argv = parms->argv;
 
 	Memory_Init (parms->membase, parms->memsize);
+
 	Cbuf_Init ();
 	Cmd_Init ();	
 	V_Init ();
@@ -893,7 +896,7 @@ void Host_Init (quakeparms_t *parms)
 	//W_LoadWadFile ("gfx.wad");
 	Key_Init ();
 	Con_Init ();	
-	M_Init ();	
+	M_Init ();
 	PR_Init ();
 	Mod_Init ();
 	NET_Init ();
@@ -901,7 +904,7 @@ void Host_Init (quakeparms_t *parms)
 
 	Con_Printf ("Quake-Wii, by id Software, PeterM, EluanCM, Izhido, Piko, and sB\n");
 	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
-	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));
+	Con_Printf ("%4.1fM Heap\n",parms->memsize/ (1024*1024.0));
 	
 	R_InitTextures ();		// needed even for dedicated servers
  
@@ -915,7 +918,6 @@ void Host_Init (quakeparms_t *parms)
 			Sys_Error ("Couldn't load gfx/colormap.lmp");
 
 		VID_Init (host_basepal);
-
 		Draw_Init ();
 		SCR_Init ();
 		R_Init ();
@@ -933,7 +935,8 @@ void Host_Init (quakeparms_t *parms)
 	host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
-	
+	VIDEO_SetBlack(false);
+	M_Start_Menu_f();
 	Sys_Printf ("========Nazi Zombies Portable Initialized=========\n");
 }
 

@@ -21,7 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 enum 
 {
-	m_none, 
+	m_none,
+	m_start,	
 	m_main, 
 	m_paused_menu, 
 	m_singleplayer, 
@@ -666,6 +667,40 @@ void M_Exit_Draw (void)
 
 //=============================================================================
 /* MAIN MENU */
+
+void M_Start_Menu_f ()
+{
+	key_dest = key_menu;
+	m_state = m_start;
+	m_entersound = true;
+}
+
+static void M_Start_Menu_Draw ()
+{
+	char *str = "Press 'A' to Slay";
+	
+	// Fill black to make everything easier to see
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
+	
+	// Background
+	menu_bk = Draw_CachePic("gfx/menu/menu_background");
+	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
+
+	Draw_ColoredString((vid.width/2) - 90, (vid.height - 64), str, 255, 0, 0, 185, 1.6);
+}
+
+void M_Start_Key (int key)
+{
+	switch (key)
+	{
+		case K_JOY0:
+		case K_JOY5:
+			S_LocalSound ("sounds/menu/enter.wav");
+			//Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
+			Cbuf_AddText("togglemenu\n");
+			break;
+	}
+}
 
 int	m_main_cursor;
 #define	MAIN_ITEMS	4
@@ -3415,6 +3450,10 @@ void M_Draw (void)
 	{
 	case m_none:
 		break;
+		
+	case m_start:
+		M_Start_Menu_Draw();
+		break;
 
 	case m_paused_menu:
 		M_Paused_Menu_Draw();
@@ -3489,6 +3528,10 @@ void M_Keydown (int key)
 
 	case m_paused_menu:
 		M_Paused_Menu_Key (key);
+		break;
+		
+	case m_start:
+		M_Start_Key (key);
 		break;
 
 	case m_main:

@@ -769,7 +769,7 @@ DrawPause
 */
 void SCR_DrawPause (void)
 {
-	qpic_t	*pic;
+	//qpic_t	*pic;
 
 	if (!scr_showpause.value)		// turn off for screenshots
 		return;
@@ -830,7 +830,7 @@ SCR_DrawLoading
 */
 void SCR_DrawLoading (void)
 {
-	qpic_t	*pic;
+	//qpic_t	*pic;
 
 	if (!scr_drawloading)
 		return;
@@ -1236,7 +1236,7 @@ void SCR_SetUpToDrawConsole (void)
 		if (scr_conlines < scr_con_current)
 			scr_con_current = scr_conlines;
 	}
-
+	/*
 	if (clearconsole++ < vid.numpages)
 	{
 		Sbar_Changed ();
@@ -1246,6 +1246,7 @@ void SCR_SetUpToDrawConsole (void)
 	}
 	else
 		con_notifylines = 0;
+	*/
 }
 	
 /*

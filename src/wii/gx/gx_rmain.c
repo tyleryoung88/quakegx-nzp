@@ -2056,7 +2056,7 @@ void R_RenderView (void)
 	//Fog_DisableGFog (); //johnfitz	
 
 	// render mirror view
-	//R_Mirror ();
+	R_Mirror ();
 
 	R_PolyBlend ();
 
