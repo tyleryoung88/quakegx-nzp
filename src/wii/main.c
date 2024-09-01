@@ -120,7 +120,7 @@ static void init()
 	VIDEO_Configure(rmode);
 
 			// Set the frame buffer.
-	VIDEO_SetNextFramebuffer(framebuffer[fb & 1]);
+	VIDEO_SetNextFramebuffer(framebuffer[fb]);
 
 	VIDEO_Flush();
 	VIDEO_WaitVSync();
@@ -232,10 +232,9 @@ int main(int argc, char* argv[])
 	init();
 	
 	// Run the main loop.
-	double current_time/*, last_time, seconds*/;
+	double current_time, last_time;
 	
-	//last_time = Sys_FloatTime ();
-	sys_frame_length = 1.0 / 60.0;
+	last_time = Sys_FloatTime ();
 	
 	for (;;)
 	{
@@ -246,8 +245,9 @@ int main(int argc, char* argv[])
 
 		// Get the frame time in ticks.
 		current_time = Sys_FloatTime ();
-		//seconds	= current_time - last_time;
-		//last_time = current_time;
+		// Run the frame.
+		Host_Frame(current_time - last_time);
+		last_time = current_time;
 		
 		//Con_Printf ("time: %f \n", current_time_millisec);
 		//Con_Printf ("time off: %f \n", time_wpad_off_millisec);
@@ -257,9 +257,6 @@ int main(int argc, char* argv[])
 			WPAD_Rumble(0, false);
 			rumble_on = 0;
 		}
-
-		// Run the frame.
-		Host_Frame(sys_frame_length);
 	};
 
 	exit(0);

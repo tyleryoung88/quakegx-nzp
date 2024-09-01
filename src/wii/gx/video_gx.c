@@ -181,7 +181,7 @@ void GL_Init (void)
 	GX_SetCopyClear(background, GX_MAX_Z24);
 
 	// other gx setup
-	//GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
+	GX_SetViewport(0,0,rmode->fbWidth,rmode->efbHeight,0,1);
 	yscale = GX_GetYScaleFactor(rmode->efbHeight,rmode->xfbHeight);
 	xfbHeight = GX_SetDispCopyYScale(yscale);
 	GX_SetScissor(0,0,rmode->fbWidth,rmode->efbHeight);
@@ -248,27 +248,22 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 
 void GL_EndRendering (void)
 {
-		// Finish up any graphics operations.
-		GX_Flush();
-		GX_DrawDone();
-		
-		fb ^= 1;
+	GX_SetColorUpdate(GX_TRUE);
+	GX_SetAlphaUpdate(GX_TRUE);
+	
+	// Start copying the frame buffer every vsync.
+	GX_CopyDisp(framebuffer[fb], GX_TRUE);
 
-		// Start copying the frame buffer every vsync.
-		GX_CopyDisp(framebuffer[fb], GX_TRUE);
-		GX_SetColorUpdate(GX_TRUE);
-		GX_SetAlphaUpdate(GX_TRUE);
-		VIDEO_SetNextFramebuffer(framebuffer[fb]);
-		
-		// Keep framerate		
-		VIDEO_Flush();
-		VIDEO_WaitVSync();
-		/*
-		if (rmode->viTVMode & VI_NON_INTERLACE)
-		{
-			VIDEO_WaitVSync();
-		}	
-		*/
+	// Finish up any graphics operations.
+	GX_DrawDone();
+	GX_Flush();
+	
+	VIDEO_SetNextFramebuffer(framebuffer[fb]);
+	VIDEO_Flush();
+	// Keep framerate		
+	VIDEO_WaitVSync();
+	
+	fb ^= 1;
 }	
 
 // This is not the "v_gamma/gamma" cvar
