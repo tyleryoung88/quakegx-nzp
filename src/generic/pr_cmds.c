@@ -110,7 +110,7 @@ void PF_objerror (void)
 	Con_Printf ("======OBJECT ERROR in %s:\n%s\n"
 	,pr_strings + pr_xfunction->s_name,s);
 	ed = PROG_TO_EDICT(pr_global_struct->self);
-	//ED_Print (ed);
+	ED_Print (ed);
 	ED_Free (ed);
 	
 	//Host_Error ("Program error");
@@ -1677,7 +1677,8 @@ void PF_Find (void)
 void PR_CheckEmptyString (char *s)
 {
 	if (s[0] <= ' ')
-		PR_RunError ("Bad string");
+		Con_Printf ("Bad string");
+		//PR_RunError ("Bad string");
 }
 
 void PF_precache_file (void)

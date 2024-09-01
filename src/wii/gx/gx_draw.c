@@ -1132,9 +1132,14 @@ void Draw_Crosshair (void)
 		Draw_FillByColor(0, vid.height/2, 400, 1, 0, 255, 0, 255);
 	}
 	
-	// We only want the crosshair to show in-game and while player is alive.
-	if (cl.stats[STAT_HEALTH] < 1)
+	if (key_dest != key_game) {
 		return;
+	}
+	
+	// We only want the crosshair to show in-game and while player is alive.
+	if (cl.stats[STAT_HEALTH] < 1) {
+		return;
+	}
 
 	if (cl.stats[STAT_ZOOM] == 2) {
 		scopex = ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 156;
@@ -1182,7 +1187,7 @@ void Draw_Crosshair (void)
 	// crosshair moving
 	if ((crosshair_spread_time > sv.time && crosshair_spread_time) || crosshairmoving == 1)
     {
-        cur_spread = cur_spread + 8;
+        cur_spread = cur_spread + 4;
 		if (cur_spread >= CrossHairMaxSpread())
 			cur_spread = CrossHairMaxSpread()*1.5f;
 		
@@ -1193,7 +1198,7 @@ void Draw_Crosshair (void)
 	// crosshair not moving
     else if ((crosshair_spread_time < sv.time && crosshair_spread_time) || crosshairmoving == 0)
     {
-        cur_spread = cur_spread - 4;
+        cur_spread = cur_spread - 2;
 		if (cur_spread <= 0) {
 			cur_spread = 0;
 			crosshair_spread_time = 0;
@@ -1220,7 +1225,7 @@ void Draw_Crosshair (void)
 	// Standard crosshair (+)
 	if (crosshair.value == 1) {
 		crosshair_offset = CrossHairWeapon() + cur_spread;
-		if (CrossHairMaxSpread() < crosshair_offset/* || crosshairmoving == 1*/)
+		if (CrossHairMaxSpread() < crosshair_offset)
 			crosshair_offset = CrossHairMaxSpread()*1.5f;
 
 		if (sv_player->v.view_ofs[2] == 8) {

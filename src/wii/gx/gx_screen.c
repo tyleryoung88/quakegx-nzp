@@ -295,7 +295,7 @@ qpic_t *GetButtonIcon (char *buttonname)
 				return b_left;
 			else if (!strcmp(Key_KeynumToString(j), "PADRIGHT"))
 				return b_right;
-			else if (!strcmp(Key_KeynumToString(j), "impulse 33"))
+			else if (!strcmp(Key_KeynumToString(j), "JOY17"))
 				return b_minus;
 			else if (!strcmp(Key_KeynumToString(j), "PLUS"))
 				return b_plus;

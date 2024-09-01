@@ -114,21 +114,20 @@ void KeyUp (kbutton_t *b)
 	b->state |= 4; 		// impulse up
 }
 
-int crosshairmoving;
 extern float scr_usetime_off;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
 void IN_VLockDown (void) {KeyDown(&in_vlock);}
 void IN_VLockUp (void) {KeyUp(&in_vlock);}
-void IN_UpDown(void) {KeyDown(&in_up);crosshairmoving = 1;}
-void IN_UpUp(void) {KeyUp(&in_up);crosshairmoving = 0;}
-void IN_DownDown(void) {KeyDown(&in_down);crosshairmoving = 1;}
-void IN_DownUp(void) {KeyUp(&in_down);crosshairmoving = 0;}
-void IN_LeftDown(void) {KeyDown(&in_left);crosshairmoving = 1;}
-void IN_LeftUp(void) {KeyUp(&in_left);crosshairmoving = 0;}
-void IN_RightDown(void) {KeyDown(&in_right);crosshairmoving = 1;}
-void IN_RightUp(void) {KeyUp(&in_right);crosshairmoving = 0;}
+void IN_UpDown(void) {KeyDown(&in_up);}
+void IN_UpUp(void) {KeyUp(&in_up);}
+void IN_DownDown(void) {KeyDown(&in_down);}
+void IN_DownUp(void) {KeyUp(&in_down);}
+void IN_LeftDown(void) {KeyDown(&in_left);}
+void IN_LeftUp(void) {KeyUp(&in_left);}
+void IN_RightDown(void) {KeyDown(&in_right);}
+void IN_RightUp(void) {KeyUp(&in_right);}
 void IN_ForwardDown(void) {KeyDown(&in_forward);}
 void IN_ForwardUp(void) {KeyUp(&in_forward);}
 void IN_BackDown(void) {KeyDown(&in_back);}
@@ -149,7 +148,7 @@ void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 
 void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
-
+extern int crosshairmoving;
 void IN_UseDown (void) {
 	// 
 	// sB this is all hacked in for now.
@@ -422,7 +421,6 @@ int EN_Find(int num,char *string)
 	return 0;
 }
 qboolean aimsnap = false;
-//extern int ir_x, ir_y;
 int zoom_snap = 0;
 void CL_Aim_Snap(void)
 {

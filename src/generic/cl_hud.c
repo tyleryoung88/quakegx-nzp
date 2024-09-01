@@ -1446,22 +1446,23 @@ void HUD_Weapon (void)
 HUD_BettyPrompt
 ===============
 */
+extern qpic_t *b_minus;
 void HUD_BettyPrompt (void)
 {
 
 	char str[32];
 	char str2[32];
 
-	strcpy(str, va("Tap %s to\n", GetGrenadeButtonL()));
+	strcpy(str, "Tap   to\n");
 	strcpy(str2, "place a Bouncing Betty\n");
 
 	int x, x2;
 	x = (vid.width - strlen(str)*12)/2;
 	x2 = (vid.width - strlen(str2)*12)/2;
 
-	Draw_String(x, 60, str);
-	Draw_String(x2, 72, str2);
-	Draw_Pic (x + 20*12 - 18, 56, GetButtonIcon("JOY17"));
+	Draw_String(x, 70, str);
+	Draw_String(x2, 90, str2);
+	Draw_Pic (x + 45, 68, b_minus);
 
 }
 

@@ -236,6 +236,7 @@ extern  cvar_t	r_decal_sparks;
 extern  cvar_t	r_decal_explosions;
 extern  cvar_t  r_coronas;
 extern  cvar_t  r_model_brightness;
+extern  cvar_t  r_overbright;
 
 extern	cvar_t	gl_max_size;
 extern	cvar_t	gl_playermip;

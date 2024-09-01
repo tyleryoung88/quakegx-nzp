@@ -69,7 +69,7 @@ cvar_t volume = {"volume", "0.7", true};
 
 cvar_t nosound = {"nosound", "0"};
 cvar_t precache = {"precache", "1"};
-cvar_t loadas8bit = {"loadas8bit", "0"};
+cvar_t loadas8bit = {"loadas8bit", "1"};
 cvar_t bgmbuffer = {"bgmbuffer", "4096"};
 cvar_t ambient_level = {"ambient_level", "0.3"};
 cvar_t ambient_fade = {"ambient_fade", "100"};
@@ -186,14 +186,6 @@ void S_Init (void)
 	Cvar_RegisterVariable(&snd_noextraupdate);
 	Cvar_RegisterVariable(&snd_show);
 	Cvar_RegisterVariable(&_snd_mixahead);
-	// LOAD ALL SOUNDS AS 8 BIT
-	//if (host_parms.memsize < 0x800000)
-	//{
-		Cvar_Set ("loadas8bit", "1");
-		Con_Printf ("loading all sounds as 8bit\n");
-	//}
-
-
 
 	snd_initialized = true;
 
@@ -221,7 +213,7 @@ void S_Init (void)
 		shm->buffer = Hunk_AllocName(1<<16, "shmbuf");
 	}
 
-	Con_Printf ("Sound sampling rate: %i\n", shm->speed);
+	//Con_Printf ("Sound sampling rate: %i\n", shm->speed);
 
 	// provides a tick sound until washed clean
 

@@ -592,9 +592,8 @@ void IN_Commands (void)
 extern float crosshair_opacity;
 float centerdrift_offset_yaw, centerdrift_offset_pitch;
 extern int zoom_snap;
-int ir_x, ir_y;
 extern kbutton_t in_forward, in_left, in_right;
-extern int crosshairmoving;
+int crosshairmoving;
 extern cvar_t ads_center;
 extern cvar_t sniper_center;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
@@ -611,8 +610,6 @@ void IN_Move (usercmd_t *cmd)
 	// In "pointer" variable there are the IR values
 	int last_wiimote_ir_x = pointer.x;
 	int last_wiimote_ir_y = pointer.y;
-	ir_x = pointer.x;
-	ir_y = pointer.y;
 	int wiimote_ir_x = 0, wiimote_ir_y = 0;
 
 
@@ -646,16 +643,14 @@ void IN_Move (usercmd_t *cmd)
 		// move with pointer>>??
 		// seems impossible in my mind
 		
-		if (key_dest != key_menu_pause) {
-			if (aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
-				Cvar_SetValue("cl_crossx", scr_vrect.width / 2);
-				Cvar_SetValue("cl_crossy", scr_vrect.height / 2);
-			} else {
-				Cvar_SetValue("cl_crossx", scr_vrect.width / 2 * x2);
-				Cvar_SetValue("cl_crossy", scr_vrect.height / 2 * y2);
-				
-				//Con_Printf ("crossx: %f crossy %f\n", scr_vrect.width / 2 * x2, scr_vrect.height / 2 * y2);
-			}
+		if (aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
+			Cvar_SetValue("cl_crossx", scr_vrect.width / 2);
+			Cvar_SetValue("cl_crossy", scr_vrect.height / 2);
+		} else {
+			Cvar_SetValue("cl_crossx", scr_vrect.width / 2 * x2);
+			Cvar_SetValue("cl_crossy", scr_vrect.height / 2 * y2);
+			
+			//Con_Printf ("crossx: %f crossy %f\n", scr_vrect.width / 2 * x2, scr_vrect.height / 2 * y2);
 		}
 	}
 		

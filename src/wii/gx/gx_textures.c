@@ -349,8 +349,9 @@ GL_Upload32
 */
 void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha, qboolean flipRGBA)
 {
-	int			s;
-	int			scaled_width, scaled_height;
+	int	s;
+	int	scaled_width, scaled_height;
+	int mip_width, mip_height;
 	u32 texbuffs;
 	//heap_iblock info;
 
@@ -366,7 +367,7 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 
 	// ELUTODO: gl_max_size should be multiple of 32?
 	// ELUTODO: mipmaps
-
+	
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
 		Sys_Error ("GL_Upload32: too big");
 	
@@ -379,7 +380,7 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 		memcpy(scaled, data, scaled_width * scaled_height * 4/*sizeof(data)*/);
 	}
 	
-	texbuffs = GX_GetTexBufferSize	(scaled_width, scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, 5);
+	texbuffs = GX_GetTexBufferSize	(scaled_width, scaled_height, GX_TF_RGB5A3, /*mipmap ? GX_TRUE : */GX_FALSE, 0);
 	//Con_Printf ("tex buff size %d\n", texbuffs);
 	destination->data = __lwp_heap_allocate(&texture_heap, texbuffs/*scaled_width * scaled_height * sizeof(data)*/);
 	
@@ -411,18 +412,21 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 		int mip_level;
 		mip_level = 0;
 		
+		mip_width = scaled_width;
+		mip_height = scaled_height;
+		
 		while (mip_level < 5) {
-			GX_MipMap ((byte *)destination->data, scaled_width, scaled_height);
+			GX_MipMap ((byte *)destination->data, mip_width, mip_height);
 			
-			scaled_width >>= 1;
-			scaled_height >>= 1;
+			mip_width >>= 2;
+			mip_height >>= 2;
 			
-			destination->width = scaled_width;
-			destination->height = scaled_height;
+			destination->width = mip_width;
+			destination->height = mip_height;
 			
 			GX_InitTexObjMaxLOD (&destination->gx_tex, 5.0);
-			GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_TRUE);
-			DCFlushRange(destination->data, texbuffs);
+			GX_InitTexObj(&destination->gx_tex, destination->data, mip_width, mip_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_TRUE);
+			DCFlushRange(destination->data, (mip_width * mip_height) * 2);
 		
 			if (vid_retromode.value == 1) {
 				GX_InitTexObjFilterMode(&destination->gx_tex, GX_NEAR_MIP_NEAR, GX_NEAR_MIP_NEAR);
@@ -729,7 +733,7 @@ void GL_ClearTextureCache(void)
 			{
 				mipmap = gltextures[i].mipmap;
 				
-				texbuffs = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, 5);
+				texbuffs = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, /*mipmap ? GX_TRUE : */GX_FALSE, 0);
 				
 				numgltextures = i + 1;
 
@@ -908,7 +912,7 @@ byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int ma
     rgba_data = COM_LoadFile(filename, 5);
 
 	if (rgba_data == NULL) {
-		Con_Printf("NULL: %s", filename);
+		Con_Printf("NULL: %s\n", filename);
 		return 0;
 	}
 

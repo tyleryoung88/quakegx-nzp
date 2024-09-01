@@ -216,6 +216,7 @@ void R_Init (void)
 	Cvar_RegisterVariable (&r_farclip);
 	
 	Cvar_RegisterVariable (&r_flatlightstyles);
+	Cvar_RegisterVariable (&r_overbright);
 
 	R_InitParticles ();
 	R_InitDecals ();
@@ -478,8 +479,8 @@ V_UpdatePalette
 */
 void V_UpdatePalette (void)
 {
-	/*
-	int		i, j;
+	
+	int		i/*, j*/;
 	qboolean	new;
 	byte	*basepal, *newpal;
 	byte	pal[768];
@@ -487,10 +488,10 @@ void V_UpdatePalette (void)
 	int		ir, ig, ib;
 	qboolean force;
 
-	V_CalcPowerupCshift ();
+	//V_CalcPowerupCshift ();
 	
 	new = false;
-	
+	/*
 	for (i=0 ; i<NUM_CSHIFTS ; i++)
 	{
 		if (cl.cshifts[i].percent != cl.prev_cshifts[i].percent)
@@ -515,6 +516,7 @@ void V_UpdatePalette (void)
 	cl.cshifts[CSHIFT_BONUS].percent -= host_frametime*100;
 	if (cl.cshifts[CSHIFT_BONUS].percent <= 0)
 		cl.cshifts[CSHIFT_BONUS].percent = 0;
+	*/
 
 	force = V_CheckGamma ();
 	if (!new && !force)
@@ -562,5 +564,5 @@ void V_UpdatePalette (void)
 	}
 
 	VID_ShiftPalette (pal);	
-	*/
+	
 }

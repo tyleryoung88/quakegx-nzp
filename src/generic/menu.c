@@ -673,6 +673,7 @@ void M_Start_Menu_f ()
 	key_dest = key_menu;
 	m_state = m_start;
 	m_entersound = true;
+	//CDAudio_Play("tracks/tensioned_by_the_damned.mp3", false);
 }
 
 static void M_Start_Menu_Draw ()
@@ -686,7 +687,7 @@ static void M_Start_Menu_Draw ()
 	menu_bk = Draw_CachePic("gfx/menu/menu_background");
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
-	Draw_ColoredString((vid.width/2) - 90, (vid.height - 64), str, 255, 0, 0, 185, 1.6);
+	Draw_ColoredString((vid.width/2) - 102, (vid.height - 64), str, 255, 0, 0, 185, 1.6);
 }
 
 void M_Start_Key (int key)
@@ -696,7 +697,6 @@ void M_Start_Key (int key)
 		case K_JOY0:
 		case K_JOY5:
 			S_LocalSound ("sounds/menu/enter.wav");
-			//Cbuf_AddText("cd playstring tensioned_by_the_damned 1\n");
 			Cbuf_AddText("togglemenu\n");
 			break;
 	}

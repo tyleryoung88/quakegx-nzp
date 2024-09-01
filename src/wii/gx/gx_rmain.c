@@ -122,10 +122,12 @@ cvar_t	r_part_flies		= {"r_part_flies",       "1",true};
 cvar_t	r_part_muzzleflash  = {"r_part_muzzleflash", "1",true};
 cvar_t	r_flametype	        = {"r_flametype",        "2",true};
 
-cvar_t	r_farclip	        = {"r_farclip",              "4096"};        //far cliping for q3 models
+cvar_t	r_farclip	        = {"r_farclip",              "4096"};        //far cliping for QMB
 
 cvar_t	r_flatlightstyles = {"r_flatlightstyles", "0"};
 cvar_t  r_model_brightness  = { "r_model_brightness", "1", true};   // Toggle high brightness model lighting
+
+cvar_t	r_overbright = {"r_overbright", "1", true}; //overbrights
 
 //johnfitz -- struct for passing lerp information to drawing functions
 typedef struct {
@@ -1655,7 +1657,7 @@ void R_PolyBlend (void)
 	// ELUTODO: check if v_blend gets bigger than 1.0f
 	if (v_blend[3])
 	{
-		Con_Printf("polyblending");
+		Con_Printf("polyblending\n");
 		
 		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
@@ -1681,7 +1683,7 @@ void R_PolyBlend (void)
 	// ELUTODO quick hack
 	if (v_gamma.value != 1.0f)
 	{
-		Con_Printf("polyblending");
+		Con_Printf("polyblending gamma\n");
 		
 		GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
 
@@ -1835,7 +1837,8 @@ void R_SetupGL (void)
 	viewport_size[1] = gly + y;
 	viewport_size[2] = w;
 	viewport_size[3] = h;
-	GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
+	//GX_SetViewport(viewport_size[0], viewport_size[1], viewport_size[2], viewport_size[3], 0.0f, 1.0f);
+	GX_SetViewport(glx, gly, glwidth, glheight, 0.0f, 1.0f);
     screenaspect = (float)r_refdef.vrect.width/r_refdef.vrect.height;
 	guPerspective (perspective, r_refdef.fov_y, screenaspect, ZMIN3D, ZMAX3D);
 
