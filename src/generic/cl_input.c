@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -45,14 +45,18 @@ state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
-
-kbutton_t	in_vlock, in_klook;
+#ifdef HW_RVL
+kbutton_t	in_vlock;
+extern float scr_usetime_off;
+#endif
+kbutton_t	in_klook;//Heffo - mlook cvar
 kbutton_t	in_left, in_right, in_forward, in_back;
 kbutton_t	in_lookup, in_lookdown, in_moveleft, in_moveright;
 kbutton_t	in_strafe, in_speed, in_use, in_jump, in_attack, in_grenade, in_reload, in_switch, in_knife, in_aim;
 kbutton_t	in_up, in_down;
 
 int			in_impulse;
+
 
 
 void KeyDown (kbutton_t *b)
@@ -68,7 +72,7 @@ void KeyDown (kbutton_t *b)
 
 	if (k == b->down[0] || k == b->down[1])
 		return;		// repeating key
-	
+
 	if (!b->down[0])
 		b->down[0] = k;
 	else if (!b->down[1])
@@ -78,7 +82,7 @@ void KeyDown (kbutton_t *b)
 		Con_Printf ("Three keys down for a button!\n");
 		return;
 	}
-	
+
 	if (b->state & 1)
 		return;		// still down
 	b->state |= 1 + 2;	// down + impulse down
@@ -88,7 +92,7 @@ void KeyUp (kbutton_t *b)
 {
 	int		k;
 	char	*c;
-	
+
 	c = Cmd_Argv(1);
 	if (c[0])
 		k = atoi(c);
@@ -114,12 +118,20 @@ void KeyUp (kbutton_t *b)
 	b->state |= 4; 		// impulse up
 }
 
-extern float scr_usetime_off;
+qboolean croshhairmoving = false;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
+#ifdef HW_RVL
 void IN_VLockDown (void) {KeyDown(&in_vlock);}
 void IN_VLockUp (void) {KeyUp(&in_vlock);}
+#endif
+/*void IN_MLookDown (void) {KeyDown(&in_mlook);}
+void IN_MLookUp (void){
+KeyUp(&in_mlook);
+if ( !(in_mlook.state&1) &&  lookspring.value)
+	V_StartPitchDrift();
+} Heffo - mlook cvar*/
 void IN_UpDown(void) {KeyDown(&in_up);}
 void IN_UpUp(void) {KeyUp(&in_up);}
 void IN_DownDown(void) {KeyDown(&in_down);}
@@ -129,7 +141,11 @@ void IN_LeftUp(void) {KeyUp(&in_left);}
 void IN_RightDown(void) {KeyDown(&in_right);}
 void IN_RightUp(void) {KeyUp(&in_right);}
 void IN_ForwardDown(void) {KeyDown(&in_forward);}
-void IN_ForwardUp(void) {KeyUp(&in_forward);}
+void IN_ForwardUp(void) {KeyUp(&in_forward);
+#ifdef __PSP__
+	Cbuf_AddText("impulse 24\n");
+#endif // __PSP__
+}
 void IN_BackDown(void) {KeyDown(&in_back);}
 void IN_BackUp(void) {KeyUp(&in_back);}
 void IN_LookupDown(void) {KeyDown(&in_lookup);}
@@ -148,30 +164,34 @@ void IN_StrafeUp(void) {KeyUp(&in_strafe);}
 
 void IN_AttackDown(void) {KeyDown(&in_attack);}
 void IN_AttackUp(void) {KeyUp(&in_attack);}
-extern int crosshairmoving;
+
 void IN_UseDown (void) {
+	KeyDown(&in_use);
+	
+#ifdef HW_RVL
 	// 
 	// sB this is all hacked in for now.
 	// the real concern is that there are now 
 	// 3 binds all hardcoded to '+ use'
 	// this is not ideal for a number of reasons :/
 	// 
-	KeyDown(&in_use);
-	
 	if (scr_usetime_off <= 0) {
 		KeyDown(&in_vlock);
 	}
 	// if moving HACK
-	if (crosshairmoving == 1) {
+	if (croshhairmoving == 1) {
 		if (cl.stats[STAT_ZOOM] != 1 && cl.stats[STAT_ZOOM] != 2) {
 			KeyUp(&in_vlock);
 			Cbuf_AddText("impulse 23\n"); // sprinting impulse - "impulse 23"
 		}
 	}
+#endif
 }
 void IN_UseUp (void) {
-	KeyUp(&in_vlock);
 	KeyUp(&in_use);
+#ifdef HW_RVL
+	KeyUp(&in_vlock);
+#endif
 }
 void IN_JumpDown (void) {KeyDown(&in_jump);}
 void IN_JumpUp (void) {KeyUp(&in_jump);}
@@ -186,32 +206,32 @@ void IN_KnifeUp (void) {KeyUp(&in_knife);}
 void IN_AimDown (void) {KeyDown(&in_aim);}
 void IN_AimUp (void) {KeyUp(&in_aim);}
 
-void IN_Impulse (void) {in_impulse=atoi(Cmd_Argv(1));}
+void IN_Impulse (void) {in_impulse=Q_atoi(Cmd_Argv(1));}
 
 /*
 ===============
 CL_KeyState
 
 Returns 0.25 if a key was pressed and released during the frame,
-0.5f if it was pressed and held
+0.5 if it was pressed and held
 0 if held then released, and
-1.0f if held for the entire time
+1.0 if held for the entire time
 ===============
 */
 float CL_KeyState (kbutton_t *key)
 {
 	float		val;
 	qboolean	impulsedown, impulseup, down;
-	
+
 	impulsedown = key->state & 2;
 	impulseup = key->state & 4;
 	down = key->state & 1;
 	val = 0;
-	
+
 	if (impulsedown && !impulseup)
 	{
 		if (down)
-			val = 0.5f;	// pressed and held this frame
+			val = 0.5;	// pressed and held this frame
 		else
 			val = 0;	//	I_Error ();
 	}
@@ -225,7 +245,7 @@ float CL_KeyState (kbutton_t *key)
 	if (!impulsedown && !impulseup)
 	{
 		if (down)
-			val = 1.0f;	// held the entire frame
+			val = 1.0;	// held the entire frame
 		else
 			val = 0;	// up the entire frame
 	}
@@ -238,7 +258,7 @@ float CL_KeyState (kbutton_t *key)
 	}
 
 	key->state &= 1;		// clear impulses
-	
+
 	return val;
 }
 
@@ -248,20 +268,24 @@ float CL_KeyState (kbutton_t *key)
 //==========================================================================
 
 cvar_t	cl_upspeed = {"cl_upspeed","200"};
+float	cl_forwardspeed;
+float	cl_backspeed;
+float	cl_sidespeed;
 
-float	cl_forwardspeed;// = {"cl_forwardspeed","190", true};
-float	cl_backspeed;// = {"cl_backspeed","150", true};
-float	cl_sidespeed;// = {"cl_sidespeed","190"};
-
-
-cvar_t	cl_movespeedkey = {"cl_movespeedkey","1.5"};
+cvar_t	cl_movespeedkey = {"cl_movespeedkey","2.0"};
 
 cvar_t	cl_yawspeed = {"cl_yawspeed","140"};
 cvar_t	cl_pitchspeed = {"cl_pitchspeed","150"};
 
-cvar_t	in_aimassist = {"in_aimassist", "0", true};
+cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
+
+cvar_t	in_mlook = {"in_mlook", "1", true}; //Heffo - mlook cvar
+cvar_t	in_aimassist = {"in_aimassist", "1", true};
+
+#ifdef HW_RVL
 cvar_t	ads_center = {"ads_center", "0", true};
 cvar_t	sniper_center = {"sniper_center", "0", true};
+#endif
 
 //Shpuld - Porting over lower sens for lower fov
 extern cvar_t scr_fov;
@@ -273,19 +297,49 @@ CL_AdjustAngles
 Moves the local angle positions
 ================
 */
+
+
+extern int original_fov, final_fov;
 void CL_AdjustAngles (void)
 {
 	float	speed;
 	float	up, down;
-	
-	speed = host_frametime;
-	
+
+	if (in_speed.state & 1)
+		speed = host_frametime * cl_anglespeedkey.value;
+	else
+		speed = host_frametime;
+
+	//shpuld begin
 	speed = speed * scr_fov.value/90;
+	//speed = speed*final_fov/original_fov;
+	//shpuld end
+
+	// ==== Aim Assist + ====
+	// cut look speed in half when facing enemy, unless
+	// mag is empty
+	if ((in_aimassist.value) && (sv_player->v.facingenemy == 1) && cl.stats[STAT_CURRENTMAG] > 0) {
+		speed *= 0.5;
+	}
+	// additionally, slice look speed when ADS/scopes
+	if (cl.stats[STAT_ZOOM] == 1)
+		speed *= 0.5;
+	else if (cl.stats[STAT_ZOOM] == 2)
+		speed *= 0.25;
+
 
 	if (!(in_strafe.state & 1))
 	{
+#ifdef __PSP__
+		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * in_sensitivity.value;
+		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * in_sensitivity.value;
+#elif _3DS
+		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right) * sensitivity.value;
+		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left) * sensitivity.value;
+#else 
 		cl.viewangles[YAW] -= speed*cl_yawspeed.value*CL_KeyState (&in_right);
 		cl.viewangles[YAW] += speed*cl_yawspeed.value*CL_KeyState (&in_left);
+#endif
 		cl.viewangles[YAW] = anglemod(cl.viewangles[YAW]);
 	}
 	if (in_klook.state & 1)
@@ -294,16 +348,24 @@ void CL_AdjustAngles (void)
 		cl.viewangles[PITCH] -= speed*cl_pitchspeed.value * CL_KeyState (&in_forward);
 		cl.viewangles[PITCH] += speed*cl_pitchspeed.value * CL_KeyState (&in_back);
 	}
-	
+
+#ifdef __PSP__
+	up = CL_KeyState (&in_lookup) * in_sensitivity.value;
+	down = CL_KeyState(&in_lookdown) * in_sensitivity.value;
+#elif _3DS
+	up = CL_KeyState (&in_lookup) * sensitivity.value;
+	down = CL_KeyState(&in_lookdown) * sensitivity.value;
+#else
 	up = CL_KeyState (&in_lookup);
 	down = CL_KeyState(&in_lookdown);
-	
+#endif // __PSP__
+
 	cl.viewangles[PITCH] -= speed*cl_pitchspeed.value * up;
 	cl.viewangles[PITCH] += speed*cl_pitchspeed.value * down;
 
 	if (up || down)
 		V_StopPitchDrift ();
-		
+
 	if (cl.viewangles[PITCH] > 80)
 		cl.viewangles[PITCH] = 80;
 	if (cl.viewangles[PITCH] < -70)
@@ -313,7 +375,7 @@ void CL_AdjustAngles (void)
 		cl.viewangles[ROLL] = 50;
 	if (cl.viewangles[ROLL] < -50)
 		cl.viewangles[ROLL] = -50;
-		
+
 }
 
 /*
@@ -323,17 +385,21 @@ CL_BaseMove
 Send the intended movement message to the server
 ================
 */
+
 extern cvar_t waypoint_mode;
+qboolean in_game;
 float crosshair_opacity;
 void CL_BaseMove (usercmd_t *cmd)
-{	
-	if (cls.signon != SIGNONS)
+{
+	if (cls.signon != SIGNONS)//BLUBS CHANGED HERE
 		return;
-			
+
+	in_game = true;
+
 	CL_AdjustAngles ();
-	
-	memset (cmd, 0, sizeof(*cmd));
-	
+
+	Q_memset (cmd, 0, sizeof(*cmd));
+
 	// cypress - we handle movespeed in QC now.
 	cl_backspeed = cl_forwardspeed = cl_sidespeed = sv_player->v.maxspeed;
 
@@ -343,14 +409,18 @@ void CL_BaseMove (usercmd_t *cmd)
 	
 	if (waypoint_mode.value)
 		cl_backspeed = cl_forwardspeed = cl_sidespeed *= 1.5;
-	
-	/*
+		
 	if (in_strafe.state & 1)
 	{
-		cmd->sidemove += cl_sidespeed.value * CL_KeyState (&in_right);
-		cmd->sidemove -= cl_sidespeed.value * CL_KeyState (&in_left);
+		cmd->sidemove += cl_sidespeed * CL_KeyState (&in_right);
+		cmd->sidemove -= cl_sidespeed * CL_KeyState (&in_left);
 	}
-	*/
+
+	// crosshair stuff
+	croshhairmoving = true;
+	crosshair_opacity -= 8;
+	if (crosshair_opacity <= 128)
+		crosshair_opacity = 128;
 
 	cmd->sidemove += cl_sidespeed * CL_KeyState (&in_moveright);
 	cmd->sidemove -= cl_sidespeed * CL_KeyState (&in_moveleft);
@@ -359,26 +429,30 @@ void CL_BaseMove (usercmd_t *cmd)
 	cmd->upmove -= cl_upspeed.value * CL_KeyState (&in_down);
 
 	if (! (in_klook.state & 1) )
-	{	
+	{
 		cmd->forwardmove += cl_forwardspeed * CL_KeyState (&in_forward);
 		cmd->forwardmove -= cl_backspeed * CL_KeyState (&in_back);
-	}	
+	}
 
 //
 // adjust for speed key
 //
-/*
 	if (in_speed.state & 1)
 	{
 		cmd->forwardmove *= cl_movespeedkey.value;
 		cmd->sidemove *= cl_movespeedkey.value;
 		cmd->upmove *= cl_movespeedkey.value;
 	}
-*/	
-	
-#ifdef QUAKE2
-	cmd->lightlevel = cl.light_level;
-#endif
+
+	// reset crosshair
+	if (!CL_KeyState (&in_moveright) && !CL_KeyState (&in_moveleft) && !CL_KeyState (&in_forward) && !CL_KeyState (&in_back)) {
+		croshhairmoving = false;
+
+		crosshair_opacity += 22;
+
+		if (crosshair_opacity >= 255)
+			crosshair_opacity = 255;
+	}	
 }
 
 int infront(edict_t *ent1, edict_t *ent2)
@@ -420,8 +494,10 @@ int EN_Find(int num,char *string)
 	}
 	return 0;
 }
+
+#ifdef HW_RVL
 qboolean aimsnap = false;
-int zoom_snap = 0;
+#endif
 void CL_Aim_Snap(void)
 {
 	edict_t *z,*bz,*player;
@@ -430,9 +506,9 @@ void CL_Aim_Snap(void)
 	float bestDist = 10000;
 	vec3_t distVec, zOrg, pOrg;
 	//32 is v_ofs num
-	
+
 	bz = sv.edicts;
-	
+
 	int vofs = 32;//32 is actual v_ofs num
 	int aimOfs = -10;//30 is top of bbox, 20 is our goal, so -10
 	//Zombie body bbox vert max = 30
@@ -472,13 +548,10 @@ void CL_Aim_Snap(void)
 				}
 			}
 		}
-		if (cl.perks & 64) {
-		  	znum = EN_Find(znum,"ai_zombie_head");
-		}
-    	else {
-      		znum = EN_Find(znum,"ai_zombie");
-		}
-		
+		if (cl.perks & 64)
+			znum = EN_Find(znum,"ai_zombie_head");
+		else
+			znum = EN_Find(znum,"ai_zombie");
 		z = EDICT_NUM(znum);
 	}
 
@@ -495,45 +568,55 @@ void CL_Aim_Snap(void)
 
 		if(distVec[0] < -70 || distVec[0] > 80)
 			return;
-		
+#ifdef HW_RVL
 		aimsnap = true;
+#endif
 		VectorCopy(distVec,cl.viewangles);
+#ifdef HW_RVL
 		aimsnap = false;
+#endif
 	}
 }
 
-extern cvar_t cl_crossx, cl_crossy;
+
 /*
 ==============
 CL_SendMove
 ==============
 */
+int zoom_snap;
 float angledelta(float a);
 float deltaPitch,deltaYaw;
+#ifdef HW_RVL
+extern cvar_t cl_crossx, cl_crossy;
+#endif
 void CL_SendMove (usercmd_t *cmd)
 {
-	int		bits;
+	long int		bits;
 	sizebuf_t	buf;
-	byte	data[128]; 
-	
+	byte	data[128];
+	vec3_t tempv;
 	buf.maxsize = 128;
 	buf.cursize = 0;
 	buf.data = data;
-	
+
 	cl.cmd = *cmd;
-	
+
 	//==== Aim Assist Code ====
 	if((cl.stats[STAT_ZOOM]==1 || cl.stats[STAT_ZOOM]==2) && ((in_aimassist.value) || (cl.perks & 64)))
 	{
-		if(zoom_snap == 0)
+		if(!zoom_snap)
 		{
+
 			CL_Aim_Snap();
 			zoom_snap = 1;
 		}
 	}
 	else {
-		aimsnap = false;
 		zoom_snap = 0;
+#ifdef HW_RVL
+		aimsnap = false;
+#endif
 	}
 
 	//==== Sniper Scope Swaying ====
@@ -546,8 +629,13 @@ void CL_SendMove (usercmd_t *cmd)
 		vang[0] -= deltaPitch;
 		vang[1] -= deltaYaw;
 
+		#ifdef PSP_VFPU
+		deltaPitch =(vfpu_cosf(cl.time/0.7) + vfpu_cosf(cl.time) + vfpu_sinf(cl.time/1.1)) * 0.5;
+		deltaYaw = (vfpu_sinf(cl.time/0.4) + vfpu_cosf(cl.time/0.56) + vfpu_sinf(cl.time)) * 0.5;
+		#else
 		deltaPitch =(cos(cl.time/0.7) + cos(cl.time) + sin(cl.time/1.1)) * 0.5;
 		deltaYaw = (sin(cl.time/0.4) + cos(cl.time/0.56) + sin(cl.time)) * 0.5;
+		#endif
 
 		vang[0] += deltaPitch;
 		vang[1] += deltaYaw;
@@ -557,48 +645,39 @@ void CL_SendMove (usercmd_t *cmd)
 		VectorCopy(vang,cl.viewangles);
 		//return 0;
 	}
+
 //
 // send the movement message
 //
-	float xcrossnormal, ycrossnormal;
-	xcrossnormal = (cl_crossx.value / (scr_vrect.width/2)) * IR_YAWRANGE;
-	ycrossnormal = (cl_crossy.value / (scr_vrect.height/2)) * IR_PITCHRANGE;
-
-	MSG_WriteByte (&buf, clc_move);
+    MSG_WriteByte (&buf, clc_move);
 
 	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
 
-	/* TODO: Not perfect, due to some gimbal lock issues, it will shoot where the shotgun is aiming, not where the
-	 * crosshair is (maybe it's better this way, until the gimbal issues are addressed on the viewmodel too.) It will
-	 * also change the movements a bit (maybe that's better too.)
-	 *
-	 * Another issue is that networked players/demo watchers will see where YOUR gun is facing, not where YOU are facing.
-	 *
-	 * It's also possible to bypass the client-side PITCH limits. Beware, this may be considered cheating!
-	 */
+	VectorAdd(cl.gun_kick, cl.viewangles, tempv);
+#ifdef HW_RVL
+	float xcrossnormal, ycrossnormal;
+	xcrossnormal = (cl_crossx.value / (vid.width/2)) * IR_YAWRANGE;
+	ycrossnormal = (cl_crossy.value / (vid.height/2)) * IR_PITCHRANGE;
 	
 	// sB lock crosshair in the center of screen
 	if(aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || sniper_center.value) {
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + (cl_crossy.value/scr_vrect.height)/* * IR_PITCHRANGE*/);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - (cl_crossx.value/scr_vrect.width - 1) /* * IR_YAWRANGE*/);
-		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
+		MSG_WriteAngle (&buf, tempv[PITCH]/* + (cl_crossy.value/vid.height) * IR_PITCHRANGE*/);
+		MSG_WriteAngle (&buf, tempv[YAW]/* - (cl_crossx.value/vid.width - 1) * IR_YAWRANGE*/);
+		MSG_WriteAngle (&buf, tempv[ROLL]);
 	} else {
-		//sBTODO figure out how to make this way more accurate than it is/
-		MSG_WriteAngle (&buf, cl.viewangles[PITCH] + ycrossnormal);
-		MSG_WriteAngle (&buf, cl.viewangles[YAW] - xcrossnormal);
-		MSG_WriteAngle (&buf, cl.viewangles[ROLL]);
-		
-		// My first approach will be to point the viewmodel directly at the crosshair at all times 
-		
-		//for (i=0 ; i<3 ; i++)
-			//MSG_WriteAngle (&buf, cl.viewangles[i]);
-		
+		//sBTODO figure out how to make this way more accurate than it is
+		MSG_WriteAngle (&buf, tempv[PITCH] + ycrossnormal);
+		MSG_WriteAngle (&buf, tempv[YAW] - xcrossnormal);
+		MSG_WriteAngle (&buf, tempv[ROLL]);
 	}
-	
-	
-	MSG_WriteShort (&buf, cmd->forwardmove);
-	MSG_WriteShort (&buf, cmd->sidemove);
-	MSG_WriteShort (&buf, cmd->upmove);
+#else
+	for (i=0 ; i<3 ; i++)
+		MSG_WriteFloat (&buf, tempv[i]);
+#endif
+
+    MSG_WriteShort (&buf, cmd->forwardmove);
+    MSG_WriteShort (&buf, cmd->sidemove);
+    MSG_WriteShort (&buf, cmd->upmove);
 
 //
 // send button bits
@@ -636,18 +715,11 @@ void CL_SendMove (usercmd_t *cmd)
 	if (in_aim.state & 3)
 		bits |= 256;
 	in_aim.state &= ~2; 
-	
+
     MSG_WriteLong (&buf, bits);
 
     MSG_WriteByte (&buf, in_impulse);
 	in_impulse = 0;
-
-#ifdef QUAKE2
-//
-// light level
-//
-	MSG_WriteByte (&buf, cmd->lightlevel);
-#endif
 
 //
 // deliver the message
@@ -719,7 +791,10 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
+#ifdef HW_RVL
 	Cmd_AddCommand ("+vlock", IN_VLockDown);
 	Cmd_AddCommand ("-vlock", IN_VLockUp);
+#endif
+
 }
 

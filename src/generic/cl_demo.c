@@ -106,7 +106,7 @@ int CL_GetMessage (void)
 				if (host_framecount == cls.td_startframe + 1)
 					cls.td_starttime = realtime;
 			}
-			else if ( cl.time > 0 &&  cl.time <= cl.mtime[0])
+			else if ( /* cl.time > 0 && */ cl.time <= cl.mtime[0])
 			{
 					return 0;		// don't need another message yet
 			}
@@ -325,8 +325,8 @@ void CL_PlayDemo_f (void)
 
 	if (neg)
 		cls.forcetrack = -cls.forcetrack;
-// ZOID, File_ScanF is evil
-//	File_ScanF (cls.demofile, "%i\n", &cls.forcetrack);
+// ZOID, fscanf is evil
+//	fscanf (cls.demofile, "%i\n", &cls.forcetrack);
 }
 
 /*
@@ -338,14 +338,14 @@ CL_FinishTimeDemo
 void CL_FinishTimeDemo (void)
 {
 	int		frames;
-	float	time;
+	double	time;
 	
-	cls.timedemo = false;
+	cls.timedemo = false; 
 	
 // the first frame didn't count
 	frames = (host_framecount - cls.td_startframe) - 1;
 	time = realtime - cls.td_starttime;
-	if (!time)
+	if (time < 1)
 		time = 1;
 	Con_Printf ("%i frames %5.1f seconds %5.1f fps\n", frames, time, frames/time);
 }
