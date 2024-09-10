@@ -286,7 +286,7 @@ GL_CopyRGB5A3
 Converts from linear to tiled during copy
 ===============
 */
-void GX_CopyRGB5A3(u16 *dest, u16 *src, int x1, int y1, int x2, int y2, int src_width)
+void GX_CopyRGB5A3(u16 *dest, u32 *src, int x1, int y1, int x2, int y2, int src_width)
 {
 	int i, j;
 
@@ -338,6 +338,21 @@ void GX_MipMap (byte *in, int width, int height)
 	}
 }
 
+// Given w,h,level,and bpp, returns the offset to the mipmap at level "level"
+static int _calc_mipmap_offset(int level, int w, int h, int b) {
+	int size = 0;
+	while (level > 0) {
+		int mipsize = ((w*h)*b);
+		if ((mipsize % 32) != 0)
+			mipsize += (32-(mipsize % 32)); // Alignment
+		size += mipsize;
+		if (w != 1) w = w/2;
+		if (h != 1) h = h/2;
+		level--;
+	}
+	return size;
+}
+
 // FIXME, temporary
 static	unsigned	scaled[640*480];
 static	unsigned	trans[640*480];
@@ -347,12 +362,14 @@ static	unsigned	trans[640*480];
 GL_Upload32
 ===============
 */
-void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int height,  qboolean mipmap, qboolean alpha, qboolean flipRGBA)
+void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int height, qboolean mipmap, qboolean alpha, qboolean flipRGBA)
 {
 	int	s;
 	int	scaled_width, scaled_height;
-	int mip_width, mip_height;
+	int sw, sh;
 	u32 texbuffs;
+	u32 texbuffs_mip;
+	int max_mip_level;
 	//heap_iblock info;
 
 	for (scaled_width = 1 << 5 ; scaled_width < width ; scaled_width<<=1)
@@ -364,9 +381,6 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 		scaled_width = gl_max_size.value;
 	if (scaled_height > gl_max_size.value)
 		scaled_height = gl_max_size.value;
-
-	// ELUTODO: gl_max_size should be multiple of 32?
-	// ELUTODO: mipmaps
 	
 	if (scaled_width * scaled_height > sizeof(scaled)/4)
 		Sys_Error ("GL_Upload32: too big");
@@ -374,70 +388,144 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	if (scaled_width != width || scaled_height != height)
 	{
 		GL_ResampleTexture (data, width, height, scaled, scaled_width, scaled_height);
-	}
-	else
-	{
-		memcpy(scaled, data, scaled_width * scaled_height * 4/*sizeof(data)*/);
+		
+	} else {
+		memcpy(scaled, data, scaled_width * scaled_height * 4);
 	}
 	
-	texbuffs = GX_GetTexBufferSize	(scaled_width, scaled_height, GX_TF_RGB5A3, /*mipmap ? GX_TRUE : */GX_FALSE, 0);
+	// start at mip level 0
+	max_mip_level = 0;	
+	if (mipmap) {
+		sw = scaled_width;
+		sh = scaled_height;
+		
+		while (sw > 4 && sh > 4)
+		{
+			sw >>= 1;
+			sh >>= 1;
+			max_mip_level++;
+		};
+		
+		if (max_mip_level != 0) {
+			// account for memory offset
+			max_mip_level += 1; 
+		}
+	}
+	
+	//get exact buffer size of memory aligned on a 32byte boundery
+	texbuffs = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, max_mip_level);
+	destination->data = __lwp_heap_allocate(&texture_heap, texbuffs/*scaled_width * scaled_height * 2*/);	
+	//__lwp_heap_getinfo(&texture_heap, &info);
 	//Con_Printf ("tex buff size %d\n", texbuffs);
-	destination->data = __lwp_heap_allocate(&texture_heap, texbuffs/*scaled_width * scaled_height * sizeof(data)*/);
+	//Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
 	
 	if (!destination->data)
 		Sys_Error("GL_Upload32: Out of memory.");
-
-	destination->scaled_width = scaled_width;
-	destination->scaled_height = scaled_height;
-
+	
 	s = scaled_width * scaled_height;
 	if (s & 31)
 		Sys_Error ("GL_Upload32: s&31");
 
 	if ((int)destination->data & 31)
 		Sys_Error ("GL_Upload32: destination->data&31");
-
-    //__lwp_heap_getinfo(&texture_heap, &info);
-    //Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
 	
-	GX_CopyRGBA8_To_RGB5A3((u16 *)destination->data, scaled, 0, 0, scaled_width, scaled_height, scaled_width, flipRGBA);	
-	GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
-	DCFlushRange(destination->data, texbuffs/*scaled_width * scaled_height * sizeof(data)*/);
+	destination->scaled_width = scaled_width;
+	destination->scaled_height = scaled_height;
 	
 	//
 	// sBTODO finish mipmap implementation 
-	// 
-	/*
+	//
+	
 	if (mipmap == true) {
-		int mip_level;
-		mip_level = 0;
 		
-		mip_width = scaled_width;
-		mip_height = scaled_height;
+		int	mip_level;
+		int sw, sh;
+		unsigned mipmaptex[640*480];
 		
-		while (mip_level < 5) {
-			GX_MipMap ((byte *)destination->data, mip_width, mip_height);
-			
-			mip_width >>= 2;
-			mip_height >>= 2;
-			
-			destination->width = mip_width;
-			destination->height = mip_height;
-			
-			GX_InitTexObjMaxLOD (&destination->gx_tex, 5.0);
-			GX_InitTexObj(&destination->gx_tex, destination->data, mip_width, mip_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_TRUE);
-			DCFlushRange(destination->data, (mip_width * mip_height) * 2);
+		texbuffs_mip = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, GX_TRUE, max_mip_level);	
 		
-			if (vid_retromode.value == 1) {
-				GX_InitTexObjFilterMode(&destination->gx_tex, GX_NEAR_MIP_NEAR, GX_NEAR_MIP_NEAR);
-			} else {
-				GX_InitTexObjFilterMode(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN);
-			}
+		// this should never happen currently however, 
+		// I plan on circumventing reloading textures
+		// which are already loaded, and this check will be neccesary 
+		// once that happens
+		if (texbuffs < texbuffs_mip) {
+			// copy the texture mem to a temporary buffer
+			unsigned char * tempbuf = malloc(texbuffs);
+			memcpy(tempbuf,destination->data,texbuffs);
+			
+			// free the used heap memory
+			if (!__lwp_heap_free(&texture_heap, destination->data))
+				Sys_Error ("Failed to free texture mem for mipmap");
+			
+			// reallocate in a section of memory big enough for mipmaps and copy in the OG texture buffer
+			destination->data = __lwp_heap_allocate (&texture_heap, texbuffs_mip);
+			memcpy(destination->data,tempbuf,texbuffs);
+			free (tempbuf);
+		}
+		
+		// copy texture to dst addr and convert to RGB5A3
+		GX_CopyRGBA8_To_RGB5A3((u16 *)destination->data, scaled, 0, 0, scaled_width, scaled_height, scaled_width, flipRGBA);
+		// copy texture to new buffer
+		memcpy((void *)mipmaptex, scaled, scaled_width * scaled_height * 4);
+		
+		sw = scaled_width;
+		sh = scaled_height;
+		mip_level = 1;
+		
+		//Con_Printf ("mip max: %i\n", mip_level);
+		//Con_Printf ("texbuffs: %d\n", texbuffs);
+		//Con_Printf ("texbuffs_mip: %d\n", texbuffs_mip);
+		
+		while (sw > 4 && sh > 4 && mip_level < 10) {
+			// Operates in place, quartering the size of the texture
+			GX_MipMap ((byte *)mipmaptex, sw, sh);
+			
+			sw >>= 1;
+			sh >>= 1;
+			if (sw < 4)
+				sw = 4;
+			if (sh < 4)
+				sh = 4;
+		
+			//Con_Printf ("gen mipmaps: %i\n", mip_level);
+			
+			// Calculate the offset and address of the mipmap
+			int offset = _calc_mipmap_offset(mip_level, scaled_width, scaled_height, 2);
+			unsigned char* dst_addr = (unsigned char*)destination->data;
+			dst_addr += offset;
+			
+			//Con_Printf ("mipmap mem offset: %i\n", offset);
 			
 			mip_level++;
+			
+			GX_CopyRGBA8_To_RGB5A3((u16 *)dst_addr, (u32 *)mipmaptex, 0, 0, sw, sh, sw, flipRGBA);
+			DCFlushRange(dst_addr, sw * sh * 2);
+			GX_InitTexObj(&destination->gx_tex, dst_addr, sw, sh, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_TRUE);
+			GX_InitTexObjLOD(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN, mip_level, max_mip_level, 0, GX_ENABLE, GX_ENABLE, GX_ANISO_2);	
+		}
+		
+		DCFlushRange(destination->data, texbuffs_mip/*scaled_width * scaled_height * 2*/);
+		GX_InvalidateTexAll();
+		GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, GX_TRUE);
+		GX_InitTexObjLOD(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN, 0, max_mip_level, 0, GX_ENABLE, GX_ENABLE, GX_ANISO_2);			
+		//GX_LoadTexObj((&destination->gx_tex), GX_TEXMAP0);
+	
+		if (vid_retromode.value == 1) {
+			GX_InitTexObjFilterMode(&destination->gx_tex, GX_NEAR_MIP_NEAR, GX_NEAR_MIP_NEAR);
+		} else {
+			GX_InitTexObjFilterMode(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN);
+		}
+		
+	} else {
+		GX_CopyRGBA8_To_RGB5A3((u16 *)destination->data, scaled, 0, 0, scaled_width, scaled_height, scaled_width, flipRGBA);	
+		DCFlushRange(destination->data, texbuffs/*scaled_width * scaled_height * 2*/);
+		GX_InvalidateTexAll();
+		GX_InitTexObj(&destination->gx_tex, destination->data, scaled_width, scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
+		// do not init mipmaps for lightmaps
+		if (destination->type != 1) {
+			GX_InitTexObjLOD(&destination->gx_tex, GX_LIN_MIP_LIN, GX_LIN_MIP_LIN, 0, max_mip_level, 0, GX_ENABLE, GX_ENABLE, GX_ANISO_2);
 		}
 	}
-	*/
 }
 
 /*
@@ -579,6 +667,8 @@ reload:
 	glt->keep = keep;
 	glt->used = true;
 	
+	GL_Bind0 (glt->texnum);
+	
 	//Con_Printf ("tex %s\n", identifier);
 	if (bytesperpixel == 1) {
 		GL_Upload8 (glt, data, width, height, mipmap, alpha);
@@ -654,7 +744,7 @@ void GL_UpdateLightmapTextureRegion32 (gltexture_t *destination, unsigned *data,
 			dest[GX_LinearToTiled(x, y, width)] = GX_RGBA_To_RGB5A3(data[x + y * realwidth], false);
 	
 	DCFlushRange(destination->data, destination->scaled_width * destination->scaled_height * 2/*sizeof(data)*/);
-	//GX_InvalidateTexAll();
+	GX_InvalidateTexAll();
 }
 
 /*
@@ -722,6 +812,8 @@ void GL_ClearTextureCache(void)
 	void *newdata;
 	u32 texbuffs;
 	qboolean mipmap;
+	int mip_level;
+	int sw, sh;
 
 	numgltextures = 0;
 
@@ -733,7 +825,21 @@ void GL_ClearTextureCache(void)
 			{
 				mipmap = gltextures[i].mipmap;
 				
-				texbuffs = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, /*mipmap ? GX_TRUE : */GX_FALSE, 0);
+				mip_level = 1;
+	
+				if (mipmap) {
+					sw = gltextures[i].scaled_width;
+					sh = gltextures[i].scaled_height;
+					
+					while (sw > 4 && sh > 4)
+					{
+						sw >>= 1;
+						sh >>= 1;
+						mip_level++;
+					};
+				}
+				
+				texbuffs = GX_GetTexBufferSize	(gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, mip_level);
 				
 				numgltextures = i + 1;
 
@@ -748,7 +854,7 @@ void GL_ClearTextureCache(void)
 					Sys_Error("GL_ClearTextureCache: Error freeing data.");
 
 				gltextures[i].data = newdata;
-				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, /*mipmap ? GX_TRUE :*/ GX_FALSE);
+				GX_InitTexObj(&gltextures[i].gx_tex, gltextures[i].data, gltextures[i].scaled_width, gltextures[i].scaled_height, GX_TF_RGB5A3, GX_REPEAT, GX_REPEAT, mipmap ? GX_TRUE : GX_FALSE);
 
 				DCFlushRange(gltextures[i].data, texbuffs/*gltextures[i].scaled_width * gltextures[i].scaled_height * sizeof(data)*/);
 			}
@@ -967,7 +1073,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 			Con_Printf("PCX: can't load %s\n", name);	
 			return 0;
 		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, true, true, true, 4);		
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, true, 4);		
 		free(data);
 		return texnum;
 	}	
@@ -981,7 +1087,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 			Con_Printf("TGA: can't load %s\n", name);	
 			return 0;
 		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, keep, 4);
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
 		free(data);
 		return texnum;
 	}
@@ -995,7 +1101,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 			Con_Printf("PNG: can't load %s\n", name);	
 			return 0;
 		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, keep, 4);	
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);	
 		free(data);
 		return texnum;
 	}
@@ -1009,7 +1115,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 			Con_Printf("JPEG: can't load %s\n", name);	
 			return 0;
 		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, keep, 4);	
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);	
 		free(data);
 		return texnum;
 	}
@@ -1022,7 +1128,7 @@ int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean 
 			Con_Printf("JPG: can't load %s\n", name);	
 			return 0;
 		}
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, true, keep, 4);
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, true, keep, 4);
 		free(data);
 		return texnum;
 	}
@@ -1078,7 +1184,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 4);	
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, false, true, 4);		
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
 		free(data);
 		return texnum;
 	}
@@ -1088,7 +1194,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, false, true, 4);		
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
 		free(data);
 		return texnum;
 	}
@@ -1098,7 +1204,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, false, true, 4);
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);
 		free(data);
 		return texnum;
 	}
@@ -1107,7 +1213,7 @@ int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean c
 	if (f > 0){
 		COM_CloseFile (f);
 		data = loadimagepixels (name, complain, matchwidth, matchheight, 1);
-		texnum = GL_LoadTexture (texname, image_width, image_height, data, mipmap, false, true, 4);		
+		texnum = GL_LoadTexture (texname, image_width, image_height, data, false, false, true, 4);		
 		free(data);
 		return texnum;
 	}
