@@ -31,7 +31,7 @@ INCLUDES	:=
 
 CFLAGS	=		$(MACHDEP) $(INCLUDE) \
 			-g -Wall -O2 -Wcast-align -fno-merge-constants -fstrict-aliasing -fsingle-precision-constant -fno-aggressive-loop-optimizations \
-			-DGXQUAKE -DNQ_HACK
+			-DGXQUAKE -DNQ_HACK -Wtrigraphs -DHW_RVL
 
 CXXFLAGS = $(CFLAGS)
 
@@ -40,7 +40,7 @@ LDFLAGS	=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
 #---------------------------------------------------------------------------------
 # any extra libraries we wish to link with the project
 #---------------------------------------------------------------------------------
-LIBS	:= -lasnd -lwiiuse -lbte -lfat -ldb -lwiikeyboard -logc -lm 
+LIBS	:= -lasnd -lmad -lwiiuse -lbte -lfat -ldb -lwiikeyboard -logc -lm 
 #---------------------------------------------------------------------------------
 # list of directories containing libraries, this must be the top level containing
 # include and lib
