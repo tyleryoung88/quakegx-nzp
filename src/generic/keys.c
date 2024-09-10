@@ -208,9 +208,13 @@ static keyname_t keynames[] =
 
 ==============================================================================
 */
-#define MAX_Y 8
-#define MAX_X 12
-#define MAX_CHAR_LINE 35
+//#define MAX_Y 8
+//#define MAX_X 12
+//#define MAX_CHAR_LINE 35
+#define MAX_Y 12
+#define MAX_X 18
+#define MAX_CHAR_LINE 54
+
 extern int  osk_pos_x;
 extern int  osk_pos_y;
 extern char osk_buffer[128];

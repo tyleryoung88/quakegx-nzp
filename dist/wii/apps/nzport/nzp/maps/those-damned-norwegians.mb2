@@ -1,0 +1,15 @@
+nzp_mbox2
+
+deny:
+    m1911
+    wunderwaffe
+    ballistic_knife
+    type_100
+    mp5k
+	kar98k
+	m1_garand
+	sawed_off_shotgun
+	double_barreled_shotgun
+	bar
+	thompson
+	trenchgun
