@@ -144,8 +144,8 @@ void VID_ConModeUpdate(void)
 	}
 	*/
 	
-	vid.conwidth = 640;
-	vid.conheight = 480;
+	vid.conwidth = 320;
+	vid.conheight = 240;
 	
 	if (vid.conheight > scr_height)
 		vid.conheight = scr_height;
@@ -313,15 +313,15 @@ void VID_Init(unsigned char *palette)
 	scr_width = rmode->fbWidth;
 	scr_height = rmode->efbHeight;
 
-	vid.width = 640; //640
-	vid.height = 480; //480
+	vid.width = 320; //640
+	vid.height = 240; //480
 
 	if (vid.height > scr_height)
 		vid.height = scr_height;
 	if (vid.width > scr_width)
 		vid.width = scr_width;
 
-	vid.aspect = ((float)vid.height / (float)vid.width) * (640.0 / 480.0); //640.0/480.0
+	vid.aspect = ((float)vid.height / (float)vid.width) * (320.0 / 240.0); //640.0/480.0
 	vid.numpages = 2;
 
 	//GL_Init();

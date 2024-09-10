@@ -196,6 +196,41 @@ void Draw_CharToConback (int num, byte *dest)
 
 }
 */
+
+// ! " # $ % & ' ( ) * _ , - . / 0
+// 1 2 3 4 5 6 7 8 9 : ; < = > ? @
+// A B C D E F G H I J K L M N O P
+// Q R S T U V W X Y Z [ \ ] ^ _ `
+// a b c d e f g h i j k l m n o p
+// q r s t u v w x y z { | } ~
+int font_kerningamount[96];
+
+void InitKerningMap(void)
+{
+	// Initialize the kerning amount as 8px for each
+	// char in the event we cant load the file.
+	for(int i = 0; i < 96; i++) {
+		font_kerningamount[i] = 8;
+	}
+
+    FILE *kerning_map = fopen(va("%s/gfx/kerning_map.txt", com_gamedir), "r");
+    if (kerning_map == NULL) {
+        return;
+    }
+
+    char buffer[1024];
+    if (fgets(buffer, sizeof(buffer), kerning_map) != NULL) {
+        char *token = strtok(buffer, ",");
+        int i = 0;
+        while (token != NULL && i < 96) {
+            font_kerningamount[i++] = atoi(token);
+            token = strtok(NULL, ",");
+        }
+    }
+
+    fclose(kerning_map);
+}
+
 /*
 ===============
 Draw_Init
@@ -272,6 +307,8 @@ void Draw_Init (void)
 	sniper_scope_nb = Draw_CachePic ("gfx/hud/scope_256");
 	
 	//Clear_LoadingFill ();
+	
+	InitKerningMap();
 }
 
 /*
@@ -279,7 +316,7 @@ void Draw_Init (void)
 Draw_CharacterRGBA
 
 This is the same as Draw_Character, but with RGBA color codes.
-- MotoLegacy
+- Cypress
 ================
 */
 extern cvar_t scr_coloredtext;
@@ -417,8 +454,17 @@ void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, floa
 	while (*str)
 	{
 		Draw_CharacterRGBA (x, y, *str, r, g, b, a, scale);
+		
+		// Hooray for variable-spacing!
+		if (*str == ' ')
+			x += 4 * scale;
+        else if ((int)*str < 33 || (int)*str > 126)
+            x += 8 * scale;
+        else
+            x += (font_kerningamount[(int)(*str - 33)] + 1) * scale;
+		
 		str++;
-		x += 8*scale;
+		//x += 8*scale;
 	}
 }
 
@@ -429,7 +475,30 @@ Draw_String
 */
 void Draw_String (int x, int y, char *str)
 {
-	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1.5); 
+	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1); 
+}
+
+int getTextWidth(char *str, int scale)
+{
+	int width = 0;
+
+    for (int i = 0; i < strlen(str); i++) {
+        // Hooray for variable-spacing!
+		if (str[i] == ' ')
+			width += 4 * scale;
+        else if ((int)str[i] < 33 || (int)str[i] > 126)
+            width += 8 * scale;
+        else
+            width += (font_kerningamount[(int)(str[i] - 33)] + 1) * scale;
+    }
+
+	return width;
+}
+
+
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
+{
+	Draw_ColoredString((vid.width - getTextWidth(str, (int)scale))/2, y, str, r, g, b, a, scale);
 }
 
 /*
@@ -699,7 +768,7 @@ void Draw_LoadingFill(void)
 	int max_step   	= 350;
     int x          	= (vid.width  / 2) - (max_step / 2);
     int y          	= vid.height - (size/ 2) - 35;
-	int l;
+	//int l;
 	//char str[64];
 	char* text;
 
@@ -725,8 +794,9 @@ void Draw_LoadingFill(void)
 		default: text = "Initializing.."; break;
 	}
 
-	l = strlen (text);
-	Draw_String((vid.width - l*12)/2, y+2, text);
+	//l = strlen (text);
+	//Draw_String((vid.width - l*12)/2, y+2, text);
+	Draw_ColoredStringCentered(y + 2, text, 255, 255, 255, 255, 1);
 
 	loading_cur_step_bk = loading_cur_step;
 }
@@ -1142,8 +1212,8 @@ void Draw_Crosshair (void)
 	}
 
 	if (cl.stats[STAT_ZOOM] == 2) {
-		scopex = ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 156;
-		scopey = ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 156;
+		scopex = ((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value)/* * vid.conwidth/vid.width*/) - 156;
+		scopey = ((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value)/* * vid.conheight/vid.height*/) - 156;
 		
 		if (sniper_center.value) {
 			Draw_StretchPic (0, 0, sniper_scope, vid.width, vid.height);
@@ -1161,14 +1231,14 @@ void Draw_Crosshair (void)
 	}
 	
    	if (Hitmark_Time > sv.time) {
-		/*
-		if (cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
-			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12, 
-					((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12, hitmark, 24, 24, 255, 255, 255, 225);
-		else*/
-		// no need to do this seperately since cl_crossx.value updates approprietly 
-		Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
+		
+		if ((cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
+			Draw_ColoredStretchPic ((vid.width - 12)/2, (vid.height - 12)/2, hitmark, 24, 24, 255, 255, 255, 225);
+		}
+		else {
+			Draw_ColoredStretchPic (((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width) - 12/* - hitmark->width*/,
 				((scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height) - 12/* - hitmark->height*/, hitmark, 24, 24, 255, 255, 255, 225);
+		}
 	}
 				 
 	/*
@@ -1267,11 +1337,11 @@ void Draw_Crosshair (void)
 	}
 	// Area of Effect (o)
 	else if (crosshair.value == 2) {
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 5, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 5, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 1.5);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 5, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 5, 'O', 255, (int)col, (int)col, (int)crosshair_opacity, 2.0);
 	}
 	// Dot crosshair (.)
 	else if (crosshair.value == 3) {
-		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 5, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 5, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 1.5);
+		Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 5, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 5, '.', 255, (int)col, (int)col, (int)crosshair_opacity, 2.0);
 	}
 	// Grenade crosshair
 	else if (crosshair.value == 4) {
@@ -1394,7 +1464,7 @@ void GL_Set2D (void)
 {
 	GX_SetViewport(glx, gly, glwidth, glheight, 0.0f, 1.0f);
 
-	guOrtho(perspective,0, vid.conheight, 0, vid.conwidth, ZMIN2D, ZMAX2D);
+	guOrtho(perspective,0, vid.height, 0, vid.width, ZMIN2D, ZMAX2D);
 	GX_LoadProjectionMtx(perspective, GX_ORTHOGRAPHIC);
 
 	guMtxIdentity(modelview);

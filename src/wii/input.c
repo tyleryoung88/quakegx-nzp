@@ -644,11 +644,11 @@ void IN_Move (usercmd_t *cmd)
 		// seems impossible in my mind
 		
 		if (aimsnap == true || (cl.stats[STAT_ZOOM] == 1 && ads_center.value) || (cl.stats[STAT_ZOOM] == 2 && sniper_center.value)) {
-			Cvar_SetValue("cl_crossx", scr_vrect.width / 2);
-			Cvar_SetValue("cl_crossy", scr_vrect.height / 2);
+			Cvar_SetValue("cl_crossx", vid.width / 2);
+			Cvar_SetValue("cl_crossy", vid.height / 2);
 		} else {
-			Cvar_SetValue("cl_crossx", scr_vrect.width / 2 * x2);
-			Cvar_SetValue("cl_crossy", scr_vrect.height / 2 * y2);
+			Cvar_SetValue("cl_crossx", vid.width / 2 * x2);
+			Cvar_SetValue("cl_crossy", vid.height / 2 * y2);
 			
 			//Con_Printf ("crossx: %f crossy %f\n", scr_vrect.width / 2 * x2, scr_vrect.height / 2 * y2);
 		}

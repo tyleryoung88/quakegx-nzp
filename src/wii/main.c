@@ -106,9 +106,9 @@ static void init()
 	
 	fb = 0;
 	
-	 // 16:9 and 4:3 Screen Adjustment for Wii
+	// 16:9 and 4:3 Screen Adjustment for Wii
     if (CONF_GetAspectRatio() == CONF_ASPECT_16_9) {
-        rmode->viWidth = 674;
+        rmode->viWidth = 672;
     } else {    // 4:3
         rmode->viWidth = 640;
     }
@@ -116,10 +116,10 @@ static void init()
     // This probably needs to consider PAL
     rmode->viXOrigin = (VI_MAX_WIDTH_NTSC - rmode->viWidth) / 2;
 
-			// Set up the video system with the chosen mode.
+	// Set up the video system with the chosen mode.
 	VIDEO_Configure(rmode);
 
-			// Set the frame buffer.
+	// Set the frame buffer.
 	VIDEO_SetNextFramebuffer(framebuffer[fb]);
 
 	VIDEO_Flush();

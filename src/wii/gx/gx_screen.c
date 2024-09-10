@@ -202,10 +202,19 @@ void SCR_DrawCenterString (void)
 		for (l=0 ; l<40 ; l++)
 			if (start[l] == '\n' || !start[l])
 				break;
-		x = (vid.conwidth - l*8)/2;
-		for (j=0 ; j<l ; j++, x+=8)
+		x = (vid.conwidth - getTextWidth(start, 1)/*l*8*/)/2;
+		for (j=0 ; j<l ; j++/*, x+=8*/)
 		{
-			Draw_Character (x, y, start[j]);	
+			Draw_Character (x, y, start[j]);
+			
+			// Hooray for variable-spacing!
+			if (start[j] == ' ')
+				x += 4;
+			else if ((int)start[j] < 33 || (int)start[j] > 126)
+				x += 8;
+			else
+				x += (font_kerningamount[(int)(start[j] - 33)] + 1);
+			
 			if (!remaining--)
 				return;
 		}
@@ -408,39 +417,39 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			strcpy(c, "");
 			break;
 		case 1://door
-			strcpy(s, va("Hold %s to open Door\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to open Door\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 2://debris
-			strcpy(s, va("Hold %s to remove Debris\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to remove Debris\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 3://ammo
-			strcpy(s, va("Hold %s to buy Ammo for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(s, va("Hold  %s  to buy Ammo for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 4://weapon
-			strcpy(s, va("Hold %s to buy %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 5://window
-			strcpy(s, va("Hold %s to Rebuild Barrier\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to Rebuild Barrier\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 6://box
-			strcpy(s, va("Hold %s to for Mystery Box\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to for Mystery Box\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 7://box take
-			strcpy(s, va("Hold %s for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
+			strcpy(s, va("Hold  %s  for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, "");
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 8://power
 			strcpy(s, "The Power must be Activated first\n");
@@ -448,39 +457,39 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 9://perk
-			strcpy(s, va("Hold %s to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
+			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 10://turn on power
-			strcpy(s, va("Hold %s to Turn On the Power\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to Turn On the Power\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 11://turn on trap
-			strcpy(s, va("Hold %s to Activate the Trap\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to Activate the Trap\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 12://PAP
-			strcpy(s, va("Hold %s to Pack-a-Punch\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to Pack-a-Punch\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 13://revive
-			strcpy(s, va("Hold %s to Fix your Code.. :)\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to Fix your Code.. :)\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 14://use teleporter (free)
-			strcpy(s, va("Hold %s to use Teleporter\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 15://use teleporter (cost)
-			strcpy(s, va("Hold %s to use Teleporter\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 16://tp cooldown
 			strcpy(s, "Teleporter is cooling down\n");
@@ -488,9 +497,9 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 17://link
-			strcpy(s, va("Hold %s to initiate link to pad\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to initiate link to pad\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 18://no link
 			strcpy(s, "Link not active\n");
@@ -498,14 +507,14 @@ void SCR_UsePrint (int type, int cost, int weapon)
 			button_pic_x = 100;
 			break;
 		case 19://finish link
-			strcpy(s, va("Hold %s to link pad with core\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to link pad with core\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		case 20://buyable ending
-			strcpy(s, va("Hold %s to End the Game\n", GetUseButtonL()));
+			strcpy(s, va("Hold  %s  to End the Game\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = 5;
+			button_pic_x = getTextWidth("Hold", 1) - 1;
 			break;
 		default:
 			Con_Printf ("No type defined in engine for useprint\n");
@@ -519,23 +528,29 @@ void SCR_UsePrint (int type, int cost, int weapon)
 
 void SCR_DrawUseString (void)
 {
-	int		l, l2;
-	int		x, x2, y;
+	//int		l, l2;
+	int		x, /*x2,*/ y;
 
 	if (cl.stats[STAT_HEALTH] < 0)
 		return;
 // the finale prints the characters one at a time
 
-	y = 285;
-	l = strlen (scr_usestring);
-	x = (vid.width - l*12)/2;
+	y = vid.height/2 + 30;
+	//l = strlen (scr_usestring);
+	//x = (vid.width - l*12)/2;
+	x = (vid.width - getTextWidth(scr_usestring, 1))/2;
 
-	l2 = strlen (scr_usestring2);
-	x2 = (vid.width - l2*12)/2;
+	//l2 = strlen (scr_usestring2);
+	//x2 = (vid.width - l2*12)/2;
 
-    Draw_String (x, y, scr_usestring);
-	Draw_String (x2, y + 20, scr_usestring2);
-	Draw_StretchPic (x + (button_pic_x*8) + 18, y - 3, GetButtonIcon("+use"), 18, 18);
+    //Draw_String (x, y, scr_usestring);
+	//Draw_String (x2, y + 20, scr_usestring2);
+	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, 1);
+	Draw_ColoredStringCentered(y + 15, scr_usestring2, 255, 255, 255, 255, 1);
+	
+	if (button_pic_x != 100) {
+		Draw_StretchPic (x + button_pic_x + 4, y - 2, GetButtonIcon("+use"), 12, 12);
+	}
 }
 
 void SCR_CheckDrawUseString (void)
@@ -1136,7 +1151,7 @@ void SCR_DrawLoadScreen (void)
 	}
 
 	if (loadingScreen) {
-		Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
+		Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
 		if (!loadscreeninit) {
 			load_screen_exists = true;
 
@@ -1158,10 +1173,10 @@ void SCR_DrawLoadScreen (void)
 		if (load_screen_exists == true)
 			Draw_StretchPic(0, 0, lscreen, vid.width, vid.height);
 		else
-			Draw_FillByColor(0, 0, 640, 480, 0, 0, 0, 255);
+			Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 255);
 
-		Draw_FillByColor(0, 0, 640, 48, 0, 0, 0, 175);
-		Draw_FillByColor(0, 432, 640, 48, 0, 0, 0, 175);
+		Draw_FillByColor(0, 0, vid.width, 24, 0, 0, 0, 175);
+		Draw_FillByColor(0, vid.height - 24, vid.height, 24, 0, 0, 0, 175);
 
 		Draw_ColoredString(2, 4, loadnamespec, 255, 255, 0, 255, 3);
 	}
@@ -1169,15 +1184,16 @@ void SCR_DrawLoadScreen (void)
 	if (loadingtimechange < Sys_FloatTime ())
 	{
         lodinglinetext = ReturnLoadingtex();
-		loadingtextwidth = strlen(lodinglinetext)*12;
+		//loadingtextwidth = strlen(lodinglinetext)*12;
         loadingtimechange = Sys_FloatTime () + 5;
 	}
 
 	if (key_dest == key_game) {
-		Draw_ColoredString((vid.width - loadingtextwidth)/2, 460, lodinglinetext, 255, 255, 255, 255, 1.5);
+		//Draw_ColoredString((vid.width - loadingtextwidth)/2, 460, lodinglinetext, 255, 255, 255, 255, 1.5);
+		Draw_ColoredStringCentered(vid.height - 12, lodinglinetext, 255, 255, 255, 255, 1.5f);
 
 		if (strcmp(lodinglinetext, "Please help me find the meaning of   . Thanks.") == 0) {
-			Draw_StretchPic(120, 420, awoo, 24, 24);
+			Draw_StretchPic(120, vid.height - 35, awoo, 24, 24);
 		}
 	}
 }
@@ -1201,7 +1217,7 @@ void SCR_SetUpToDrawConsole (void)
 	
 	con_forcedup = !cl.worldmodel || cls.signon != SIGNONS;
 		
-	/*
+	
 // decide on the height of the console
 	if (!cl.worldmodel || cls.signon != SIGNONS)//blubs here, undid it actually
 	{
@@ -1211,7 +1227,7 @@ void SCR_SetUpToDrawConsole (void)
 	{
 		con_forcedup = false;
 	}
-	*/
+	
 
 	if (con_forcedup)
 	{
@@ -1236,7 +1252,7 @@ void SCR_SetUpToDrawConsole (void)
 		if (scr_conlines < scr_con_current)
 			scr_con_current = scr_conlines;
 	}
-	/*
+	
 	if (clearconsole++ < vid.numpages)
 	{
 		Sbar_Changed ();
@@ -1246,7 +1262,7 @@ void SCR_SetUpToDrawConsole (void)
 	}
 	else
 		con_notifylines = 0;
-	*/
+	
 }
 	
 /*
