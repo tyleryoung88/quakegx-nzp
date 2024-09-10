@@ -835,10 +835,8 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_WEAPONSKIN] = 0;
 
 
-	if (bits & SU_WEAPON)
-		i = MSG_ReadShort ();
-	else
-		i = 0;
+	// Weapon model index
+	i = MSG_ReadShort();
 
 	if (cl.stats[STAT_WEAPON] != i)
 		cl.stats[STAT_WEAPON] = i;
@@ -1309,9 +1307,11 @@ void CL_ParseServerMessage (void)
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
 			if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
-				CDAudio_Play ((byte)cls.forcetrack, true);
+				break;
+				//CDAudio_Play ((byte)cls.forcetrack, true);
 			else
-				CDAudio_Play ((byte)cl.cdtrack, true);
+				break;
+				//CDAudio_Play ((byte)cl.cdtrack, true);
 			break;
 
 		case svc_intermission:

@@ -218,14 +218,14 @@ void Con_Init (void)
 
 	con_debuglog = COM_CheckParm("-condebug");
 
-	if (con_debuglog)
-	{
+	//if (con_debuglog)
+	//{
 		if (strlen (com_gamedir) < (MAXGAMEDIRLEN - strlen (t2)))
 		{
 			sprintf (temp, "%s%s", com_gamedir, t2);
 			unlink (temp);
 		}
-	}
+	//}
 
 	con_text = Hunk_AllocName (CON_TEXTSIZE, "context");
 	memset (con_text, ' ', CON_TEXTSIZE);
@@ -389,7 +389,7 @@ void Con_Printf (char *fmt, ...)
 	Sys_Printf ("%s", msg);	// also echo to debugging console
 
 	// log all messages to file
-	if (con_debuglog)
+	//if (con_debuglog)
 		Con_DebugLog(va("%s/qconsole.log",com_gamedir), "%s", msg);
 
 	if (!con_initialized)

@@ -19,8 +19,6 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
-//#define LOGFILE
-
 #include <sys/unistd.h>
 
 #include <ogc/gx_struct.h>
@@ -90,26 +88,26 @@ void Sys_Error (const char *error, ...)
 void Sys_Init_Logfile(void)
 {
 
-#ifdef LOGFILE	
+//#ifdef LOGFILE	
  logfile= fopen("/apps/nzportable/logfile.txt", "w");
-#endif
+//#endif
 }
 
 void Sys_Finish_Logfile(void)
 {
-#ifdef LOGFILE	
+//#ifdef LOGFILE	
  if (logfile) fclose(logfile);
-#endif
+//#endif
 }
 
 void Sys_Printf (const char *fmt, ...)
 {
-#ifdef LOGFILE	
+//#ifdef LOGFILE	
 	va_list args;
 	va_start(args, fmt);
 	if (logfile) vfprintf(logfile, fmt, args);
 	va_end(args);
-#endif
+//#endif
 }
 
 void Sys_Quit (void)

@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include "quakedef.h"
 #include <stdio.h>
+#include <mp3player.h>
 
 extern cvar_t	pausable;
 
@@ -1117,6 +1118,10 @@ void Host_Spawn_f (void)
 
 		if ((Sys_FloatTime() - host_client->netconnection->connecttime) <= sv.time)
 			Sys_Printf ("%s entered the game\n", host_client->name);
+		
+		// sB HACK HACK HACK
+		// temporarily stop MP3 menu music this way.
+		MP3Player_Stop ();
 
 		PR_ExecuteProgram (pr_global_struct->PutClientInServer);	
 	}
