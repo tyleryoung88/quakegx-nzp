@@ -45,7 +45,7 @@ state bit 2 is edge triggered on the down to up transition
 ===============================================================================
 */
 
-#ifdef HW_RVL
+#ifdef __WII__
 kbutton_t	in_vlock;
 extern float scr_usetime_off;
 #endif
@@ -122,7 +122,7 @@ qboolean croshhairmoving = false;
 
 void IN_KLookDown (void) {KeyDown(&in_klook);}
 void IN_KLookUp (void) {KeyUp(&in_klook);}
-#ifdef HW_RVL
+#ifdef __WII__
 void IN_VLockDown (void) {KeyDown(&in_vlock);}
 void IN_VLockUp (void) {KeyUp(&in_vlock);}
 #endif
@@ -167,8 +167,7 @@ void IN_AttackUp(void) {KeyUp(&in_attack);}
 
 void IN_UseDown (void) {
 	KeyDown(&in_use);
-	
-#ifdef HW_RVL
+#ifdef __WII__
 	// 
 	// sB this is all hacked in for now.
 	// the real concern is that there are now 
@@ -189,7 +188,7 @@ void IN_UseDown (void) {
 }
 void IN_UseUp (void) {
 	KeyUp(&in_use);
-#ifdef HW_RVL
+#ifdef __WII__
 	KeyUp(&in_vlock);
 #endif
 }
@@ -282,7 +281,7 @@ cvar_t	cl_anglespeedkey = {"cl_anglespeedkey","1.5"};
 cvar_t	in_mlook = {"in_mlook", "1", true}; //Heffo - mlook cvar
 cvar_t	in_aimassist = {"in_aimassist", "1", true};
 
-#ifdef HW_RVL
+#ifdef __WII__
 cvar_t	ads_center = {"ads_center", "0", true};
 cvar_t	sniper_center = {"sniper_center", "0", true};
 #endif
@@ -495,7 +494,7 @@ int EN_Find(int num,char *string)
 	return 0;
 }
 
-#ifdef HW_RVL
+#ifdef __WII__
 qboolean aimsnap = false;
 #endif
 void CL_Aim_Snap(void)
@@ -568,11 +567,11 @@ void CL_Aim_Snap(void)
 
 		if(distVec[0] < -70 || distVec[0] > 80)
 			return;
-#ifdef HW_RVL
+#ifdef __WII__
 		aimsnap = true;
 #endif
 		VectorCopy(distVec,cl.viewangles);
-#ifdef HW_RVL
+#ifdef __WII__
 		aimsnap = false;
 #endif
 	}
@@ -587,7 +586,7 @@ CL_SendMove
 int zoom_snap;
 float angledelta(float a);
 float deltaPitch,deltaYaw;
-#ifdef HW_RVL
+#ifdef __WII__
 extern cvar_t cl_crossx, cl_crossy;
 #endif
 void CL_SendMove (usercmd_t *cmd)
@@ -614,7 +613,7 @@ void CL_SendMove (usercmd_t *cmd)
 	}
 	else {
 		zoom_snap = 0;
-#ifdef HW_RVL
+#ifdef __WII__
 		aimsnap = false;
 #endif
 	}
@@ -654,7 +653,7 @@ void CL_SendMove (usercmd_t *cmd)
 	MSG_WriteFloat (&buf, cl.mtime[0]);	// so server can get ping times
 
 	VectorAdd(cl.gun_kick, cl.viewangles, tempv);
-#ifdef HW_RVL
+#ifdef __WII__
 	float xcrossnormal, ycrossnormal;
 	xcrossnormal = (cl_crossx.value / (vid.width/2)) * IR_YAWRANGE;
 	ycrossnormal = (cl_crossy.value / (vid.height/2)) * IR_PITCHRANGE;
@@ -791,7 +790,7 @@ void CL_InitInput (void)
 	Cmd_AddCommand ("impulse", IN_Impulse);
 	Cmd_AddCommand ("+klook", IN_KLookDown);
 	Cmd_AddCommand ("-klook", IN_KLookUp);
-#ifdef HW_RVL
+#ifdef __WII__
 	Cmd_AddCommand ("+vlock", IN_VLockDown);
 	Cmd_AddCommand ("-vlock", IN_VLockUp);
 #endif

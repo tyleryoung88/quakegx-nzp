@@ -940,7 +940,6 @@ void Host_Color_f(void)
 	
 	if (Cmd_Argc() == 1)
 	{
-		Con_Printf ("\"color\" is \"%i %i\"\n", ((int)cl_color.value) >> 4, ((int)cl_color.value) & 0x0f);
 		Con_Printf ("color <0-13> [0-13]\n");
 		return;
 	}
@@ -964,7 +963,6 @@ void Host_Color_f(void)
 
 	if (cmd_source == src_command)
 	{
-		Cvar_SetValue ("_cl_color", playercolor);
 		if (cls.state == ca_connected)
 			Cmd_ForwardToServer ();
 		return;

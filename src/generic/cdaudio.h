@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 int CDAudio_Init(void);
-#ifdef HW_RVL
+#ifdef __WII__
 void CDAudio_Play(char *track, qboolean looping);
 #else
 void CDAudio_Play(byte track, qboolean looping);

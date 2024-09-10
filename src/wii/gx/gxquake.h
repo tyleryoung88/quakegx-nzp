@@ -413,4 +413,6 @@ void R_DrawDecals (void);
 void R_InitDecals (void);
 void R_ClearDecals (void);
 
+void Sky_LoadSkyBox(char* name);
+
 extern	qboolean	qmb_initialized;

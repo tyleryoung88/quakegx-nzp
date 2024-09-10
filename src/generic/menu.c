@@ -1532,8 +1532,6 @@ void M_Menu_Setup_f (void)
 	m_entersound = true;
 	strcpy(setup_myname, cl_name.string);
 	strcpy(setup_hostname, hostname.string);
-	setup_top = setup_oldtop = ((int)cl_color.value) >> 4;
-	setup_bottom = setup_oldbottom = ((int)cl_color.value) & 15;
 }
 
 

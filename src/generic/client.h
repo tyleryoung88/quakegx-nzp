@@ -252,7 +252,6 @@ typedef struct
 // cvars
 //
 extern	cvar_t	cl_name;
-extern	cvar_t	cl_color;
 
 extern	cvar_t	cl_upspeed;
 extern	float	cl_forwardspeed;
@@ -260,6 +259,7 @@ extern	float	cl_backspeed;
 extern	float	cl_sidespeed;
 
 extern	cvar_t	cl_movespeedkey;
+extern	cvar_t	cl_anglespeedkey;
 
 extern	cvar_t	cl_yawspeed;
 extern	cvar_t	cl_pitchspeed;
@@ -281,6 +281,7 @@ extern	cvar_t	m_pitch;
 extern	cvar_t	m_yaw;
 extern	cvar_t	m_forward;
 extern	cvar_t	m_side;
+extern 	cvar_t 	in_mlook;
 
 
 #define	MAX_TEMP_ENTITIES	64			// lightning bolts, etc

@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -20,43 +20,71 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_main.c  -- client main loop
 
 #include "quakedef.h"
+#include "cl_slist.h"
 
 // we need to declare some mouse variables here, because the menu system
 // references them even when on a unix system.
 
+// these two are not intended to be set directly
 cvar_t	waypoint_mode = {"waypoint_mode", "0", false};// waypoint mode active
 cvar_t	autosave_waypoint = {"autosave_waypoint", "0", false};// waypoint mode active
 cvar_t	cl_name = {"_cl_name", "player", true};
-cvar_t	cl_color = {"_cl_color", "0", true};
-
+cvar_t  cl_truelightning = {"cl_truelightning", "1", true};
 cvar_t	cl_shownet = {"cl_shownet","0"};	// can be 0, 1, or 2
 cvar_t	cl_nolerp = {"cl_nolerp","0"};
+cvar_t	cl_lightning_zadjust = {"cl_lightning_zadjust", "0", true};
 
 cvar_t	lookspring = {"lookspring","0", true};
 cvar_t	lookstrafe = {"lookstrafe","0", true};
+#ifdef __PSP__
+cvar_t	in_sensitivity = {"sensitivity","3", true};
+#elif _3DS
+cvar_t	sensitivity = {"sensitivity","8", true};
+#else
 cvar_t	sensitivity = {"sensitivity","3", true};
+#endif // __PSP__
+cvar_t	in_tolerance = {"tolerance","0.25", true};
+cvar_t	in_acceleration = {"acceleration","1.0", true};
+
+cvar_t	cl_rocket2grenade = {"cl_r2g", "0"};
+cvar_t	cl_deadbodyfilter = {"cl_deadbodyfilter", "0"};
+cvar_t	cl_gibfilter = {"cl_gibfilter", "0"};
 
 cvar_t	m_pitch = {"m_pitch","0.022", true};
 cvar_t	m_yaw = {"m_yaw","0.022", true};
 cvar_t	m_forward = {"m_forward","1", true};
 cvar_t	m_side = {"m_side","0.8", true};
 
+cvar_t	in_disable_analog = {"in_disable_analog", "0", true};
+cvar_t	in_analog_strafe = {"in_analog_strafe", "0", true};
+cvar_t  in_x_axis_adjust = {"in_x_axis_adjust", "0", true};
+cvar_t  in_y_axis_adjust = {"in_y_axis_adjust", "0", true};
 
+//=================================================//
+modelindex_t		cl_modelindex[NUM_MODELINDEX]; //
+char				*cl_modelnames[NUM_MODELINDEX];//
+												   //
+#ifdef __PSP__
+tagentity_t			q3player_body, q3player_head;  //
+#endif // __PSP__
+//=================================================//
 client_static_t	cls;
 client_state_t	cl;
 // FIXME: put these on hunk?
-modelindex_t		cl_modelindex[NUM_MODELINDEX]; 
-char				*cl_modelnames[NUM_MODELINDEX];
 efrag_t			cl_efrags[MAX_EFRAGS];
 entity_t		cl_entities[MAX_EDICTS];
 entity_t		cl_static_entities[MAX_STATIC_ENTITIES];
 lightstyle_t	cl_lightstyle[MAX_LIGHTSTYLES];
 dlight_t		cl_dlights[MAX_DLIGHTS];
 
+modelindex_t		cl_modelindex[NUM_MODELINDEX];
+
 int				cl_numvisedicts;
 entity_t		*cl_visedicts[MAX_VISEDICTS];
-int 			cl_numstaticbrushmodels;
-entity_t 		*cl_staticbrushmodels[MAX_VISEDICTS];
+int				cl_numstaticbrushmodels;
+entity_t		*cl_staticbrushmodels[MAX_VISEDICTS];
+
+void CL_ClearTEnts (void);
 
 /*
 =====================
@@ -71,12 +99,13 @@ void CL_ClearState (void)
 	if (!sv.active)
 		Host_ClearMemory ();
 
+	CL_ClearTEnts ();
 // wipe the entire cl structure
 	memset (&cl, 0, sizeof(cl));
 
 	SZ_Clear (&cls.message);
 
-// clear other arrays	
+// clear other arrays
 	memset (cl_efrags, 0, sizeof(cl_efrags));
 	memset (cl_entities, 0, sizeof(cl_entities));
 	memset (cl_dlights, 0, sizeof(cl_dlights));
@@ -84,6 +113,7 @@ void CL_ClearState (void)
 	memset (cl_temp_entities, 0, sizeof(cl_temp_entities));
 	memset (cl_beams, 0, sizeof(cl_beams));
 
+    memset (cl_static_entities, 0, sizeof(cl_static_entities));
 //
 // allocate the efrags and chain together into a free list
 //
@@ -105,7 +135,7 @@ void CL_Disconnect (void)
 {
 // stop sounds (especially looping!)
 	S_StopAllSounds (true);
-	
+
 // bring the console down and fade the colors back to normal
 //	SCR_BringDownConsole ();
 
@@ -163,13 +193,12 @@ void CL_EstablishConnection (char *host)
 	cls.netcon = NET_Connect (host);
 	if (!cls.netcon)
 		Host_Error ("CL_Connect: connect failed\n");
-	Con_DPrintf ("CL_EstablishConnection: connected to %s\n", host);
-	
+	//Con_DPrintf ("CL_EstablishConnection: connected to %s\n", host);
+	Con_Printf ("CL_EstablishConnection: connected to %s\n", host);
+
 	cls.demonum = -1;			// not in the demo loop now
 	cls.state = ca_connected;
 	cls.signon = 0;				// need all the signon messages before playing
-	
-	//MSG_WriteByte (&cls.message, clc_nop); // ProQuake NAT Fix 
 }
 
 /*
@@ -183,36 +212,37 @@ void CL_SignonReply (void)
 {
 	char 	str[8192];
 
-Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
+	Con_DPrintf ("CL_SignonReply: %i\n", cls.signon);
+	//Con_Printf ("CL_SignonReply: %i\n", cls.signon);
+
 
 	switch (cls.signon)
 	{
-	case 1:
-		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, "prespawn");
-		break;
-		
-	case 2:		
-		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, va("name \"%s\"\n", cl_name.string));
-	
-		MSG_WriteByte (&cls.message, clc_stringcmd);
-		//MSG_WriteString (&cls.message, va("color %i %i\n", ((int)cl_color.value)>>4, ((int)cl_color.value)&15));
-	
-		//MSG_WriteByte (&cls.message, clc_stringcmd);
-		sprintf (str, "spawn %s", cls.spawnparms);
-		MSG_WriteString (&cls.message, str);
-		break;
-		
-	case 3:	
-		MSG_WriteByte (&cls.message, clc_stringcmd);
-		MSG_WriteString (&cls.message, "begin");
-		Cache_Report ();		// print remaining memory
-		break;
-		
-	case 4:
-		SCR_EndLoadingPlaque ();		// allow normal screen updates
-		break;
+		case 1:
+			MSG_WriteByte (&cls.message, clc_stringcmd);
+			MSG_WriteString (&cls.message, "prespawn");
+			break;
+
+		case 2:
+			MSG_WriteByte (&cls.message, clc_stringcmd);
+			MSG_WriteString (&cls.message, va("name \"%s\"\n", cl_name.string));
+
+			MSG_WriteByte (&cls.message, clc_stringcmd);
+			sprintf (str, "spawn %s", cls.spawnparms);
+			MSG_WriteString (&cls.message, str);
+			break;
+
+		case 3:	//just sets client.spawned = true
+			MSG_WriteByte (&cls.message, clc_stringcmd);
+			MSG_WriteString (&cls.message, "begin");
+			Cache_Report ();		// print remaining memory
+			break;
+
+		case 4:
+		{
+			SCR_EndLoadingPlaque ();		// allow normal screen updates
+			break;
+		}
 	}
 }
 
@@ -257,7 +287,7 @@ void CL_PrintEntities_f (void)
 {
 	entity_t	*ent;
 	int			i;
-	
+
 	for (i=0,ent=cl_entities ; i<cl.num_entities ; i++,ent++)
 	{
 		Con_Printf ("%3i:",i);
@@ -285,7 +315,7 @@ void SetPal (int i)
 	static int old;
 	byte	pal[768];
 	int		c;
-	
+
 	if (i == old)
 		return;
 	old = i;
@@ -315,6 +345,43 @@ void SetPal (int i)
 #endif
 }
 
+#ifdef __PSP__
+void CL_CopyPlayerInfo (entity_t *ent, entity_t *player)
+{
+	memcpy_vfpu(&ent->baseline, &player->baseline, sizeof(entity_state_t));
+
+	ent->msgtime = player->msgtime;
+	memcpy_vfpu(ent->msg_origins, player->msg_origins, sizeof(ent->msg_origins));
+	VectorCopy (player->origin, ent->origin);
+	memcpy_vfpu(ent->msg_angles, player->msg_angles, sizeof(ent->msg_angles));
+	VectorCopy (player->angles, ent->angles);
+
+	ent->model = (ent == &q3player_body.ent) ? cl.model_precache[cl_modelindex[mi_q3torso]] : cl.model_precache[cl_modelindex[mi_q3head]];
+
+	ent->efrag = player->efrag;
+
+	ent->frame = player->frame;
+	ent->syncbase = player->syncbase;
+	ent->colormap = player->colormap;
+	ent->effects = player->effects;
+	ent->skinnum = player->skinnum;
+	ent->visframe = player->visframe;
+	ent->dlightframe = player->dlightframe;
+	ent->dlightbits = player->dlightbits;
+
+	ent->trivial_accept = player->trivial_accept;
+	ent->topnode = player->topnode;
+
+	ent->modelindex = (ent == &q3player_body.ent) ? cl_modelindex[mi_q3torso] : cl_modelindex[mi_q3head];
+
+	ent->noshadow = player->noshadow;
+
+	ent->rendermode = player->rendermode;
+    ent->renderamt = player->renderamt;
+    //ent->rendercolor = player->rendercolor;
+}
+#endif // __PSP__
+
 /*
 ===============
 CL_AllocDlight
@@ -336,7 +403,7 @@ dlight_t *CL_AllocDlight (int key)
 			{
 				memset (dl, 0, sizeof(*dl));
 				dl->key = key;
-				dl->color[0] = dl->color[1] = dl->color[2] = 1; //johnfitz -- lit support via lordhavoc
+                dl->color[0] = dl->color[1] = dl->color[2] = 1; // LordHavoc: .lit support
 				return dl;
 			}
 		}
@@ -350,7 +417,7 @@ dlight_t *CL_AllocDlight (int key)
 		{
 			memset (dl, 0, sizeof(*dl));
 			dl->key = key;
-			dl->color[0] = dl->color[1] = dl->color[2] = 1; //johnfitz -- lit support via lordhavoc
+            dl->color[0] = dl->color[1] = dl->color[2] = 1; // LordHavoc: .lit support
 			return dl;
 		}
 	}
@@ -358,35 +425,8 @@ dlight_t *CL_AllocDlight (int key)
 	dl = &cl_dlights[0];
 	memset (dl, 0, sizeof(*dl));
 	dl->key = key;
-	dl->color[0] = dl->color[1] = dl->color[2] = 1; //johnfitz -- lit support via lordhavoc
+    dl->color[0] = dl->color[1] = dl->color[2] = 1; // LordHavoc: .lit support
 	return dl;
-}
-
-
-/*
-===============
-CL_DecayLights
-
-===============
-*/
-void CL_DecayLights (void)
-{
-	int			i;
-	dlight_t	*dl;
-	float		time;
-	
-	time = cl.time - cl.oldtime;
-
-	dl = cl_dlights;
-	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
-	{
-		if (dl->die < cl.time || !dl->radius)
-			continue;
-		
-		dl->radius -= time*dl->decay;
-		if (dl->radius < 0)
-			dl->radius = 0;
-	}
 }
 
 void CL_NewDlight (int key, vec3_t origin, float radius, float time, int type)
@@ -419,6 +459,32 @@ dlighttype_t SetDlightColor (float f, dlighttype_t def, qboolean random)
 		return def;
 }
 
+/*
+===============
+CL_DecayLights
+
+===============
+*/
+void CL_DecayLights (void)
+{
+	int			i;
+	dlight_t	*dl;
+	float		time;
+
+	time = cl.time - cl.oldtime;
+
+	dl = cl_dlights;
+	for (i=0 ; i<MAX_DLIGHTS ; i++, dl++)
+	{
+		if (dl->die < cl.time || !dl->radius)
+			continue;
+
+		dl->radius -= time*dl->decay;
+		if (dl->radius < 0)
+			dl->radius = 0;
+	}
+}
+
 
 /*
 ===============
@@ -428,32 +494,30 @@ Determines the fraction between the last two messages that the objects
 should be put at.
 ===============
 */
-float	CL_LerpPoint (void)
+float CL_LerpPoint (void)
 {
 	float	f, frac;
 
 	f = cl.mtime[0] - cl.mtime[1];
-	
+
 	if (!f || cl_nolerp.value || cls.timedemo || sv.active)
 	{
-		cl.time = cl.mtime[0];
+		cl.ctime = cl.time = cl.mtime[0];
 		return 1;
 	}
-		
-	if (f > 0.1f)
+
+	if (f > 0.1)
 	{	// dropped packet, or start of demo
-		cl.mtime[1] = cl.mtime[0] - 0.1f;
-		f = 0.1f;
+		cl.mtime[1] = cl.mtime[0] - 0.1;
+		f = 0.1;
 	}
-	frac = (cl.time - cl.mtime[1]) / f;
-	
+
+	frac = (cl.ctime - cl.mtime[1]) / f;
 	if (frac < 0)
 	{
-		if (frac < -0.01f)
+		if (frac < -0.01)
 		{
-SetPal(1);
-			cl.time = cl.mtime[1];
-//				Con_Printf ("low frac\n");
+			cl.ctime = cl.time = cl.mtime[1];
 		}
 		frac = 0;
 	}
@@ -461,17 +525,16 @@ SetPal(1);
 	{
 		if (frac > 1.01)
 		{
-SetPal(2);
-			cl.time = cl.mtime[0];
-			//Con_Printf ("high frac\n");
+			cl.ctime = cl.time = cl.mtime[0];
 		}
 		frac = 1;
 	}
-	else
-		SetPal(0);
-		
+
 	return frac;
 }
+
+
+extern cvar_t scr_fov;
 
 float 	mdlflag_poweruprotate_duration 	= 0.0f;
 float 	mdlflag_poweruprotate_starttime = 0.0f;
@@ -528,42 +591,39 @@ void CL_UpdatePowerUpAngles (void)
 	}
 }
 
-
 /*
 ===============
 CL_RelinkEntities
 ===============
 */
+
 void CL_RelinkEntities (void)
 {
 	entity_t	*ent;
 	int			i, j;
 	float		frac, f, d;
 	vec3_t		delta;
-	//float		bobjrotate;
 	vec3_t		oldorg;
+    //model_t		*model;
 	dlight_t	*dl;
+    //vec3_t		smokeorg, smokeorg2;
+	//float		scale;
+// determine partial update time
+	frac = CL_LerpPoint ();
 
-// determine partial update time	
-	frac = CL_LerpPoint();
-	
 	CL_UpdatePowerUpAngles();
 
 	cl_numvisedicts = 0;
 	cl_numstaticbrushmodels = 0;
-	
-	//bobjrotate = anglemod(100*cl.time);
-
 //
 // interpolate player info
 //
 	for (i=0 ; i<3 ; i++)
-		cl.velocity[i] = cl.mvelocity[1][i] + 
-			frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
+		cl.velocity[i] = cl.mvelocity[1][i] + frac * (cl.mvelocity[0][i] - cl.mvelocity[1][i]);
 
 	if (cls.demoplayback)
 	{
-	// interpolate the angles	
+	// interpolate the angles
 		for (j=0 ; j<3 ; j++)
 		{
 			d = cl.mviewangles[0][j] - cl.mviewangles[1][j];
@@ -574,7 +634,7 @@ void CL_RelinkEntities (void)
 			cl.viewangles[j] = cl.mviewangles[1][j] + frac*d;
 		}
 	}
-	
+
 // start on the entity after the world
 	for (i=1,ent=cl_entities+1 ; i<cl.num_entities ; i++,ent++)
 	{
@@ -589,9 +649,13 @@ void CL_RelinkEntities (void)
 		if (ent->msgtime != cl.mtime[0])
 		{
 			ent->model = NULL;
+            // fenix@io.com: model transform interpolation
+            ent->frame_start_time     = 0;
+            ent->translate_start_time = 0;
+            ent->rotate_start_time    = 0;
 			continue;
 		}
-		
+
 		// shpuld: if brush model is at 0 with no angle changes, we can draw it with world
 		if (ent->model->type == mod_brush && cl_numstaticbrushmodels < MAX_VISEDICTS)
 		{
@@ -600,13 +664,15 @@ void CL_RelinkEntities (void)
 				ent->msg_origins[0][2] == 0 &&
 				ent->msg_angles[0][0] == 0 &&
 				ent->msg_angles[0][1] == 0 &&
-				ent->msg_angles[0][2] == 0) {
+				ent->msg_angles[0][2] == 0 &&
+				(ent->rendermode == 0 || ent->rendermode == TEX_SOLID || ent->rendermode == TEX_TEXTURE))
+			{
 				cl_staticbrushmodels[cl_numstaticbrushmodels] = ent;
 				cl_numstaticbrushmodels++;
 				continue;
 			}
 		}
-		
+
 		VectorCopy (ent->origin, oldorg);
 
 		if (ent->forcelink)
@@ -621,9 +687,18 @@ void CL_RelinkEntities (void)
 			for (j=0 ; j<3 ; j++)
 			{
 				delta[j] = ent->msg_origins[0][j] - ent->msg_origins[1][j];
-				if (delta[j] > 100 || delta[j] < -100)
+				if (delta[j] > 100 || delta[j] < -100)//blubs check here for interpolating zombies
 					f = 1;		// assume a teleportation, not a motion
 			}
+
+		// fenix@io.com: model transform interpolation
+        // interpolation should be reset in the event of a large delta
+            if (f >= 1)
+            {
+				//ent->frame_start_time     = 0;
+				ent->translate_start_time = 0;
+				ent->rotate_start_time    = 0;
+            }
 
 		// interpolate the origin and angles
 			for (j=0 ; j<3 ; j++)
@@ -637,25 +712,34 @@ void CL_RelinkEntities (void)
 					d += 360;
 				ent->angles[j] = ent->msg_angles[1][j] + f*d;
 			}
-			
+
+		}
+/*
+		if (ent->modelindex == cl_modelindex[mi_explo1] || ent->modelindex == cl_modelindex[mi_explo2])
+		{
+			// software removal of sprites
+			if (r_explosiontype.value == 2 || r_explosiontype.value == 3)
+				continue;
+
+			if (qmb_initialized && r_part_explosions.value)
+				continue;
 		}
 
+		if (!(model = cl.model_precache[ent->modelindex]))
+			Host_Error ("CL_RelinkEntities: bad modelindex");
+*/
+
 // rotate binary objects locally
+
 		if (ent->model->flags & EF_ROTATE) {
-			
 			ent->angles[0] = mdlflag_poweruprotate_currentangles[0];
 			ent->angles[1] = mdlflag_poweruprotate_currentangles[1];
 			ent->angles[2] = mdlflag_poweruprotate_currentangles[2];
-			
-			
-			//ent->angles[1] = bobjrotate;
 		}
-		
-		if (ent->effects & EF_BRIGHTFIELD)
-			R_EntityParticles (ent);
 
 		if (ent->effects & EF_MUZZLEFLASH)
-		{			
+		{
+
 			if (i == cl.viewentity && qmb_initialized && r_part_muzzleflash.value)
 			{
 				vec3_t		start, smokeorg, v_forward, v_right, v_up;
@@ -668,13 +752,13 @@ void CL_RelinkEntities (void)
 
 				AngleVectors (tempangles, v_forward, v_right, v_up);
 				VectorCopy (cl_entities[cl.viewentity].origin, smokeorg);
-				smokeorg[2] += cl.viewheight;
+				smokeorg[2] += cl.viewheight; // account for beta maps
 				VectorCopy(smokeorg,start);
 
 				right_offset	 = sv_player->v.Flash_Offset[0];
 				up_offset		 = sv_player->v.Flash_Offset[1];
 				forward_offset 	 = sv_player->v.Flash_Offset[2];
-				
+				 
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;
 				forward_offset  = forward_offset/1000;
@@ -684,27 +768,10 @@ void CL_RelinkEntities (void)
 				VectorMA (smokeorg, right_offset, v_right ,smokeorg);
 				VectorAdd(smokeorg,CWeaponOffset,smokeorg);
 				QMB_MuzzleFlash (smokeorg);
-				
 			}
-			
+
 		}
-		
-		if (ent->effects & EF_BRIGHTLIGHT)
-		{			
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->origin[2] += 16;
-			dl->radius = 400 + (rand()&31);
-			dl->die = cl.time + 0.001f;
-		} /*
-		if (ent->effects & EF_DIMLIGHT)
-		{			
-			dl = CL_AllocDlight (i);
-			VectorCopy (ent->origin,  dl->origin);
-			dl->radius = 200 + (rand()&31);
-			dl->die = cl.time + 0.001f;
-		}
-	*/
+
 		if (ent->effects & EF_BLUELIGHT)
 		{
 			dl = CL_AllocDlight (i);
@@ -806,7 +873,11 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_RAYGREEN)
 		{
+#ifdef __WII__
 			QMB_RocketTrail(oldorg, ent->origin, RAYGREEN_TRAIL);
+#else
+			R_RocketTrail (oldorg, ent->origin, 12);
+#endif
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
@@ -820,7 +891,11 @@ void CL_RelinkEntities (void)
 
 		if (ent->effects & EF_RAYRED)
 		{
+#ifdef __WII__
 			QMB_RocketTrail(oldorg, ent->origin, RAYRED_TRAIL);
+#else
+			R_RocketTrail (oldorg, ent->origin, 13);
+#endif
 			dl = CL_AllocDlight (i);
 			VectorCopy (ent->origin, dl->origin);
 			dl->radius = 25;
@@ -831,7 +906,7 @@ void CL_RelinkEntities (void)
 			//DLight color 1 is red
 	        dl->type = SetDlightColor (1, lt_rocket, true);
 		}
-		
+
 		if (!strcmp(ent->model->name, "progs/flame2.mdl"))
 		{
 			if (qmb_initialized && r_part_flames.value)
@@ -842,7 +917,15 @@ void CL_RelinkEntities (void)
 			}
 		}
 
-		if (ent->model->flags)
+		if ((!strcmp(ent->model->name, "progs/s_spike.mdl"))||(!strcmp(ent->model->name, "progs/spike.mdl")))
+		{
+			if (qmb_initialized && r_part_trails.value)
+			{
+				R_RocketTrail (oldorg, ent->origin, NAIL_TRAIL);
+			}
+		}
+
+        if (ent->model->flags)
 		{
 			if (ent->model->flags & EF_GIB)
 				R_RocketTrail (oldorg, ent->origin, 2);
@@ -859,17 +942,17 @@ void CL_RelinkEntities (void)
 				VectorCopy (ent->origin, dl->origin);
 				dl->radius = 200;
 				dl->die = cl.time + 0.01;
-				dl->color[0] = 0.2;
+	            dl->color[0] = 0.2;
 				dl->color[1] = 0.1;
 				dl->color[2] = 0.5;
-				dl->type = SetDlightColor (2, lt_rocket, true);
+	            dl->type = SetDlightColor (2, lt_rocket, true);
 			}
 			else if (ent->model->flags & EF_GRENADE)
 				R_RocketTrail (oldorg, ent->origin, 1);
 			else if (ent->model->flags & EF_TRACER3)
 				R_RocketTrail (oldorg, ent->origin, 6);
 		}
-		
+
 		// Tomaz - QC Glow Begin
         if (ISLMPOINT(ent))
         {
@@ -888,18 +971,17 @@ void CL_RelinkEntities (void)
 		if (i == cl.viewentity && !chase_active.value)
 			continue;
 
+
 		if ( ent->effects & EF_NODRAW )
 			continue;
-		
+
 		if (cl_numvisedicts < MAX_VISEDICTS)
 		{
 			cl_visedicts[cl_numvisedicts] = ent;
 			cl_numvisedicts++;
 		}
 	}
-
 }
-
 
 /*
 ===============
@@ -914,19 +996,30 @@ int CL_ReadFromServer (void)
 
 	cl.oldtime = cl.time;
 	cl.time += host_frametime;
-	
+
 	do
 	{
 		ret = CL_GetMessage ();
+
 		if (ret == -1)
 			Host_Error ("CL_ReadFromServer: lost server connection");
 		if (!ret)
 			break;
-		
-		cl.last_received_message = realtime;
-		CL_ParseServerMessage ();
+
+		//if(ret)
+		//{
+			//Con_Printf("++++++++++++++Got a new server message!+++++++++\n");
+		//}
+			cl.last_received_message = realtime;
+			//Con_Printf("ParseServerMessage \n");
+			CL_ParseServerMessage ();
+		//}
+
 	} while (ret && cls.state == ca_connected);
-	
+
+
+		//Con_Printf("-------------Done with server messages---------------=====\n");
+
 	if (cl_shownet.value)
 		Con_Printf ("\n");
 
@@ -955,13 +1048,14 @@ void CL_SendCmd (void)
 	{
 	// get basic movement from keyboard
 		CL_BaseMove (&cmd);
-	
+
 	// allow mice or other external controllers to add to the move
+	if (!in_disable_analog.value)
 		IN_Move (&cmd);
-	
+
 	// send the unreliable message
 		CL_SendMove (&cmd);
-	
+
 	}
 
 	if (cls.demoplayback)
@@ -969,11 +1063,11 @@ void CL_SendCmd (void)
 		SZ_Clear (&cls.message);
 		return;
 	}
-	
+
 // send the reliable message
 	if (!cls.message.cursize)
 		return;		// no message at all
-	
+
 	if (!NET_CanSendMessage (cls.netcon))
 	{
 		Con_DPrintf ("CL_WriteToServer: can't send\n");
@@ -992,32 +1086,52 @@ CL_Init
 =================
 */
 void CL_Init (void)
-{	
+{
 	SZ_Alloc (&cls.message, 1024);
+
+	SList_Init ();
+	SList_Load ();
 
 	CL_InitInput ();
 	CL_InitTEnts ();
-	
 //
 // register our commands
 //
 	Cvar_RegisterVariable (&cl_name);
-	Cvar_RegisterVariable (&cl_color);
+	Cvar_RegisterVariable (&waypoint_mode);
+	Cvar_RegisterVariable (&autosave_waypoint);
 	Cvar_RegisterVariable (&cl_upspeed);
-	//Cvar_RegisterVariable (&cl_forwardspeed);
-	//Cvar_RegisterVariable (&cl_backspeed);
-	//Cvar_RegisterVariable (&cl_sidespeed);
 	Cvar_RegisterVariable (&cl_movespeedkey);
 	Cvar_RegisterVariable (&cl_yawspeed);
 	Cvar_RegisterVariable (&cl_pitchspeed);
+	Cvar_RegisterVariable (&cl_anglespeedkey);
 	Cvar_RegisterVariable (&cl_shownet);
 	Cvar_RegisterVariable (&cl_nolerp);
 	Cvar_RegisterVariable (&lookspring);
 	Cvar_RegisterVariable (&lookstrafe);
+	Cvar_RegisterVariable (&cl_rocket2grenade);
+	Cvar_RegisterVariable (&cl_deadbodyfilter);
+	Cvar_RegisterVariable (&cl_gibfilter);
+	Cvar_RegisterVariable (&cl_lightning_zadjust);
+    Cvar_RegisterVariable (&cl_truelightning);
+#ifdef __PSP__
+	Cvar_RegisterVariable (&in_sensitivity);
+#else
 	Cvar_RegisterVariable (&sensitivity);
+#endif // __PSP__
+    Cvar_RegisterVariable (&in_mlook); //Heffo - mlook cvar
 	Cvar_RegisterVariable (&in_aimassist);
+	Cvar_RegisterVariable (&in_tolerance);
+	Cvar_RegisterVariable (&in_acceleration);
+	Cvar_RegisterVariable (&in_disable_analog);
+	Cvar_RegisterVariable (&in_analog_strafe);
+	Cvar_RegisterVariable (&in_x_axis_adjust);
+	Cvar_RegisterVariable (&in_y_axis_adjust);
+	
+#ifdef __WII__
 	Cvar_RegisterVariable (&ads_center);
 	Cvar_RegisterVariable (&sniper_center);
+#endif
 
 	Cvar_RegisterVariable (&m_pitch);
 	Cvar_RegisterVariable (&m_yaw);
@@ -1025,7 +1139,7 @@ void CL_Init (void)
 	Cvar_RegisterVariable (&m_side);
 
 //	Cvar_RegisterVariable (&cl_autofire);
-	
+
 	Cmd_AddCommand ("entities", CL_PrintEntities_f);
 	Cmd_AddCommand ("disconnect", CL_Disconnect_f);
 	Cmd_AddCommand ("record", CL_Record_f);

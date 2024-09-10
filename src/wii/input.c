@@ -593,7 +593,7 @@ extern float crosshair_opacity;
 float centerdrift_offset_yaw, centerdrift_offset_pitch;
 extern int zoom_snap;
 extern kbutton_t in_forward, in_left, in_right;
-int crosshairmoving;
+extern qboolean croshhairmoving;
 extern cvar_t ads_center;
 extern cvar_t sniper_center;
 // Some things here rely upon IN_Move always being called after IN_Commands on the same frame
@@ -740,9 +740,9 @@ void IN_Move (usercmd_t *cmd)
 			else cmd->forwardmove += cl_backspeed * y1; 
 			
 		if (cmd->forwardmove == 0.0f && cmd->sidemove == 0.0f)
-			crosshairmoving = 0;
+			croshhairmoving = false;
 		else 
-			crosshairmoving = 1;
+			croshhairmoving = true;
 		/*
 		//if the nunchuk c button is pressed it speeds up
 		if (in_speed.state & 1)

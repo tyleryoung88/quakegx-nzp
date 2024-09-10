@@ -1013,7 +1013,7 @@ void Draw_Fill (int x, int y, int w, int h, int c)
 //=============================================================================
 
 extern cvar_t crosshair;
-extern int crosshairmoving;
+extern qboolean croshhairmoving;
 //extern cvar_t cl_zoom;
 extern qpic_t *hitmark;
 double Hitmark_Time, crosshair_spread_time;
@@ -1255,7 +1255,7 @@ void Draw_Crosshair (void)
 	}
 
 	// crosshair moving
-	if ((crosshair_spread_time > sv.time && crosshair_spread_time) || crosshairmoving == 1)
+	if ((crosshair_spread_time > sv.time && crosshair_spread_time) || croshhairmoving == true)
     {
         cur_spread = cur_spread + 4;
 		if (cur_spread >= CrossHairMaxSpread())
@@ -1266,7 +1266,7 @@ void Draw_Crosshair (void)
 			crosshair_opacity = 155;
     }
 	// crosshair not moving
-    else if ((crosshair_spread_time < sv.time && crosshair_spread_time) || crosshairmoving == 0)
+    else if ((crosshair_spread_time < sv.time && crosshair_spread_time) || croshhairmoving == false)
     {
         cur_spread = cur_spread - 2;
 		if (cur_spread <= 0) {

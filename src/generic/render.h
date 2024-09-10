@@ -73,7 +73,6 @@ typedef struct entity_s
 	byte					*colormap;
 	int						effects;		// light, particals, etc
 	int						skinnum;		// for Alias models
-	int 					iframetime;		// dummy for dquake parity
 	int						visframe;		// last frame this entity was
 											//  found in an active leaf
 											
@@ -100,6 +99,11 @@ typedef struct entity_s
 	vec3_t					currentangles;	//johnfitz -- transform lerping
 											
 	int						modelindex;
+	
+	// sBTODO come back and change lerping to match vril
+	float                   frame_start_time;
+	float                   rotate_start_time;
+	float                   translate_start_time;
 
     int                     z_head;
     int                     z_larm;

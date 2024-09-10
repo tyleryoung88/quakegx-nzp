@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -20,12 +20,13 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // cl_parse.c  -- parse a message received from the server
 
 #include "quakedef.h"
-#include <wiiuse/wpad.h>
 
-extern qboolean domaxammo;
-qboolean crosshair_pulse_grenade;
-extern char player_name[16];
-extern double nameprint_time;
+extern double hud_maxammo_starttime;
+extern double hud_maxammo_endtime;
+
+qboolean 			crosshair_pulse_grenade;
+
+extern int EN_Find(int num,char *string);
 
 char *svc_strings[] =
 {
@@ -51,7 +52,7 @@ char *svc_strings[] =
 	"svc_updatepoints",	// [byte] [short]
 	"svc_clientdata",		// <shortbits + data>
 	"svc_stopsound",		// <see code>
-	"svc_setcolor",	// [byte] [byte]
+	"",	// [byte] [byte]
 	"svc_particle",		// [vec3] <variable>
 	"svc_damage",			// [byte] impact [byte] blood [vec3] from
 
@@ -78,13 +79,8 @@ char *svc_strings[] =
     "svc_fog",    // 41		// [byte] start [byte] end [byte] red [byte] green [byte] blue [float] time
     "svc_bspdecal", //42     // [string] name [byte] decal_size [coords] pos
     "svc_achievement", //43
-	"svc_songegg", //44 			[string] track name
-	"svc_maxammo", //45
-	"svc_pulse", //46
-	"svc_bettyprompt",
-	"svc_playername",
-	"svc_doubletap",
-	"svc_screenflash" // 50
+	"svc_maxammo" //44
+	//"svc_pulse" //45
 };
 
 //=============================================================================
@@ -108,7 +104,7 @@ entity_t	*CL_EntityNum (int num)
 			cl.num_entities++;
 		}
 	}
-		
+
 	return &cl_entities[num];
 }
 
@@ -125,21 +121,21 @@ void CL_ParseStartSoundPacket(void)
     int 	sound_num;
     int 	volume;
     int 	field_mask;
-    float 	attenuation;  
+    float 	attenuation;
  	int		i;
-	           
-    field_mask = MSG_ReadByte(); 
+
+    field_mask = MSG_ReadByte();
 
     if (field_mask & SND_VOLUME)
 		volume = MSG_ReadByte ();
 	else
 		volume = DEFAULT_SOUND_PACKET_VOLUME;
-	
+
     if (field_mask & SND_ATTENUATION)
-		attenuation = MSG_ReadByte () / 64.0f;
+		attenuation = MSG_ReadByte () / 64.0;
 	else
 		attenuation = DEFAULT_SOUND_PACKET_ATTENUATION;
-	
+
 	channel = MSG_ReadShort ();
 	sound_num = MSG_ReadByte ();
 
@@ -148,12 +144,42 @@ void CL_ParseStartSoundPacket(void)
 
 	if (ent > MAX_EDICTS)
 		Host_Error ("CL_ParseStartSoundPacket: ent = %i", ent);
-	
+
 	for (i=0 ; i<3 ; i++)
 		pos[i] = MSG_ReadCoord ();
- 
+
     S_StartSound (ent, channel, cl.sound_precache[sound_num], pos, volume/255.0, attenuation);
-}       
+}
+
+/*
+==================
+CL_ParseBSPDecal
+
+Spawn decals on map
+Crow_bar.
+==================
+*/
+void CL_ParseBSPDecal (void)
+{
+#ifdef __PSP__
+	vec3_t		pos;
+	int			decal_size;
+	char        *texname;
+
+    texname     = MSG_ReadString ();
+    decal_size  = MSG_ReadByte   ();
+	pos[0]      = MSG_ReadCoord  ();
+    pos[1]      = MSG_ReadCoord  ();
+    pos[2]      = MSG_ReadCoord  ();
+
+	if(!texname)
+		return;
+
+	Con_Printf("BSPDECAL[tex: %s size: %i pos: %f %f %f]\n", texname, decal_size, pos[0], pos[1], pos[2]);
+
+	R_SpawnDecalBSP(pos, texname, decal_size);
+#endif // __PSP__
+}
 
 /*
 ==================
@@ -165,28 +191,38 @@ so the server doesn't disconnect.
 */
 void CL_KeepaliveMessage (void)
 {
-	float	time;
-	static float lastmsg;
+	double	time;
+	static double lastmsg;//BLUBSFIX, this was a float
 	int		ret;
 	sizebuf_t	old;
 	byte		olddata[8192];
-	
+
 	if (sv.active)
+	{
+		//Con_Printf("Active Server...exit keepalive\n");
 		return;		// no need if server is local
+	}
 	if (cls.demoplayback)
+	{
+		//Con_Printf("Demo Playback...exit keepalive\n");
 		return;
+	}
 
 // read messages from server, should just be nops
 	old = net_message;
-	memcpy (olddata, net_message.data, net_message.cursize);
-	
+#ifdef PSP_VFPU
+	memcpy_vfpu(olddata, net_message.data, net_message.cursize);
+#else
+	memcpy(olddata, net_message.data, net_message.cursize);
+#endif // PSP_VFPU
+
 	do
 	{
 		ret = CL_GetMessage ();
 		switch (ret)
 		{
 		default:
-			Host_Error ("CL_KeepaliveMessage: CL_GetMessage failed");		
+			Host_Error ("CL_KeepaliveMessage: CL_GetMessage failed");
 		case 0:
 			break;	// nothing waiting
 		case 1:
@@ -200,12 +236,18 @@ void CL_KeepaliveMessage (void)
 	} while (ret);
 
 	net_message = old;
-	memcpy (net_message.data, olddata, net_message.cursize);
+#ifdef PSP_VFPU
+	memcpy_vfpu(net_message.data, olddata, net_message.cursize);
+#else
+	memcpy(net_message.data, olddata, net_message.cursize);
+#endif // PSP_VFPU
 
 // check time
 	time = Sys_FloatTime ();
 	if (time - lastmsg < 5)
 		return;
+	//Con_Printf("Time since last keepAlive msg = %f\n",time - lastmsg);
+
 	lastmsg = time;
 
 // write out a nop
@@ -221,6 +263,15 @@ void CL_KeepaliveMessage (void)
 CL_ParseServerInfo
 ==================
 */
+int has_pap;
+int has_perk_revive;
+int has_perk_juggernog;
+int has_perk_speedcola;
+int has_perk_doubletap;
+int has_perk_staminup;
+int has_perk_flopper;
+int has_perk_deadshot;
+int has_perk_mulekick;
 void CL_ParseServerInfo (void)
 {
 	char	*str;
@@ -228,8 +279,13 @@ void CL_ParseServerInfo (void)
 	int		nummodels, numsounds;
 	char	model_precache[MAX_MODELS][MAX_QPATH];
 	char	sound_precache[MAX_SOUNDS][MAX_QPATH];
-	
+
+	//void R_PreMapLoad (char *);
+
+	//char	mapname[MAX_QPATH];
+
 	Con_DPrintf ("Serverinfo packet received.\n");
+	//Con_Printf ("Serverinfo packet received.\n");
 //
 // wipe the client_state_t struct
 //
@@ -272,32 +328,53 @@ void CL_ParseServerInfo (void)
 // precache models
 	for (i=0 ; i<NUM_MODELINDEX ; i++)
 		cl_modelindex[i] = -1;
+
+	has_pap = EN_Find(0,"perk_pap");
+	has_perk_revive = EN_Find(0, "perk_revive");
+	has_perk_juggernog = EN_Find(0, "perk_juggernog");
+	has_perk_speedcola = EN_Find(0, "perk_speed");
+	has_perk_doubletap = EN_Find(0, "perk_double");
+	has_perk_staminup = EN_Find(0, "perk_staminup");
+	has_perk_flopper = EN_Find(0, "perk_flopper");
+	has_perk_deadshot = EN_Find(0, "perk_deadshot");
+	has_perk_mulekick = EN_Find(0, "perk_mule");
+
+
 // precache models
 	memset (cl.model_precache, 0, sizeof(cl.model_precache));
+	//Con_Printf("GotModelsToLoad: ");
 	for (nummodels=1 ; ; nummodels++)
 	{
 		str = MSG_ReadString ();
+
 		if (!str[0])
 			break;
+
 		if (nummodels==MAX_MODELS)
 		{
 			Con_Printf ("Server sent too many model precaches\n");
 			return;
 		}
-		strcpy (model_precache[nummodels], str);
+
+		Q_strncpyz (model_precache[nummodels], str, sizeof(model_precache[nummodels]));
+		//Con_Printf("%i,",nummodels);
+
 		Mod_TouchModel (str);
+
 		if (!strcmp(model_precache[nummodels], "models/player.mdl"))
 			cl_modelindex[mi_player] = nummodels;
 		else if (!strcmp(model_precache[nummodels], "progs/flame.mdl"))
 			cl_modelindex[mi_flame1] = nummodels;
 		else if (!strcmp(model_precache[nummodels], "progs/flame2.mdl"))
 			cl_modelindex[mi_flame2] = nummodels;
-	}
+  }
 
 // precache sounds
+	//Con_Printf("Got Sounds to load: ");
 	memset (cl.sound_precache, 0, sizeof(cl.sound_precache));
 	for (numsounds=1 ; ; numsounds++)
 	{
+
 		str = MSG_ReadString ();
 		if (!str[0])
 			break;
@@ -308,14 +385,20 @@ void CL_ParseServerInfo (void)
 		}
 		strcpy (sound_precache[numsounds], str);
 		S_TouchSound (str);
+		//Con_Printf("%i,",numsounds);
 	}
+	//Con_Printf("\n");
+    //COM_StripExtension (COM_SkipPath(model_precache[1]), mapname);
+	//R_PreMapLoad (mapname);
 
 //
 // now we try to load everything else until a cache allocation fails
 //
 
-	loading_num_step = loading_num_step +nummodels + numsounds;
-	loading_step = 1;
+   loading_num_step = loading_num_step +nummodels + numsounds;
+   loading_step = 1;
+
+	//Con_Printf("Loaded Model: ");
 
 	for (i=1 ; i<nummodels ; i++)
 	{
@@ -324,41 +407,53 @@ void CL_ParseServerInfo (void)
 		{
 			Con_Printf("Model %s not found\n", model_precache[i]);
 			loading_cur_step++;
-			//return;
+			return;
 		}
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
 		strcpy(loading_name, model_precache[i]);
+		//Con_Printf("%i,",i);
 		SCR_UpdateScreen ();
 	}
+
+	//Con_Printf("\n");
+	//Con_Printf("Total Models loaded: %i\n",nummodels);
 	SCR_UpdateScreen ();
+
+	// load the extra "no-flamed-torch" model
+	//cl.model_precache[nummodels] = Mod_ForName ("progs/flame0.mdl", false);
+	//cl_modelindex[mi_flame0] = nummodels++;
 
 	loading_step = 4;
 
 	S_BeginPrecaching ();
+	//Con_Printf("Loaded Sounds: ");
 	for (i=1 ; i<numsounds ; i++)
 	{
 		cl.sound_precache[i] = S_PrecacheSound (sound_precache[i]);
 		CL_KeepaliveMessage ();
 		loading_cur_step++;
+		//Con_Printf("%i,",i);
 		strcpy(loading_name, sound_precache[i]);
 		SCR_UpdateScreen ();
 	}
 	S_EndPrecaching ();
-	
+
+	//Con_Printf("...\n");
+	//Con_Printf("Total Sounds Loaded: %i\n",numsounds);
 	SCR_UpdateScreen ();
 
    	Clear_LoadingFill ();
 
 // local state
 	cl_entities[0].model = cl.worldmodel = cl.model_precache[1];
-	
+
 	R_NewMap ();
 
 	Hunk_Check ();		// make sure nothing is hurt
 	HUD_NewMap ();
-	
-	noclip_anglehack = false;		// noclip is turned off at start	
+
+	noclip_anglehack = false;		// noclip is turned off at start
 }
 
 
@@ -381,13 +476,16 @@ void CL_ParseUpdate (int bits)
 	qboolean	forcelink;
 	entity_t	*ent;
 	int			num;
-	int			skin;
+    //int		    skin;
 
 	if (cls.signon == SIGNONS - 1)
 	{	// first update is the final signon stage
+		Con_DPrintf("First Update\n");
 		cls.signon = SIGNONS;
-		CL_SignonReply ();
+		CL_SignonReply (); //disabling this temp-mortem
 	}
+	//Con_Printf("2\n");
+
 
 	if (bits & U_MOREBITS)
 	{
@@ -407,27 +505,24 @@ void CL_ParseUpdate (int bits)
 	}
 	// Tomaz - QC Control End
 
-	if (bits & U_LONGENTITY)	
+	if (bits & U_LONGENTITY)
 		num = MSG_ReadShort ();
 	else
 		num = MSG_ReadByte ();
 
 	ent = CL_EntityNum (num);
 
-	for (i=0 ; i<16 ; i++) {
-		if (bits&(1<<i)) {
+	for (i=0 ; i<16 ; i++)
+		if (bits&(1<<i))
 			bitcounts[i]++;
-		}
-	}
 
-	if (ent->msgtime != cl.mtime[1]) {
+	if (ent->msgtime != cl.mtime[1])
 		forcelink = true;	// no previous frame to lerp from
-	} else {
+	else
 		forcelink = false;
-	}
 
 	ent->msgtime = cl.mtime[0];
-	
+
 	if (bits & U_MODEL)
 	{
 		modnum = MSG_ReadShort ();
@@ -436,7 +531,7 @@ void CL_ParseUpdate (int bits)
 	}
 	else
 		modnum = ent->baseline.modelindex;
-		
+
 	model = cl.model_precache[modnum];
 	if (model != ent->model)
 	{
@@ -448,51 +543,33 @@ void CL_ParseUpdate (int bits)
 			if (model->synctype == ST_RAND)
 				ent->syncbase = (float)(rand()&0x7fff) / 0x7fff;
 			else
-				ent->syncbase = 0.0f;
+				ent->syncbase = 0.0;
 		}
 		else
 			forcelink = true;	// hack to make null model players work
-		if (num > 0 && num <= cl.maxclients)
-			R_TranslatePlayerSkin (num - 1);
 	}
-	
+
 	if (bits & U_FRAME)
 		ent->frame = MSG_ReadByte ();
 	else
 		ent->frame = ent->baseline.frame;
 
 	if (bits & U_COLORMAP)
-			i = MSG_ReadByte();
-		else
-			i = ent->baseline.colormap;
-		if (!i)
-			ent->colormap = vid.colormap;
-		else
-		{
-			if (i > cl.maxclients)
-				Sys_Error ("i >= cl.maxclients");
-			//ent->colormap = cl.scores[i-1].translations;
-		}
-
-#if 1
-	if (bits & U_SKIN)
-		skin = MSG_ReadByte();
+		i = MSG_ReadByte();
 	else
-		skin = ent->baseline.skin;
-	
-	if (skin != ent->skinnum) {
-		ent->skinnum = skin;
-		if (num > 0 && num <= cl.maxclients)
-			R_TranslatePlayerSkin (num - 1);
+		i = ent->baseline.colormap;
+	if (!i)
+		ent->colormap = vid.colormap;
+	else
+	{
+		if (i > cl.maxclients)
+			Sys_Error ("i >= cl.maxclients");
 	}
-
-#else
 
 	if (bits & U_SKIN)
 		ent->skinnum = MSG_ReadByte();
 	else
 		ent->skinnum = ent->baseline.skin;
-#endif
 
 	if (bits & U_EFFECTS)
 		ent->effects = MSG_ReadShort();
@@ -502,12 +579,10 @@ void CL_ParseUpdate (int bits)
 // shift the known values for interpolation
 	VectorCopy (ent->msg_origins[0], ent->msg_origins[1]);
 	VectorCopy (ent->msg_angles[0], ent->msg_angles[1]);
-
 	if (bits & U_ORIGIN1)
 		ent->msg_origins[0][0] = MSG_ReadCoord ();
 	else
 		ent->msg_origins[0][0] = ent->baseline.origin[0];
-	
 	if (bits & U_ANGLE1)
 		ent->msg_angles[0][0] = MSG_ReadAngle();
 	else
@@ -517,7 +592,6 @@ void CL_ParseUpdate (int bits)
 		ent->msg_origins[0][1] = MSG_ReadCoord ();
 	else
 		ent->msg_origins[0][1] = ent->baseline.origin[1];
-	
 	if (bits & U_ANGLE2)
 		ent->msg_angles[0][1] = MSG_ReadAngle();
 	else
@@ -527,13 +601,11 @@ void CL_ParseUpdate (int bits)
 		ent->msg_origins[0][2] = MSG_ReadCoord ();
 	else
 		ent->msg_origins[0][2] = ent->baseline.origin[2];
-	
 	if (bits & U_ANGLE3)
 		ent->msg_angles[0][2] = MSG_ReadAngle();
 	else
 		ent->msg_angles[0][2] = ent->baseline.angles[2];
-
-	// Tomaz - QC Alpha Scale Glow Begin
+// Tomaz - QC Alpha Scale Glow Begin
 	if (bits & U_RENDERAMT)
 	    ent->renderamt = MSG_ReadFloat();
     else
@@ -565,7 +637,7 @@ void CL_ParseUpdate (int bits)
 	else
 		ent->scale = ENTSCALE_DEFAULT;
 
-	if ( bits & U_NOLERP )
+    if ( bits & U_NOLERP )//there's no data for nolerp, it is the value itself
 		ent->forcelink = true;
 
 	if ( forcelink )
@@ -586,8 +658,8 @@ CL_ParseBaseline
 void CL_ParseBaseline (entity_t *ent)
 {
 	int			i;
-	
-	ent->baseline.modelindex = MSG_ReadShort (); //should be ReadShort??
+
+	ent->baseline.modelindex = MSG_ReadShort ();
 	ent->baseline.frame = MSG_ReadByte ();
 	ent->baseline.colormap = MSG_ReadByte();
 	ent->baseline.skin = MSG_ReadByte();
@@ -597,7 +669,6 @@ void CL_ParseBaseline (entity_t *ent)
 		ent->baseline.angles[i] = MSG_ReadAngle ();
 	}
 }
-
 
 /*
 ==================
@@ -622,11 +693,11 @@ void CL_ParseClientdata (int bits)
 	else
 		cl.idealpitch = 0;
 
+
 	if (bits & SU_PERKS)
 		i = MSG_ReadLong ();
 	else
 		i = 0;
-	
 	if (cl.perks != i)
 	{
 		if (i & 1 && !(cl.perks & 1))
@@ -837,7 +908,6 @@ void CL_ParseClientdata (int bits)
 
 	// Weapon model index
 	i = MSG_ReadShort();
-
 	if (cl.stats[STAT_WEAPON] != i)
 		cl.stats[STAT_WEAPON] = i;
 
@@ -847,20 +917,23 @@ void CL_ParseClientdata (int bits)
 	else
 		i = 0;
 
-	if (cl.stats[STAT_GRENADES] != i) {
+	if (cl.stats[STAT_GRENADES] != i)
+	{
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_GRENADES] = i;
 	}
 
 	i = MSG_ReadShort ();
-	if (cl.stats[STAT_PRIGRENADES] != i) {
+	if (cl.stats[STAT_PRIGRENADES] != i)
+	{
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_PRIGRENADES] = i;
 	}
 
 
 	i = MSG_ReadShort ();
-	if (cl.stats[STAT_SECGRENADES] != i) {
+	if (cl.stats[STAT_SECGRENADES] != i)
+	{
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_SECGRENADES] = i;
 	}
@@ -870,13 +943,15 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_HEALTH] = i;
 
 	i = MSG_ReadShort ();
-	if (cl.stats[STAT_AMMO] != i) {
+	if (cl.stats[STAT_AMMO] != i)
+	{
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_AMMO] = i;
 	}
 
 	i = MSG_ReadByte ();
-	if (cl.stats[STAT_CURRENTMAG] != i) {
+	if (cl.stats[STAT_CURRENTMAG] != i)
+	{
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_CURRENTMAG] = i;
 	}
@@ -886,7 +961,8 @@ void CL_ParseClientdata (int bits)
 		cl.stats[STAT_ZOOM] = i;
 
 	i = MSG_ReadByte ();
-	if (cl.stats[STAT_ACTIVEWEAPON] != i) {
+	if (cl.stats[STAT_ACTIVEWEAPON] != i)
+	{
 		HUD_Change_time = Sys_FloatTime() + 6;
 		cl.stats[STAT_ACTIVEWEAPON] = i;
 	}
@@ -930,44 +1006,6 @@ void CL_ParseClientdata (int bits)
 
 /*
 =====================
-CL_NewTranslation
-=====================
-*/
-void CL_NewTranslation (int slot)
-{
-	/*
-	int		i, j;
-	int		top, bottom;
-	byte	*dest, *source;
-	
-	if (slot > cl.maxclients)
-		Sys_Error ("CL_NewTranslation: slot > cl.maxclients");
-	dest = cl.scores[slot].translations;
-	source = vid.colormap;
-	memcpy (dest, vid.colormap, sizeof(cl.scores[slot].translations));
-	top = cl.scores[slot].colors & 0xf0;
-	bottom = (cl.scores[slot].colors &15)<<4;
-	R_TranslatePlayerSkin (slot);
-
-	for (i=0 ; i<VID_GRADES ; i++, dest += 256, source+=256)
-	{
-		if (top < 128)	// the artists made some backwards ranges.  sigh.
-			memcpy (dest + TOP_RANGE, source + top, 16);
-		else
-			for (j=0 ; j<16 ; j++)
-				dest[TOP_RANGE+j] = source[top+15-j];
-				
-		if (bottom < 128)
-			memcpy (dest + BOTTOM_RANGE, source + bottom, 16);
-		else
-			for (j=0 ; j<16 ; j++)
-				dest[BOTTOM_RANGE+j] = source[bottom+15-j];		
-	}
-	*/
-}
-
-/*
-=====================
 CL_ParseStatic
 =====================
 */
@@ -975,7 +1013,7 @@ void CL_ParseStatic (void)
 {
 	entity_t *ent;
 	int		i;
-		
+
 	i = cl.num_statics;
 	if (i >= MAX_STATIC_ENTITIES)
 		Host_Error ("Too many static entities");
@@ -991,7 +1029,7 @@ void CL_ParseStatic (void)
 	ent->effects = ent->baseline.effects;
 
 	VectorCopy (ent->baseline.origin, ent->origin);
-	VectorCopy (ent->baseline.angles, ent->angles);	
+	VectorCopy (ent->baseline.angles, ent->angles);
 	R_AddEfrags (ent);
 }
 
@@ -1005,13 +1043,13 @@ void CL_ParseStaticSound (void)
 	vec3_t		org;
 	int			sound_num, vol, atten;
 	int			i;
-	
+
 	for (i=0 ; i<3 ; i++)
 		org[i] = MSG_ReadCoord ();
 	sound_num = MSG_ReadByte ();
 	vol = MSG_ReadByte ();
 	atten = MSG_ReadByte ();
-	
+
 	S_StaticSound (cl.sound_precache[sound_num], org, vol, atten);
 }
 
@@ -1033,12 +1071,12 @@ void CL_ParseWeaponFire (void)
 	kick[0] = MSG_ReadCoord()/5;
 	kick[1] = MSG_ReadCoord()/5;
 	kick[2] = MSG_ReadCoord()/5;
-	
+
 	cl.gun_kick[0] += kick[0];
 	cl.gun_kick[1] += kick[1];
 	cl.gun_kick[2] += kick[2];
-}
 
+}
 /*
 ===================
 CL_ParseLimbUpdate
@@ -1049,7 +1087,6 @@ void CL_ParseLimbUpdate (void)
     int limb = MSG_ReadByte();
     int zombieent = MSG_ReadShort();
     int limbent = MSG_ReadShort();
-	
     switch (limb)
     {
         case 0://head
@@ -1067,24 +1104,14 @@ void CL_ParseLimbUpdate (void)
 
 
 #define SHOWNET(x) if(cl_shownet.value==2)Con_Printf ("%3i:%s\n", msg_readcount-1, x);
-void Sky_LoadSkyBox(char* name);
 
-extern double bettyprompt_time;
-extern qboolean doubletap_has_damage_buff;
-extern int screenflash_color;
-extern double screenflash_duration;
-extern int screenflash_type;
-extern double screenflash_worktime;
-extern double screenflash_starttime;
-extern int lock_viewmodel; 
-extern double time_wpad_off;
-extern int rumble_on;
-extern cvar_t  rumble;
 /*
 =====================
 CL_ParseServerMessage
 =====================
 */
+extern double bettyprompt_time;
+extern qboolean doubletap_has_damage_buff;
 void CL_ParseServerMessage (void)
 {
 	int			cmd;
@@ -1168,7 +1195,8 @@ void CL_ParseServerMessage (void)
 			SCR_UsePrint (MSG_ReadByte (),MSG_ReadShort (),MSG_ReadByte ());
 			break;
 		case svc_maxammo:
-			domaxammo = true;
+			hud_maxammo_starttime = sv.time;
+			hud_maxammo_endtime = sv.time + 2;
 			break;
 
 		case svc_pulse:
@@ -1177,6 +1205,18 @@ void CL_ParseServerMessage (void)
 
 		case svc_doubletap:
 			doubletap_has_damage_buff = MSG_ReadByte();
+			break;
+
+		case svc_lockviewmodel:
+			// This platform doesn't use this.
+			MSG_ReadByte();
+			break;
+
+		case svc_rumble:
+			// This platform doesn't use this.
+			MSG_ReadShort();
+			MSG_ReadShort();
+			MSG_ReadShort();
 			break;
 
 		case svc_screenflash:
@@ -1306,12 +1346,6 @@ void CL_ParseServerMessage (void)
 		case svc_cdtrack:
 			cl.cdtrack = MSG_ReadByte ();
 			cl.looptrack = MSG_ReadByte ();
-			if ( (cls.demoplayback || cls.demorecording) && (cls.forcetrack != -1) )
-				break;
-				//CDAudio_Play ((byte)cls.forcetrack, true);
-			else
-				break;
-				//CDAudio_Play ((byte)cl.cdtrack, true);
 			break;
 
 		case svc_intermission:
@@ -1362,16 +1396,7 @@ void CL_ParseServerMessage (void)
 			break;
 
 		case svc_bspdecal:
-			//CL_ParseBSPDecal ();
-			break;
-			
-		case svc_lockviewmodel:
-			lock_viewmodel = MSG_ReadByte();
-			break;
-			
-		case svc_rumble:
-			// this is unneccesary 
-			//IN_StartRumble((int)MSG_ReadShort(), (int)MSG_ReadShort(), (int)MSG_ReadShort());
+			CL_ParseBSPDecal ();
 			break;
 		}
 	}
