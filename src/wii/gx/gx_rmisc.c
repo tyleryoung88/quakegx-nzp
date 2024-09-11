@@ -422,10 +422,6 @@ void R_TimeRefresh_f (void)
 	//GL_EndRendering ();
 }
 
-void D_FlushCaches (void)
-{
-}
-
 byte		ramps[3][256];
 float		v_blend[4];		// rgba 0.0 - 1.0
 

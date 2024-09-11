@@ -85,6 +85,8 @@ Zone block
 
 void Memory_Init (void *buf, int size);
 
+void *Q_malloc (size_t size);			// joe
+
 void Z_Free (void *ptr);
 void *Z_Malloc (int size);			// returns 0 filled memory
 void *Z_Realloc (void *ptr, int size);

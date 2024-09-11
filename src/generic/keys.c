@@ -41,6 +41,7 @@ keydest_t	key_dest;
 int		key_count;			// incremented every key event
 
 char	*keybindings[256];
+char	*dtbindings[256];
 qboolean	consolekeys[256];	// if true, can't be rebound while in console
 qboolean	menubound[256];	// if true, can't be rebound while in menu
 int		keyshift[256];		// key to map to if shift held down in console
@@ -572,6 +573,34 @@ void Key_SetBinding (key_id_t keynum, char *binding)
 
 /*
 ===================
+Key_SetDTBinding
+===================
+*/
+void Key_SetDTBinding (int keynum, char *binding)
+{
+	char	*new;
+	int		l;
+
+	if (keynum == -1)
+		return;
+
+// free old bindings
+	if (dtbindings[keynum])
+	{
+		Z_Free (dtbindings[keynum]);
+		dtbindings[keynum] = NULL;
+	}
+
+// allocate memory for new binding
+	l = Q_strlen (binding);
+	new = Z_Malloc (l+1);
+	Q_strcpy (new, binding);
+	new[l] = 0;
+	dtbindings[keynum] = new;
+}
+
+/*
+===================
 Key_Unbind_f
 ===================
 */
@@ -651,6 +680,51 @@ void Key_Bind_f (void)
 }
 
 /*
+===================
+Key_Binddt_f
+===================
+*/
+void Key_Binddt_f (void)
+{
+	int			i, c, b;
+	char		cmd[1024];
+
+	c = Cmd_Argc();
+
+	if (c != 2 && c != 3)
+	{
+		Con_Printf ("binddt <key> [command] : attach a command to a double tap key\n");
+		return;
+	}
+	b = Key_StringToKeynum (Cmd_Argv(1));
+	if (b==-1)
+	{
+		Con_Printf ("\"%s\" isn't a valid key\n", Cmd_Argv(1));
+		return;
+	}
+
+	if (c == 2)
+	{
+		if (dtbindings[b])
+			Con_Printf ("\"%s\" = \"%s\"\n", Cmd_Argv(1), dtbindings[b] );
+		else
+			Con_Printf ("\"%s\" is not bound\n", Cmd_Argv(1) );
+		return;
+	}
+
+// copy the rest of the command line
+	cmd[0] = 0;		// start out with a null string
+	for (i=2 ; i< c ; i++)
+	{
+		if (i > 2)
+			strcat (cmd, " ");
+		strcat (cmd, Cmd_Argv(i));
+	}
+
+	Key_SetDTBinding (b, cmd);
+}
+
+/*
 ============
 Key_WriteBindings
 
@@ -667,6 +741,22 @@ void Key_WriteBindings (FILE *f)
 				fprintf (f, "bind \"%s\" \"%s\"\n", Key_KeynumToString(i), keybindings[i]);
 }
 
+/*
+============
+Key_WriteDTBindings
+
+Writes lines containing "binddt key value"
+============
+*/
+void Key_WriteDTBindings (FILE *f)
+{
+	int		i;
+
+	for (i=0 ; i<256 ; i++)
+		if (dtbindings[i])
+			if (*dtbindings[i])
+				fprintf (f, "binddt \"%s\" \"%s\"\n", Key_KeynumToString(i), dtbindings[i]);
+}
 
 /*
 ===================

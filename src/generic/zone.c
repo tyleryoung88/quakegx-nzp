@@ -65,6 +65,24 @@ memzone_t	*mainzone;
 
 void Z_ClearZone (memzone_t *zone, int size);
 
+/*
+===================
+Q_malloc
+Use it instead of malloc so that if memory allocation fails,
+the program exits with a message saying there's not enough memory
+instead of crashing after trying to use a NULL pointer
+===================
+*/
+void *Q_malloc (size_t size)
+{
+	void	*p;
+
+	if (!(p = malloc(size)))
+		Sys_Error ("Not enough memory free; check disk space");
+
+	return p;
+}
+
 
 /*
 ========================
