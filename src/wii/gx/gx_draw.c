@@ -31,7 +31,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <gccore.h>
 
 byte		*draw_chars;				// 8*8 graphic characters
-qpic_t		*draw_disc;
 qpic_t		*draw_backtile;
 
 qpic_t		*sniper_scope;
@@ -449,7 +448,7 @@ void Draw_Character (int x, int y, int num)
 	Draw_CharacterRGBA(x, y, num, 255, 255, 255, 255, 1);
 }
 
-void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
+void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, int scale) 
 {
 	while (*str)
 	{
@@ -496,7 +495,7 @@ int getTextWidth(char *str, int scale)
 }
 
 
-void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, int scale)
 {
 	Draw_ColoredString((vid.width - getTextWidth(str, (int)scale))/2, y, str, r, g, b, a, scale);
 }
@@ -519,7 +518,7 @@ void Draw_DebugChar (char num)
 Draw_ColoredStretchPic
 =============
 */
-void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, float r, float g , float b, float a)
+void Draw_ColoredStretchPic (int x, int y, qpic_t *pic, int x_value, int y_value, int r, int g , int b, int a)
 {
 	/*
 	glpic_t			*gl;
@@ -973,7 +972,7 @@ Draw_FillByColor
 Fills a box of pixels with a single color
 =============
 */
-void Draw_FillByColor (int x, int y, int w, int h, float r, float g, float b, float a)
+void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a)
 {
 	Draw_Fill(x, y, w, h, r, g, b, a);
 }
@@ -1422,36 +1421,6 @@ void Draw_FadeScreen (void)
 }
 
 //=============================================================================
-
-/*
-================
-Draw_BeginDisc
-
-Draws the little blue disc in the corner of the screen.
-Call before beginning any disc IO.
-================
-*/
-void Draw_BeginDisc (void)
-{
-	if (!draw_disc)
-		return;
-	// ELUTODO glDrawBuffer  (GL_FRONT);
-	Draw_Pic (vid.conwidth - 24, 0, draw_disc);
-	// ELUTODO glDrawBuffer  (GL_BACK);
-}
-
-
-/*
-================
-Draw_EndDisc
-
-Erases the disc icon.
-Call after completing any disc IO
-================
-*/
-void Draw_EndDisc (void)
-{
-}
 
 /*
 ================
