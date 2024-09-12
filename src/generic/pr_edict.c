@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -31,6 +31,11 @@ globalvars_t	*pr_global_struct;
 float			*pr_globals;			// same as pr_global_struct
 int				pr_edict_size;	// in bytes
 
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  start
+cvar_t	pr_builtin_find = {"pr_builtin_find", "0", false, false};
+cvar_t	pr_builtin_remap = {"pr_builtin_remap", "0", false, false};
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  end
+
 unsigned short		pr_crc;
 
 int		type_size[8] = {1,sizeof(string_t)/4,1,3,1,1,sizeof(func_t)/4,sizeof(void *)/4};
@@ -50,13 +55,6 @@ cvar_t	saved2 = {"saved2", "0", true};
 cvar_t	saved3 = {"saved3", "0", true};
 cvar_t	saved4 = {"saved4", "0", true};
 
-// evaluation shortcuts
-int	eval_gravity;
-int eval_idealpitch, eval_pitch_speed;
-
-// Half_life modes. Crow_bar
-int	eval_renderamt, eval_rendermode, eval_rendercolor;
-
 #define	MAX_FIELD_LEN	64
 #define GEFV_CACHESIZE	2
 
@@ -66,6 +64,36 @@ typedef struct {
 } gefv_cache;
 
 static gefv_cache	gefvCache[GEFV_CACHESIZE] = {{NULL, ""}, {NULL, ""}};
+
+// evaluation shortcuts
+int	eval_gravity;
+int eval_idealpitch, eval_pitch_speed;
+
+// Half_life modes. Crow_bar
+int	eval_renderamt, eval_rendermode, eval_rendercolor;
+
+ddef_t *ED_FindField (char *name);
+
+int FindFieldOffset (char *field)
+{
+	ddef_t	*d;
+
+	if (!(d = ED_FindField(field)))
+		return 0;
+
+	return d->ofs*4;
+}
+
+void FindEdictFieldOffsets (void)
+{
+	eval_gravity = FindFieldOffset ("gravity");
+
+    eval_idealpitch = FindFieldOffset ("idealpitch");
+	eval_pitch_speed = FindFieldOffset ("pitch_speed");
+	eval_renderamt   = FindFieldOffset ("renderamt");
+	eval_rendermode  = FindFieldOffset ("rendermode");
+    eval_rendercolor = FindFieldOffset ("rendercolor");
+}
 
 /*
 =================
@@ -101,16 +129,16 @@ edict_t *ED_Alloc (void)
 		e = EDICT_NUM(i);
 		// the first couple seconds of server time can involve a lot of
 		// freeing and allocating, so relax the replacement policy
-		if (e->free && ( e->freetime < 2 || sv.time - e->freetime > 0.5f ) )
+		if (e->free && ( e->freetime < 2 || sv.time - e->freetime > 0.5 ) )
 		{
 			ED_ClearEdict (e);
 			return e;
 		}
 	}
-	
+
 	if (i == MAX_EDICTS)
 		Sys_Error ("ED_Alloc: no free edicts");
-		
+
 	sv.num_edicts++;
 	e = EDICT_NUM(i);
 	ED_ClearEdict (e);
@@ -130,7 +158,7 @@ void ED_Free (edict_t *ed)
 {
 	// pathfind optimization:
 	closest_waypoints[NUM_FOR_EDICT(ed)] = -1;
-	
+
 	SV_UnlinkEdict (ed);		// unlink from world bsp
 
 	ed->free = true;
@@ -144,7 +172,7 @@ void ED_Free (edict_t *ed)
 	VectorCopy (vec3_origin, ed->v.angles);
 	ed->v.nextthink = -1;
 	ed->v.solid = 0;
-	
+
 	ed->freetime = sv.time;
 }
 
@@ -159,7 +187,7 @@ ddef_t *ED_GlobalAtOfs (int ofs)
 {
 	ddef_t		*def;
 	int			i;
-	
+
 	for (i=0 ; i<progs->numglobaldefs ; i++)
 	{
 		def = &pr_globaldefs[i];
@@ -178,7 +206,7 @@ ddef_t *ED_FieldAtOfs (int ofs)
 {
 	ddef_t		*def;
 	int			i;
-	
+
 	for (i=0 ; i<progs->numfielddefs ; i++)
 	{
 		def = &pr_fielddefs[i];
@@ -197,7 +225,7 @@ ddef_t *ED_FindField (char *name)
 {
 	ddef_t		*def;
 	int			i;
-	
+
 	for (i=0 ; i<progs->numfielddefs ; i++)
 	{
 		def = &pr_fielddefs[i];
@@ -207,26 +235,6 @@ ddef_t *ED_FindField (char *name)
 	return NULL;
 }
 
-int FindFieldOffset (char *field)
-{
-	ddef_t	*d;
-
-	if (!(d = ED_FindField(field)))
-		return 0;
-
-	return d->ofs*4;
-}
-
-void FindEdictFieldOffsets (void)
-{
-	eval_gravity = FindFieldOffset ("gravity");
-
-    eval_idealpitch = FindFieldOffset ("idealpitch");
-	eval_pitch_speed = FindFieldOffset ("pitch_speed");
-	eval_renderamt   = FindFieldOffset ("renderamt");
-	eval_rendermode  = FindFieldOffset ("rendermode");
-    eval_rendercolor = FindFieldOffset ("rendercolor");
-}
 
 /*
 ============
@@ -237,7 +245,7 @@ ddef_t *ED_FindGlobal (char *name)
 {
 	ddef_t		*def;
 	int			i;
-	
+
 	for (i=0 ; i<progs->numglobaldefs ; i++)
 	{
 		def = &pr_globaldefs[i];
@@ -257,7 +265,7 @@ dfunction_t *ED_FindFunction (char *name)
 {
 	dfunction_t		*func;
 	int				i;
-	
+
 	for (i=0 ; i<progs->numfunctions ; i++)
 	{
 		func = &pr_functions[i];
@@ -267,7 +275,7 @@ dfunction_t *ED_FindFunction (char *name)
 	return NULL;
 }
 
-
+/*
 eval_t *GetEdictFieldValue(edict_t *ed, char *field)
 {
 	ddef_t			*def = NULL;
@@ -298,7 +306,7 @@ Done:
 
 	return (eval_t *)((char *)&ed->v + def->ofs*4);
 }
-
+*/
 
 /*
 ============
@@ -312,7 +320,7 @@ char *PR_ValueString (etype_t type, eval_t *val)
 	static char	line[256];
 	ddef_t		*def;
 	dfunction_t	*f;
-	
+
 	type &= ~DEF_SAVEGLOBAL;
 
 	switch (type)
@@ -320,7 +328,7 @@ char *PR_ValueString (etype_t type, eval_t *val)
 	case ev_string:
 		sprintf (line, "%s", pr_strings + val->string);
 		break;
-	case ev_entity:	
+	case ev_entity:
 		sprintf (line, "entity %i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)) );
 		break;
 	case ev_function:
@@ -347,7 +355,7 @@ char *PR_ValueString (etype_t type, eval_t *val)
 		sprintf (line, "bad type %i", type);
 		break;
 	}
-	
+
 	return line;
 }
 
@@ -364,7 +372,7 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 	static char	line[256];
 	ddef_t		*def;
 	dfunction_t	*f;
-	
+
 	type &= ~DEF_SAVEGLOBAL;
 
 	switch (type)
@@ -372,7 +380,7 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 	case ev_string:
 		sprintf (line, "%s", pr_strings + val->string);
 		break;
-	case ev_entity:	
+	case ev_entity:
 		sprintf (line, "%i", NUM_FOR_EDICT(PROG_TO_EDICT(val->edict)));
 		break;
 	case ev_function:
@@ -396,7 +404,7 @@ char *PR_UglyValueString (etype_t type, eval_t *val)
 		sprintf (line, "bad type %i", type);
 		break;
 	}
-	
+
 	return line;
 }
 
@@ -415,22 +423,22 @@ char *PR_GlobalString (int ofs)
 	ddef_t	*def;
 	void	*val;
 	static char	line[128];
-	
+
 	val = (void *)&pr_globals[ofs];
 	def = ED_GlobalAtOfs(ofs);
 	if (!def)
-		sprintf (line,"%i(?)", ofs);
+		sprintf (line,"%i(?\?\?)", ofs);
 	else
 	{
 		s = PR_ValueString (def->type, val);
 		sprintf (line,"%i(%s)%s", ofs, pr_strings + def->s_name, s);
 	}
-	
+
 	i = strlen(line);
 	for ( ; i<20 ; i++)
 		strcat (line," ");
 	strcat (line," ");
-		
+
 	return line;
 }
 
@@ -439,18 +447,18 @@ char *PR_GlobalStringNoContents (int ofs)
 	int		i;
 	ddef_t	*def;
 	static char	line[128];
-	
+
 	def = ED_GlobalAtOfs(ofs);
 	if (!def)
-		sprintf (line,"%i(?)", ofs);
+		sprintf (line,"%i(?\?\?)", ofs);
 	else
 		sprintf (line,"%i(%s)", ofs, pr_strings + def->s_name);
-	
+
 	i = strlen(line);
 	for ( ; i<20 ; i++)
 		strcat (line," ");
 	strcat (line," ");
-		
+
 	return line;
 }
 
@@ -484,24 +492,24 @@ void ED_Print (edict_t *ed)
 		name = pr_strings + d->s_name;
 		if (name[strlen(name)-2] == '_')
 			continue;	// skip _x, _y, _z vars
-			
+
 		v = (int *)((char *)&ed->v + d->ofs*4);
 
 	// if the value is still all 0, skip the field
 		type = d->type & ~DEF_SAVEGLOBAL;
-		
+
 		for (j=0 ; j<type_size[type] ; j++)
 			if (v[j])
 				break;
 		if (j == type_size[type])
 			continue;
-	
+
 		Con_Printf ("%s",name);
 		l = strlen (name);
 		while (l++ < 15)
 			Con_Printf (" ");
 
-		Con_Printf ("%s\n", PR_ValueString(d->type, (eval_t *)v));		
+		Con_Printf ("%s\n", PR_ValueString(d->type, (eval_t *)v));
 	}
 }
 
@@ -520,21 +528,21 @@ void ED_Write (FILE *f, edict_t *ed)
 	char	*name;
 	int		type;
 
-	fprintf(f, "{\n");
+	fprintf (f, "{\n");
 
 	if (ed->free)
 	{
 		fprintf (f, "}\n");
 		return;
 	}
-	
+
 	for (i=1 ; i<progs->numfielddefs ; i++)
 	{
 		d = &pr_fielddefs[i];
 		name = pr_strings + d->s_name;
 		if (name[strlen(name)-2] == '_')
 			continue;	// skip _x, _y, _z vars
-			
+
 		v = (int *)((char *)&ed->v + d->ofs*4);
 
 	// if the value is still all 0, skip the field
@@ -544,9 +552,9 @@ void ED_Write (FILE *f, edict_t *ed)
 				break;
 		if (j == type_size[type])
 			continue;
-	
+
 		fprintf (f,"\"%s\" ",name);
-		fprintf (f,"\"%s\"\n", PR_UglyValueString(d->type, (eval_t *)v));		
+		fprintf (f,"\"%s\"\n", PR_UglyValueString(d->type, (eval_t *)v));
 	}
 
 	fprintf (f, "}\n");
@@ -567,7 +575,7 @@ For debugging, prints all the entities in the current server
 void ED_PrintEdicts (void)
 {
 	int		i;
-	
+
 	Con_Printf ("%i entities\n", sv.num_edicts);
 	for (i=0 ; i<sv.num_edicts ; i++)
 		ED_PrintNum (i);
@@ -583,8 +591,8 @@ For debugging, prints a single edicy
 void ED_PrintEdict_f (void)
 {
 	int		i;
-	
-	i = atoi (Cmd_Argv(1));
+
+	i = Q_atoi (Cmd_Argv(1));
 	if (i >= sv.num_edicts)
 	{
 		Con_Printf("Bad edict number\n");
@@ -664,9 +672,9 @@ void ED_WriteGlobals (FILE *f)
 		&& type != ev_entity)
 			continue;
 
-		name = pr_strings + def->s_name;		
+		name = pr_strings + def->s_name;
 		fprintf (f,"\"%s\" ", name);
-		fprintf (f,"\"%s\"\n", PR_UglyValueString(type, (eval_t *)&pr_globals[def->ofs]));		
+		fprintf (f,"\"%s\"\n", PR_UglyValueString(type, (eval_t *)&pr_globals[def->ofs]));
 	}
 	fprintf (f,"}\n");
 }
@@ -682,7 +690,7 @@ void ED_ParseGlobals (char *data)
 	ddef_t	*key;
 
 	while (1)
-	{	
+	{
 	// parse key
 		data = COM_Parse (data);
 		if (com_token[0] == '}')
@@ -692,7 +700,7 @@ void ED_ParseGlobals (char *data)
 
 		strcpy (keyname, com_token);
 
-	// parse value	
+	// parse value
 		data = COM_Parse (data);
 		if (!data)
 			Sys_Error ("ED_ParseEntity: EOF without closing brace");
@@ -703,7 +711,7 @@ void ED_ParseGlobals (char *data)
 		key = ED_FindGlobal (keyname);
 		if (!key)
 		{
-			//Con_Printf ("'%s' is not a global\n", keyname);
+			Con_Printf ("'%s' is not a global\n", keyname);
 			continue;
 		}
 
@@ -724,7 +732,7 @@ char *ED_NewString (char *string)
 {
 	char	*new, *new_p;
 	int		i,l;
-	
+
 	l = strlen(string) + 1;
 	new = Hunk_Alloc (l);
 	new_p = new;
@@ -742,7 +750,7 @@ char *ED_NewString (char *string)
 		else
 			*new_p++ = string[i];
 	}
-	
+
 	return new;
 }
 
@@ -763,19 +771,19 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 	char	*v, *w;
 	void	*d;
 	dfunction_t	*func;
-	
+
 	d = (void *)((int *)base + key->ofs);
-	
+
 	switch (key->type & ~DEF_SAVEGLOBAL)
 	{
 	case ev_string:
 		*(string_t *)d = ED_NewString (s) - pr_strings;
 		break;
-		
+
 	case ev_float:
 		*(float *)d = atof (s);
 		break;
-		
+
 	case ev_vector:
 		strcpy (string, s);
 		v = string;
@@ -789,31 +797,31 @@ qboolean	ED_ParseEpair (void *base, ddef_t *key, char *s)
 			w = v = v+1;
 		}
 		break;
-		
+
 	case ev_entity:
 		*(int *)d = EDICT_TO_PROG(EDICT_NUM(atoi (s)));
 		break;
-		
+
 	case ev_field:
 		def = ED_FindField (s);
 		if (!def)
 		{
-			//Con_Printf ("Can't find field %s\n", s);
+			Con_Printf ("Can't find field %s\n", s);
 			return false;
 		}
 		*(int *)d = G_INT(def->ofs);
 		break;
-	
+
 	case ev_function:
 		func = ED_FindFunction (s);
 		if (!func)
 		{
-			//Con_Printf ("Can't find function %s\n", s);
+			Con_Printf ("Can't find function %s\n", s);
 			return false;
 		}
 		*(func_t *)d = func - pr_functions;
 		break;
-		
+
 	default:
 		break;
 	}
@@ -845,14 +853,14 @@ char *ED_ParseEdict (char *data, edict_t *ent)
 
 // go through all the dictionary pairs
 	while (1)
-	{	
+	{
 	// parse key
 		data = COM_Parse (data);
 		if (com_token[0] == '}')
 			break;
 		if (!data)
 			Sys_Error ("ED_ParseEntity: EOF without closing brace");
-		
+
 // anglehack is to allow QuakeEd to write single scalar angles
 // and allow them to be turned into vectors. (FIXME...)
 if (!strcmp(com_token, "angle"))
@@ -877,7 +885,7 @@ if (!strcmp(com_token, "light"))
 			n--;
 		}
 
-	// parse value	
+	// parse value
 		data = COM_Parse (data);
 		if (!data)
 			Sys_Error ("ED_ParseEntity: EOF without closing brace");
@@ -885,23 +893,25 @@ if (!strcmp(com_token, "light"))
 		if (com_token[0] == '}')
 			Sys_Error ("ED_ParseEntity: closing brace without data");
 
-		init = true;	
+		init = true;
 
 // keynames with a leading underscore are used for utility comments,
 // and are immediately discarded by quake
 		if (keyname[0] == '_')
 			continue;
-		
+
 		key = ED_FindField (keyname);
 		if (!key)
 		{
-			//Con_Printf ("'%s' is not a field\n", keyname);
-			continue;
-		}
-		
-		if (!(key = ED_FindField(keyname))) {
-			if (strcmp(keyname, "sky") && strcmp(keyname, "fog")) // Now supported in worldspawn
-				//Con_SafePrintf("'%s' is not a field\n", keyname);
+			if (strcmp (keyname, "compiler") &&
+				strcmp (keyname, "r_skycolor") &&
+				strcmp (keyname, "sequence") &&
+				strcmp (keyname, "message2") && //dirty hack to keep the console clean. Dem lazy mappers
+				strcmp (keyname, "mangle") &&
+				strcmp (keyname, "Maxrange") &&
+				strcmp (keyname, "light_lev") &&
+				strcmp (keyname, "fog"))
+				Con_Printf ("'%s' is not a field\n", keyname);
 			continue;
 		}
 
@@ -939,19 +949,19 @@ to call ED_CallSpawnFunctions () to let the objects initialize themselves.
 ================
 */
 void ED_LoadFromFile (char *data)
-{	
+{
 	edict_t		*ent;
 	int			inhibit;
 	dfunction_t	*func;
-	
+
 	ent = NULL;
 	inhibit = 0;
 	pr_global_struct->time = sv.time;
-	
+
 // parse ents
 	while (1)
 	{
-// parse the opening brace	
+// parse the opening brace
 		data = COM_Parse (data);
 		if (!data)
 			break;
@@ -964,32 +974,13 @@ void ED_LoadFromFile (char *data)
 			ent = ED_Alloc ();
 		data = ED_ParseEdict (data, ent);
 
-// remove things from different skill levels or deathmatch
-		if (deathmatch.value)
-		{
-			if (((int)ent->v.spawnflags & SPAWNFLAG_NOT_DEATHMATCH))
-			{
-				ED_Free (ent);	
-				inhibit++;
-				continue;
-			}
-		}
-		else if ((current_skill == 0 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_EASY))
-				|| (current_skill == 1 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_MEDIUM))
-				|| (current_skill >= 2 && ((int)ent->v.spawnflags & SPAWNFLAG_NOT_HARD)) )
-		{
-			ED_Free (ent);	
-			inhibit++;
-			continue;
-		}
-
 //
 // immediately call spawn function
 //
 		if (!ent->v.classname)
 		{
-			//Con_Printf ("No classname for:\n");
-			//ED_Print (ent);
+			Con_Printf ("No classname for:\n");
+			ED_Print (ent);
 			ED_Free (ent);
 			continue;
 		}
@@ -999,29 +990,34 @@ void ED_LoadFromFile (char *data)
 
 		if (!func)
 		{
-			//Con_Printf ("No spawn function for:\n");
-			//ED_Print (ent);
+			Con_Printf ("No spawn function for:\n");
+			ED_Print (ent);
 			ED_Free (ent);
 			continue;
 		}
 
 		pr_global_struct->self = EDICT_TO_PROG(ent);
 		PR_ExecuteProgram (func - pr_functions);
-	}	
+	}
 
 	Con_DPrintf ("%i entities inhibited\n", inhibit);
 }
 
+func_t	EndFrame;
 /*
 ===============
 PR_LoadProgs
 ===============
 */
-func_t	EndFrame;
 void PR_LoadProgs (void)
 {
 	dfunction_t	*f;
 	int		i;
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  start
+	int 	j;
+	int		funcno;
+	char	*funcname;
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  end
 
 // flush the non-C variable lookup cache
 	for (i=0 ; i<GEFV_CACHESIZE ; i++)
@@ -1030,8 +1026,12 @@ void PR_LoadProgs (void)
 	CRC_Init (&pr_crc);
 
 	progs = (dprograms_t *)COM_LoadHunkFile ("progs.dat");
-	if (!progs)
-		Sys_Error ("PR_LoadProgs: couldn't load progs.dat");
+
+	if (!progs) {
+		Sys_Error("PR_LoadProgs: couldn't load progs.dat");
+		Host_Error ("PR_LoadProgs: couldn't load progs.dat");
+	}
+
 	Con_DPrintf ("Programs occupy %iK.\n", com_filesize/1024);
 
 	for (i=0 ; i<com_filesize ; i++)
@@ -1039,14 +1039,7 @@ void PR_LoadProgs (void)
 
 // byte swap the header
 	for (i=0 ; i<sizeof(*progs)/4 ; i++)
-		((int *)progs)[i] = LittleLong ( ((int *)progs)[i] );		
-
-	if (progs->version != PROG_VERSION)
-		Sys_Error ("progs.dat has wrong version number (%i should be %i)", progs->version, PROG_VERSION);
-	/*
-	if (progs->crc != PROGHEADER_CRC)
-		Sys_Error ("progs.dat system vars have been modified, progdefs.h is out of date");
-	*/
+		((int *)progs)[i] = LittleLong ( ((int *)progs)[i] );
 
 	pr_functions = (dfunction_t *)((byte *)progs + progs->ofs_functions);
 	pr_strings = (char *)progs + progs->ofs_strings;
@@ -1056,9 +1049,9 @@ void PR_LoadProgs (void)
 
 	pr_global_struct = (globalvars_t *)((byte *)progs + progs->ofs_globals);
 	pr_globals = (float *)pr_global_struct;
-	
+
 	pr_edict_size = progs->entityfields * 4 + sizeof (edict_t) - sizeof(entvars_t);
-	
+
 // byte swap the lumps
 	for (i=0 ; i<progs->numstatements ; i++)
 	{
@@ -1068,6 +1061,33 @@ void PR_LoadProgs (void)
 		pr_statements[i].c = LittleShort(pr_statements[i].c);
 	}
 
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  start
+	// initialize function numbers for PROGS.DAT
+	pr_numbuiltins = 0;
+	pr_builtins = NULL;
+	if (pr_builtin_remap.value)
+	{
+		// remove all previous assigned function numbers
+		for ( j=1 ; j < pr_ebfs_numbuiltins; j++)
+		{
+			pr_ebfs_builtins[j].funcno = 0;
+		}
+	}
+	else
+	{
+		// use default function numbers
+		for ( j=1 ; j < pr_ebfs_numbuiltins; j++)
+		{
+			pr_ebfs_builtins[j].funcno = pr_ebfs_builtins[j].default_funcno;
+			// determine highest builtin number (when NOT remapped)
+			if (pr_ebfs_builtins[j].funcno > pr_numbuiltins)
+			{
+				pr_numbuiltins = pr_ebfs_builtins[j].funcno;
+			}
+		}
+	}
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  end
+
 	for (i=0 ; i<progs->numfunctions; i++)
 	{
 	pr_functions[i].first_statement = LittleLong (pr_functions[i].first_statement);
@@ -1076,7 +1096,104 @@ void PR_LoadProgs (void)
 	pr_functions[i].s_file = LittleLong (pr_functions[i].s_file);
 	pr_functions[i].numparms = LittleLong (pr_functions[i].numparms);
 	pr_functions[i].locals = LittleLong (pr_functions[i].locals);
-	}	
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  start
+		if (pr_builtin_remap.value)
+		{
+			if (pr_functions[i].first_statement < 0)	// builtin function
+			{
+				funcno = -pr_functions[i].first_statement;
+				funcname = pr_strings + pr_functions[i].s_name;
+
+				// search function name
+				for ( j=1 ; j < pr_ebfs_numbuiltins ; j++)
+				{
+					if (!(Q_strcasecmp(funcname, pr_ebfs_builtins[j].funcname)))
+					{
+						break;	// found
+					}
+				}
+
+				if (j < pr_ebfs_numbuiltins)	// found
+				{
+					pr_ebfs_builtins[j].funcno = funcno;
+				}
+				else
+				{
+					Con_DPrintf("Can not assign builtin number #%i to %s - function unknown\n", funcno, funcname);
+				}
+			}
+		}
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  end
+	}
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  start
+	if (pr_builtin_remap.value)
+	{
+		// check for unassigned functions and try to assign their default function number
+		for ( i=1 ; i < pr_ebfs_numbuiltins; i++)
+		{
+			if ((!pr_ebfs_builtins[i].funcno) && (pr_ebfs_builtins[i].default_funcno))	// unassigned and has a default number
+			{
+				// check if default number is already assigned to another function
+				for ( j=1 ; j < pr_ebfs_numbuiltins; j++)
+				{
+					if (pr_ebfs_builtins[j].funcno == pr_ebfs_builtins[i].default_funcno)
+					{
+						break;	// number already assigned to another builtin function
+					}
+				}
+
+				if (j < pr_ebfs_numbuiltins)	// already assigned
+				{
+					Con_DPrintf("Can not assign default builtin number #%i to %s - number is already assigned to %s\n",
+					pr_ebfs_builtins[i].default_funcno, pr_ebfs_builtins[i].funcname, pr_ebfs_builtins[j].funcname);
+				}
+				else
+				{
+					pr_ebfs_builtins[i].funcno = pr_ebfs_builtins[i].default_funcno;
+				}
+			}
+			// determine highest builtin number (when remapped)
+			if (pr_ebfs_builtins[i].funcno > pr_numbuiltins)
+			{
+				pr_numbuiltins = pr_ebfs_builtins[i].funcno;
+			}
+		}
+	}
+	pr_numbuiltins++;
+
+	// allocate and initialize builtin list for execution time
+	pr_builtins = Hunk_AllocName (pr_numbuiltins*sizeof(builtin_t), "builtins");
+	for ( i=0 ; i < pr_numbuiltins ; i++)
+	{
+		pr_builtins[i] = pr_ebfs_builtins[0].function;
+	}
+
+	// create builtin list for execution time and set cvars accordingly
+	Cvar_Set("pr_builtin_find", "0");
+//	Cvar_Set("pr_checkextension", "0");	// 2001-10-20 Extension System by Lord Havoc/Maddes (DP compatibility)
+	for ( j=1 ; j < pr_ebfs_numbuiltins ; j++)
+	{
+		if (pr_ebfs_builtins[j].funcno)	// only put assigned functions into builtin list
+		{
+			pr_builtins[pr_ebfs_builtins[j].funcno] = pr_ebfs_builtins[j].function;
+		}
+
+		if (pr_ebfs_builtins[j].default_funcno == PR_DEFAULT_FUNCNO_BUILTIN_FIND)
+		{
+			Cvar_SetValue("pr_builtin_find", pr_ebfs_builtins[j].funcno);
+		}
+
+// 2001-10-20 Extension System by Lord Havoc/Maddes (DP compatibility)  start
+// not implemented yet
+/*
+		if (pr_ebfs_builtins[j].default_funcno == PR_DEFAULT_FUNCNO_EXTENSION_FIND)
+		{
+			Cvar_SetValue("pr_checkextension", pr_ebfs_builtins[j].funcno);
+		}
+*/
+// 2001-10-20 Extension System by Lord Havoc/Maddes (DP compatibility)  end
+	}
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes/Firestorm  end
 
 	for (i=0 ; i<progs->numglobaldefs ; i++)
 	{
@@ -1096,14 +1213,59 @@ void PR_LoadProgs (void)
 
 	for (i=0 ; i<progs->numglobals ; i++)
 		((int *)pr_globals)[i] = LittleLong (((int *)pr_globals)[i]);
-	
-	FindEdictFieldOffsets ();
+
+   	FindEdictFieldOffsets ();
 	EndFrame = 0;
 
 	if ((f = ED_FindFunction ("EndFrame")) != NULL)
 		EndFrame = (func_t)(f - pr_functions);
 }
 
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  start
+/*
+=============
+PR_BuiltInList_f
+
+For debugging, prints all builtin functions with assigned and default number
+=============
+*/
+void PR_BuiltInList_f (void)
+{
+	int		i;
+	char	*partial;
+	int		len;
+	int		count;
+
+	if (Cmd_Argc() > 1)
+	{
+		partial = Cmd_Argv (1);
+		len = strlen(partial);
+	}
+	else
+	{
+		partial = NULL;
+		len = 0;
+	}
+
+	count=0;
+	for (i=1; i < pr_ebfs_numbuiltins; i++)
+	{
+		if (partial && Q_strncasecmp (partial, pr_ebfs_builtins[i].funcname, len))
+		{
+			continue;
+		}
+		count++;
+		Con_Printf ("%i(%i): %s\n", pr_ebfs_builtins[i].funcno, pr_ebfs_builtins[i].default_funcno, pr_ebfs_builtins[i].funcname);
+	}
+
+	Con_Printf ("------------\n");
+	if (partial)
+	{
+		Con_Printf ("%i beginning with \"%s\" out of ", count, partial);
+	}
+	Con_Printf ("%i builtin functions\n", i);
+}
+// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  end
 
 /*
 ===============
@@ -1127,11 +1289,16 @@ void PR_Init (void)
 	Cvar_RegisterVariable (&saved2);
 	Cvar_RegisterVariable (&saved3);
 	Cvar_RegisterVariable (&saved4);
+	// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  start
+	Cvar_RegisterVariable (&pr_builtin_find);
+	Cvar_RegisterVariable (&pr_builtin_remap);
+	Cmd_AddCommand ("builtinlist", PR_BuiltInList_f);	// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes
+	// 2001-09-14 Enhanced BuiltIn Function System (EBFS) by Maddes  end
 }
 
 
 
-edict_t *EDICT_NUM(int n)
+inline edict_t *EDICT_NUM(int n)
 {
 	if (n < 0 || n >= sv.max_edicts)
 		Sys_Error ("EDICT_NUM: bad number %i", n);
@@ -1141,10 +1308,10 @@ edict_t *EDICT_NUM(int n)
 int NUM_FOR_EDICT(edict_t *e)
 {
 	int		b;
-	
+
 	b = (byte *)e - (byte *)sv.edicts;
 	b = b / pr_edict_size;
-	
+
 	if (b < 0 || b >= sv.num_edicts)
 		Sys_Error ("NUM_FOR_EDICT: bad pointer");
 	return b;

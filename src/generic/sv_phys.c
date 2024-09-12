@@ -373,20 +373,13 @@ void SV_AddGravity (edict_t *ent)
 {
 	float	ent_gravity;
 
-#ifdef QUAKE2
-	if (ent->v.gravity)
-		ent_gravity = ent->v.gravity;
-	else
-		ent_gravity = 1.0f;
-#else
 	eval_t	*val;
 
-	val = GetEdictFieldValue(ent, "gravity");
+	val = GETEDICTFIELDVALUE(ent, eval_gravity);
 	if (val && val->_float)
 		ent_gravity = val->_float;
 	else
-		ent_gravity = 1.0f;
-#endif
+		ent_gravity = 1.0;
 	ent->v.velocity[2] -= ent_gravity * sv_gravity.value * host_frametime;
 }
 

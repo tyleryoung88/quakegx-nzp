@@ -62,7 +62,7 @@ void SV_SetIdealPitch (void)
 	if (!((int)sv_player->v.flags & FL_ONGROUND))
 		return;
 		
-	angleval = sv_player->v.angles[YAW] * Q_PI*2 / 360;
+	angleval = sv_player->v.angles[YAW] * M_PI*2 / 360;
 	sinval = sinf(angleval);
 	cosval = cosf(angleval);
 

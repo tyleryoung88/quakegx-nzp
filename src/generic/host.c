@@ -490,7 +490,6 @@ void Host_ClearMemory (void)
 
 	GL_ClearTextureCache();
 
-	D_FlushCaches ();
 	Mod_ClearAll ();
 	if (host_hunklevel)
 		Hunk_FreeToLowMark (host_hunklevel);

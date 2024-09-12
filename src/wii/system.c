@@ -35,7 +35,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 FILE *logfile;
 
-void Sys_Error (const char *error, ...)
+void Sys_Error (char *error, ...)
 {
 	// Clear the sound buffer.
 	S_ClearBuffer();

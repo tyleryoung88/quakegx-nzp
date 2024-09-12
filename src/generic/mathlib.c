@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -21,7 +21,12 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <math.h>
 #include "quakedef.h"
-#include "sys.h"
+
+#ifdef PSP_VFPU
+#include <pspmath.h>
+#endif
+
+void Sys_Error (char *error, ...);
 
 vec3_t vec3_origin = {0,0,0};
 int nanmask = 255<<23;
@@ -30,8 +35,25 @@ int  _mathlib_temp_int1, _mathlib_temp_int2, _mathlib_temp_int3;
 float _mathlib_temp_float1, _mathlib_temp_float2, _mathlib_temp_float3;
 vec3_t _mathlib_temp_vec1, _mathlib_temp_vec2, _mathlib_temp_vec3;
 
+
+/*-----------------------------------------------------------------*/
+
 float rsqrt( float number )
 {
+#ifdef PSP_VFPU
+	float d;
+    __asm__ (
+		".set			push\n"					// save assember option
+		".set			noreorder\n"			// suppress reordering
+		"lv.s			s000, %1\n"				// s000 = s
+		"vrsq.s			s000, s000\n"			// s000 = 1 / sqrt(s000)
+		"sv.s			s000, %0\n"				// d    = s000
+		".set			pop\n"					// restore assember option
+		: "=m"(d)
+		: "m"(number)
+	);
+	return d;
+#else
 	int	i;
 	float	x, y;
 
@@ -45,9 +67,35 @@ float rsqrt( float number )
 	y = y * (1.5f - (x * y * y));	// first iteration
 
 	return y;
+#endif
 }
 
-/*-----------------------------------------------------------------*/
+/*
+=================
+SinCos
+=================
+*/
+void SinCos( float radians, float *sine, float *cosine )
+{
+#ifndef __PSP__
+	sincos(radians, sine, cosine);
+#else
+
+#ifdef PSP_VFPU
+	vfpu_sincos(radians,sine,cosine);
+#else
+	__asm__ volatile (
+		"mtv      %2, S002\n"
+		"vcst.s   S003, VFPU_2_PI\n"
+		"vmul.s   S002, S002, S003\n"
+		"vrot.p   C000, S002, [s, c]\n"
+		"mfv      %0, S000\n"
+		"mfv      %1, S001\n"
+	: "=r"(*sine), "=r"(*cosine): "r"(radians));
+#endif // PSP_VFPU
+
+#endif // __PSP__
+}
 
 void ProjectPointOnPlane( vec3_t dst, const vec3_t p, const vec3_t normal )
 {
@@ -103,6 +151,7 @@ void PerpendicularVector( vec3_t dst, const vec3_t src )
 	VectorNormalize( dst );
 }
 
+
 void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, float degrees )
 {
 	float	m[3][3];
@@ -112,9 +161,6 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 	float	rot[3][3];
 	int	i;
 	vec3_t vr, vup, vf;
-	float	radians;
-	float	s;
-	float	c;
 
 	vf[0] = dir[0];
 	vf[1] = dir[1];
@@ -135,7 +181,15 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 	m[1][2] = vf[1];
 	m[2][2] = vf[2];
 
+#ifdef PSP_VFPU
+
+	memcpy_vfpu( im, m, sizeof( im ) );
+
+#else
+
 	memcpy( im, m, sizeof( im ) );
+
+#endif // PSP_VFPU
 
 	im[0][1] = m[1][0];
 	im[0][2] = m[2][0];
@@ -147,13 +201,17 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 	memset( zrot, 0, sizeof( zrot ) );
 	zrot[0][0] = zrot[1][1] = zrot[2][2] = 1.0F;
 
-	radians = DEG2RAD(degrees);
-	s = sinf(radians);
-	c = cosf(radians);
-	zrot[0][0] = c;
-	zrot[0][1] = s;
-	zrot[1][0] = -s;
-	zrot[1][1] = c;
+	#ifdef PSP_VFPU
+	zrot[0][0] = vfpu_cosf( DEG2RAD( degrees ) );
+	zrot[0][1] = vfpu_sinf( DEG2RAD( degrees ) );
+	zrot[1][0] = -vfpu_sinf( DEG2RAD( degrees ) );
+	zrot[1][1] = vfpu_cosf( DEG2RAD( degrees ) );
+	#else
+	zrot[0][0] = cosf( DEG2RAD( degrees ) );
+	zrot[0][1] = sinf( DEG2RAD( degrees ) );
+	zrot[1][0] = -sinf( DEG2RAD( degrees ) );
+	zrot[1][1] = cosf( DEG2RAD( degrees ) );
+	#endif
 
 	R_ConcatRotations( m, zrot, tmpmat );
 	R_ConcatRotations( tmpmat, im, rot );
@@ -165,19 +223,6 @@ void RotatePointAroundVector( vec3_t dst, const vec3_t dir, const vec3_t point, 
 }
 
 /*-----------------------------------------------------------------*/
-
-
-float	anglemod(float a)
-{
-#if 0
-	if (a >= 0)
-		a -= 360*(int)(a/360);
-	else
-		a += 360*( 1 + (int)(-a/360) );
-#endif
-	a = (360.0f/65536) * ((int)(a*(65536/360.0f)) & 65535);
-	return a;
-}
 
 /*
 ==================
@@ -191,7 +236,6 @@ void BOPS_Error (void)
 	Sys_Error ("BoxOnPlaneSide:  Bad signbits");
 }
 
-
 /*
 ==================
 BoxOnPlaneSide
@@ -199,91 +243,230 @@ BoxOnPlaneSide
 Returns 1, 2, or 1 + 2
 ==================
 */
-int BoxOnPlaneSide (vec3_t emins, vec3_t emaxs, mplane_t *p)
+// crow_bar's enhanced boxonplaneside 
+int BoxOnPlaneSide(vec3_t emins, vec3_t emaxs, mplane_t *p)
 {
-	float	dist1, dist2;
-	int		sides;
+	int	sides;
 
-#if 0	// this is done by the BOX_ON_PLANE_SIDE macro before calling this
-		// function
-// fast axial cases
-	if (p->type < 3)
-	{
-		if (p->dist <= emins[p->type])
-			return 1;
-		if (p->dist >= emaxs[p->type])
-			return 2;
-		return 3;
-	}
-#endif
-	
+#ifdef __PSP__
+
+	__asm__ (
+		".set		push\n"					// save assembler option
+		".set		noreorder\n"			// suppress reordering
+		"lv.s		S000,  0 + %[normal]\n"	// S000 = p->normal[0]
+		"lv.s		S001,  4 + %[normal]\n"	// S001 = p->normal[1]
+		"lv.s		S002,  8 + %[normal]\n"	// S002 = p->normal[2]
+		"vzero.p	C030\n"					// C030 = [0.0f, 0.0f]
+		"lv.s		S032, %[dist]\n"		// S032 = p->dist
+		"move		$8,   $0\n"				// $8 = 0
+		"beq		%[signbits], $8, 0f\n"	// jump to 0
+		"addiu		$8,   $8,   1\n"		// $8 = $8 + 1							( delay slot )
+		"beq		%[signbits], $8, 1f\n"	// jump to 1
+		"addiu		$8,   $8,   1\n"		// $8 = $8 + 1							( delay slot )
+		"beq		%[signbits], $8, 2f\n"	// jump to 2
+		"addiu		$8,   $8,   1\n"		// $8 = $8 + 1							( delay slot )
+		"beq		%[signbits], $8, 3f\n"	// jump to 3
+		"addiu		$8,   $8,   1\n"		// $8 = $8 + 1							( delay slot )
+		"beq		%[signbits], $8, 4f\n"	// jump to 4
+		"addiu		$8,   $8,   1\n"		// $8 = $8 + 1							( delay slot )
+		"beq		%[signbits], $8, 5f\n"	// jump to 5
+		"addiu		$8,   $8,   1\n"		// $8 = $8 + 1							( delay slot )
+		"beq		%[signbits], $8, 6f\n"	// jump to 6
+		"addiu		$8,   $8,   1\n"		// $8 = $8 + 1							( delay slot )
+		"beq		%[signbits], $8, 7f\n"	// jump to 7
+		"nop\n"								// 										( delay slot )
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"0:\n"
+/*
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+*/
+		"lv.s		S010,  0 + %[emaxs]\n"	// S010 = emaxs[0]
+		"lv.s		S011,  4 + %[emaxs]\n"	// S011 = emaxs[1]
+		"lv.s		S012,  8 + %[emaxs]\n"	// S012 = emaxs[2]
+		"lv.s		S020,  0 + %[emins]\n"	// S020 = emins[0]
+		"lv.s		S021,  4 + %[emins]\n"	// S021 = emins[1]
+		"lv.s		S022,  8 + %[emins]\n"	// S022 = emins[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"1:\n"
+/*
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+*/
+		"lv.s		S010,  0 + %[emins]\n"	// S010 = emins[0]
+		"lv.s		S011,  4 + %[emaxs]\n"	// S011 = emaxs[1]
+		"lv.s		S012,  8 + %[emaxs]\n"	// S012 = emaxs[2]
+		"lv.s		S020,  0 + %[emaxs]\n"	// S020 = emaxs[0]
+		"lv.s		S021,  4 + %[emins]\n"	// S021 = emins[1]
+		"lv.s		S022,  8 + %[emins]\n"	// S022 = emins[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"2:\n"
+/*
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+*/
+		"lv.s		S010,  0 + %[emaxs]\n"	// S010 = emaxs[0]
+		"lv.s		S011,  4 + %[emins]\n"	// S011 = emins[1]
+		"lv.s		S012,  8 + %[emaxs]\n"	// S012 = emaxs[2]
+		"lv.s		S020,  0 + %[emins]\n"	// S020 = emins[0]
+		"lv.s		S021,  4 + %[emaxs]\n"	// S021 = emaxs[1]
+		"lv.s		S022,  8 + %[emins]\n"	// S022 = emins[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"3:\n"
+/*
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+*/
+		"lv.s		S010,  0 + %[emins]\n"	// S010 = emins[0]
+		"lv.s		S011,  4 + %[emins]\n"	// S011 = emins[1]
+		"lv.s		S012,  8 + %[emaxs]\n"	// S012 = emaxs[2]
+		"lv.s		S020,  0 + %[emaxs]\n"	// S020 = emaxs[0]
+		"lv.s		S021,  4 + %[emaxs]\n"	// S021 = emaxs[1]
+		"lv.s		S022,  8 + %[emins]\n"	// S022 = emins[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"4:\n"
+/*
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+*/
+		"lv.s		S010,  0 + %[emaxs]\n"	// S010 = emaxs[0]
+		"lv.s		S011,  4 + %[emaxs]\n"	// S011 = emaxs[1]
+		"lv.s		S012,  8 + %[emins]\n"	// S012 = emins[2]
+		"lv.s		S020,  0 + %[emins]\n"	// S020 = emins[0]
+		"lv.s		S021,  4 + %[emins]\n"	// S021 = emins[1]
+		"lv.s		S022,  8 + %[emaxs]\n"	// S022 = emaxs[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"5:\n"
+/*
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+*/
+		"lv.s		S010,  0 + %[emins]\n"	// S010 = emins[0]
+		"lv.s		S011,  4 + %[emaxs]\n"	// S011 = emaxs[1]
+		"lv.s		S012,  8 + %[emins]\n"	// S012 = emins[2]
+		"lv.s		S020,  0 + %[emaxs]\n"	// S020 = emaxs[0]
+		"lv.s		S021,  4 + %[emins]\n"	// S021 = emins[1]
+		"lv.s		S022,  8 + %[emaxs]\n"	// S022 = emaxs[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"6:\n"
+/*
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+*/
+		"lv.s		S010,  0 + %[emaxs]\n"	// S010 = emaxs[0]
+		"lv.s		S011,  4 + %[emins]\n"	// S011 = emins[1]
+		"lv.s		S012,  8 + %[emins]\n"	// S012 = emins[2]
+		"lv.s		S020,  0 + %[emins]\n"	// S020 = emins[0]
+		"lv.s		S021,  4 + %[emaxs]\n"	// S021 = emaxs[1]
+		"lv.s		S022,  8 + %[emaxs]\n"	// S022 = emaxs[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+		"j			8f\n"					// jump to SetSides
+		"nop\n"								// 										( delay slot )
+	"7:\n"
+/*
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+*/
+		"lv.s		S010,  0 + %[emins]\n"	// S010 = emins[0]
+		"lv.s		S011,  4 + %[emins]\n"	// S011 = emins[1]
+		"lv.s		S012,  8 + %[emins]\n"	// S012 = emins[2]
+		"lv.s		S020,  0 + %[emaxs]\n"	// S020 = emaxs[0]
+		"lv.s		S021,  4 + %[emaxs]\n"	// S021 = emaxs[1]
+		"lv.s		S022,  8 + %[emaxs]\n"	// S022 = emaxs[2]
+		"vdot.t		S030, C000, C010\n"		// S030 = C000 * C010
+		"vdot.t		S031, C000, C020\n"		// S030 = C000 * C020
+	"8:\n"									// SetSides
+/*
+		if( dist1 >= p->dist )
+			sides = 1;
+		if( dist2 < p->dist )
+			sides |= 2;
+*/
+		"addiu		%[sides], $0, 0\n"		// sides = 0
+		"vcmp.s		LT,   S030, S032\n"		// S030 < S032
+		"bvt		0,    9f\n"				// if ( CC[0] == 1 ) jump to 9
+		"nop\n"								// 										( delay slot )
+		"addiu		%[sides], %[sides], 1\n"// sides = 1
+	"9:\n"
+		"vcmp.s		GE,   S031, S032\n"		// S031 >= S032
+		"bvt		0,    10f\n"			// if ( CC[0] == 1 ) jump to 10
+		"nop\n"								// 										( delay slot )
+		"addiu		%[sides], %[sides], 2\n"// sides = sides + 2
+	"10:\n"
+		".set		pop\n"					// restore assembler option
+		:	[sides]    "=r" ( sides )
+		:	[normal]   "m"  (*(p->normal)),
+			[emaxs]    "m"  ( *emaxs ),
+			[emins]    "m"  ( *emins ),
+			[signbits] "r"  ( p->signbits ),
+			[dist]     "m"  ( p->dist )
+		:	"$8"
+	);
+
+#else
+
+	float	dist1, dist2;
+
 // general case
 	switch (p->signbits)
 	{
 	case 0:
-dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
-dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
 		break;
 	case 1:
-dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
-dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
 		break;
 	case 2:
-dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
-dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
 		break;
 	case 3:
-dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
-dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
 		break;
 	case 4:
-dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
-dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
 		break;
 	case 5:
-dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
-dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emaxs[2];
 		break;
 	case 6:
-dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
-dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist1 = p->normal[0]*emaxs[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emins[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
 		break;
 	case 7:
-dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
-dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
+		dist1 = p->normal[0]*emins[0] + p->normal[1]*emins[1] + p->normal[2]*emins[2];
+		dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
 		break;
 	default:
 		dist1 = dist2 = 0;		// shut up compiler
-		BOPS_Error ();
+		Sys_Error ("BoxOnPlaneSide:  Bad signbits");
 		break;
 	}
-
-#if 0
-	int		i;
-	vec3_t	corners[2];
-
-	for (i=0 ; i<3 ; i++)
-	{
-		if (plane->normal[i] < 0)
-		{
-			corners[0][i] = emins[i];
-			corners[1][i] = emaxs[i];
-		}
-		else
-		{
-			corners[1][i] = emins[i];
-			corners[0][i] = emaxs[i];
-		}
-	}
-	dist = DotProduct (plane->normal, corners[0]) - plane->dist;
-	dist2 = DotProduct (plane->normal, corners[1]) - plane->dist;
-	sides = 0;
-	if (dist1 >= 0)
-		sides = 1;
-	if (dist2 < 0)
-		sides |= 2;
-
-#endif
 
 	sides = 0;
 	if (dist1 >= p->dist)
@@ -291,13 +474,13 @@ dist2 = p->normal[0]*emaxs[0] + p->normal[1]*emaxs[1] + p->normal[2]*emaxs[2];
 	if (dist2 < p->dist)
 		sides |= 2;
 
-#ifdef PARANOID
-if (sides == 0)
-	Sys_Error ("BoxOnPlaneSide: sides==0");
-#endif
+	return sides;
+
+#endif // __PSP__
 
 	return sides;
 }
+
 
 void vectoangles (vec3_t vec, vec3_t ang)
 {
@@ -310,13 +493,20 @@ void vectoangles (vec3_t vec, vec3_t ang)
 	}
 	else
 	{
+		#ifdef PSP_VFPU
+		yaw = vec[0] ? (vfpu_atan2f(vec[1], vec[0]) * 180 / M_PI) : (vec[1] > 0) ? 90 : 270;
+		#else
 		yaw = vec[0] ? (atan2(vec[1], vec[0]) * 180 / M_PI) : (vec[1] > 0) ? 90 : 270;
+		#endif
 		if (yaw < 0)
 			yaw += 360;
-		
-		forward = sqrt (vec[0] * vec[0] + vec[1] * vec[1]);
-		pitch = atan2 (vec[2], forward) * 180 / M_PI;
 
+		forward = sqrt (vec[0] * vec[0] + vec[1] * vec[1]);
+		#ifdef PSP_VFPU
+		pitch = vfpu_atan2f (vec[2], forward) * 180 / M_PI;
+		#else
+		pitch = atan2 (vec[2], forward) * 180 / M_PI;
+		#endif
 		if (pitch < 0)
 			pitch += 360;
 	}
@@ -326,21 +516,35 @@ void vectoangles (vec3_t vec, vec3_t ang)
 	ang[2] = 0;
 }
 
-
 void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 {
 	float		angle;
 	float		sr, sp, sy, cr, cp, cy;
 	
-	angle = angles[YAW] * (Q_PI*2 / 360);
+	angle = angles[YAW] * (M_PI*2 / 360);
+	#ifdef PSP_VFPU
+	sy = vfpu_sinf(angle);
+	cy = vfpu_cosf(angle);
+	#else
 	sy = sinf(angle);
 	cy = cosf(angle);
-	angle = angles[PITCH] * (Q_PI*2 / 360);
+	#endif
+	angle = angles[PITCH] * (M_PI*2 / 360);
+	#ifdef PSP_VFPU
+	sp = vfpu_sinf(angle);
+	cp = vfpu_cosf(angle);
+	#else
 	sp = sinf(angle);
 	cp = cosf(angle);
-	angle = angles[ROLL] * (Q_PI*2 / 360);
+	#endif
+	angle = angles[ROLL] * (M_PI*2 / 360);
+	#ifdef PSP_VFPU
+	sr = vfpu_sinf(angle);
+	cr = vfpu_cosf(angle);
+	#else
 	sr = sinf(angle);
 	cr = cosf(angle);
+	#endif
 
 	forward[0] = cp*cy;
 	forward[1] = cp*sy;
@@ -356,24 +560,6 @@ void AngleVectors (vec3_t angles, vec3_t forward, vec3_t right, vec3_t up)
 float VectorLength (vec3_t v)
 {
 	return sqrtf(DotProduct(v, v));
-}
-
-float VecLength2(vec3_t v1, vec3_t v2)
-{
-	vec3_t k;
-	VectorSubtract(v1, v2, k);
-	return sqrt(k[0]*k[0] + k[1]*k[1] + k[2]*k[2]);
-}
-
-int VectorCompare (vec3_t v1, vec3_t v2)
-{
-	int		i;
-	
-	for (i=0 ; i<3 ; i++)
-		if (v1[i] != v2[i])
-			return 0;
-			
-	return 1;
 }
 
 void VectorMA (vec3_t veca, float scale, vec3_t vecb, vec3_t vecc)
@@ -417,14 +603,17 @@ void CrossProduct (vec3_t v1, vec3_t v2, vec3_t cross)
 	cross[2] = v1[0]*v2[1] - v1[1]*v2[0];
 }
 
-vec_t Length(vec3_t v)
+float VecLength2(vec3_t v1, vec3_t v2)
 {
-	return sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+	vec3_t k;
+	VectorSubtract(v1, v2, k);
+	return sqrt(k[0]*k[0] + k[1]*k[1] + k[2]*k[2]);
 }
 
 float VectorNormalize (vec3_t v)
 {
 	float length = sqrtf(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
+
 	if (length)
 	{
 		const float ilength = 1.0f / length;
@@ -539,16 +728,10 @@ void FloorDivMod (float numer, float denom, int *quotient,
 	int		q, r;
 	float	x;
 
-#ifndef PARANOID
-	if (denom <= 0.0f)
+	if (denom <= 0.0)
 		Sys_Error ("FloorDivMod: bad denominator %d\n", denom);
 
-//	if ((floorf(numer) != numer) || (floor(denom) != denom))
-//		Sys_Error ("FloorDivMod: non-integer numer or denom %f %f\n",
-//				numer, denom);
-#endif
-
-	if (numer >= 0.0f)
+	if (numer >= 0.0)
 	{
 
 		x = floorf(numer / denom);
@@ -597,6 +780,8 @@ int GreatestCommonDivisor (int i1, int i2)
 }
 
 
+#if	!id386
+
 // TODO: move to nonintel.c
 
 /*
@@ -613,5 +798,126 @@ fixed16_t Invert24To16(fixed16_t val)
 		return (0xFFFFFFFF);
 
 	return (fixed16_t)
-			(((float)0x10000 * (float)0x1000000 / (float)val) + 0.5f);
+			(((float)0x10000 * (float)0x1000000 / (float)val) + 0.5);
+}
+
+#endif
+
+void VectorTransform (const vec3_t in1, matrix3x4 in2, vec3_t out)
+{
+	out[0] = DotProduct(in1, in2[0]) + in2[0][3];
+	out[1] = DotProduct(in1, in2[1]) +	in2[1][3];
+	out[2] = DotProduct(in1, in2[2]) +	in2[2][3];
+}
+
+void AngleQuaternion( const vec3_t angles, vec4_t quaternion )
+{
+	float		angle;
+	float		sr, sp, sy, cr, cp, cy;
+
+	// FIXME: rescale the inputs to 1/2 angle
+	angle = angles[2] * 0.5;
+	#ifdef PSP_VFPU
+	sy = vfpu_sinf(angle);
+	cy = vfpu_cosf(angle);
+	#else
+	sy = sin(angle);
+	cy = cos(angle);
+	#endif
+	angle = angles[1] * 0.5;
+	#ifdef PSP_VFPU
+	sp = vfpu_sinf(angle);
+	cp = vfpu_cosf(angle);
+	#else
+	sp = sin(angle);
+	cp = cos(angle);
+	#endif
+	angle = angles[0] * 0.5;
+	#ifdef PSP_VFPU
+	sr = vfpu_sinf(angle);
+	cr = vfpu_cosf(angle);
+	#else
+	sr = sin(angle);
+	cr = cos(angle);
+	#endif
+
+	quaternion[0] = sr*cp*cy-cr*sp*sy; // X
+	quaternion[1] = cr*sp*cy+sr*cp*sy; // Y
+	quaternion[2] = cr*cp*sy-sr*sp*cy; // Z
+	quaternion[3] = cr*cp*cy+sr*sp*sy; // W
+}
+
+void QuaternionMatrix( const vec4_t quaternion, float (*matrix)[4] )
+{
+
+	matrix[0][0] = 1.0 - 2.0 * quaternion[1] * quaternion[1] - 2.0 * quaternion[2] * quaternion[2];
+	matrix[1][0] = 2.0 * quaternion[0] * quaternion[1] + 2.0 * quaternion[3] * quaternion[2];
+	matrix[2][0] = 2.0 * quaternion[0] * quaternion[2] - 2.0 * quaternion[3] * quaternion[1];
+
+	matrix[0][1] = 2.0 * quaternion[0] * quaternion[1] - 2.0 * quaternion[3] * quaternion[2];
+	matrix[1][1] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[2] * quaternion[2];
+	matrix[2][1] = 2.0 * quaternion[1] * quaternion[2] + 2.0 * quaternion[3] * quaternion[0];
+
+	matrix[0][2] = 2.0 * quaternion[0] * quaternion[2] + 2.0 * quaternion[3] * quaternion[1];
+	matrix[1][2] = 2.0 * quaternion[1] * quaternion[2] - 2.0 * quaternion[3] * quaternion[0];
+	matrix[2][2] = 1.0 - 2.0 * quaternion[0] * quaternion[0] - 2.0 * quaternion[1] * quaternion[1];
+}
+
+void QuaternionSlerp( const vec4_t p, vec4_t q, float t, vec4_t qt )
+{
+	int i;
+	float omega, cosom, sinom, sclp, sclq;
+
+	// decide if one of the quaternions is backwards
+	float a = 0;
+	float b = 0;
+	for (i = 0; i < 4; i++) {
+		a += (p[i]-q[i])*(p[i]-q[i]);
+		b += (p[i]+q[i])*(p[i]+q[i]);
+	}
+	if (a > b) {
+		for (i = 0; i < 4; i++) {
+			q[i] = -q[i];
+		}
+	}
+
+	cosom = p[0]*q[0] + p[1]*q[1] + p[2]*q[2] + p[3]*q[3];
+
+	if ((1.0 + cosom) > 0.00000001) {
+		if ((1.0 - cosom) > 0.00000001) {
+			omega = acos( cosom );
+			#ifdef PSP_VFPU
+			sinom = vfpu_sinf( omega );
+			sclp = vfpu_sinf( (1.0 - t)*omega) / sinom;
+			sclq = vfpu_sinf( t*omega ) / sinom;
+			#else
+			sinom = sin( omega );
+			sclp = sin( (1.0 - t)*omega) / sinom;
+			sclq = sin( t*omega ) / sinom;
+			#endif
+		}
+		else {
+			sclp = 1.0 - t;
+			sclq = t;
+		}
+		for (i = 0; i < 4; i++) {
+			qt[i] = sclp * p[i] + sclq * q[i];
+		}
+	}
+	else {
+		qt[0] = -p[1];
+		qt[1] = p[0];
+		qt[2] = -p[3];
+		qt[3] = p[2];
+		#ifdef PSP_VFPU
+		sclp = vfpu_sinf( (1.0 - t) * 0.5 * M_PI);
+		sclq = vfpu_sinf( t * 0.5 * M_PI);
+		#else
+		sclp = sin( (1.0 - t) * 0.5 * M_PI);
+		sclq = sin( t * 0.5 * M_PI);
+		#endif
+		for (i = 0; i < 3; i++) {
+			qt[i] = sclp * p[i] + sclq * qt[i];
+		}
+	}
 }

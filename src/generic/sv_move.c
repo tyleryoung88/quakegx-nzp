@@ -238,7 +238,7 @@ qboolean SV_StepDirection (edict_t *ent, float yaw, float dist)
 	ent->v.ideal_yaw = yaw;
 	PF_changeyaw();
 	
-	yaw = yaw*Q_PI*2 / 360;
+	yaw = yaw*M_PI*2 / 360;
 	move[0] = cosf(yaw)*dist;
 	move[1] = sinf(yaw)*dist;
 	move[2] = 0;
