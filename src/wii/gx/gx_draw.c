@@ -1416,8 +1416,6 @@ void Draw_FadeScreen (void)
 
 	QGX_Blend(false);
 	QGX_Alpha(true);
-
-	Sbar_Changed();
 }
 
 //=============================================================================

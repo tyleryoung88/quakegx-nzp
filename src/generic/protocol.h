@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -40,6 +40,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	U_SKIN		(1<<13)
 #define	U_EFFECTS	(1<<14)
 
+
 // Tomaz - QC Alpha Scale Glow Control Begin
 #define	U_LONGENTITY (1<<15)//blubs here, U_EXTEND1 used to be here, but it needs to be in the byte above, so moved it to the 1<<8 position, and moved the rest down
 #define	U_RENDERMODE    (1<<16)
@@ -48,9 +49,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	U_RENDERCOLOR2  (1<<19)
 #define	U_RENDERCOLOR3  (1<<20)
 #define	U_EXTEND2	    (1<<21) // another byte to follow
-#define	U_FRAMETIME	    (1<<22) // another byte to follow
 // Tomaz - QC Alpha Scale Glow Control End
 #define U_SCALE 		(1<<23)
+
 
 #define	SU_VIEWHEIGHT	(1<<0)
 #define	SU_IDEALPITCH	(1<<1)
@@ -79,8 +80,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define ENTSCALE_ENCODE(a)	((a) ? ((a) * ENTSCALE_DEFAULT) : ENTSCALE_DEFAULT) // Convert to byte
 #define ENTSCALE_DECODE(a)	((float)(a) / ENTSCALE_DEFAULT) // Convert to float for rendering
 
+
 // defaults for clientinfo messages
-#define	DEFAULT_VIEWHEIGHT	32
+#define	DEFAULT_VIEWHEIGHT	22
 
 
 // game types sent by serverinfo
@@ -186,10 +188,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	TE_LAVASPLASH		10
 #define	TE_TELEPORT			11
 #define TE_EXPLOSION2		12
-
-// PGM 01/21/97 
+// PGM 01/21/97
 #define TE_BEAM				13
-// PGM 01/21/97 
-
+// PGM 01/21/97
 #define TE_RAYSPLASHGREEN 	14
 #define TE_RAYSPLASHRED 	15

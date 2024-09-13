@@ -22,6 +22,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
 #include "../../generic/quakedef.h"
+#include <limits.h>
 
 /*
 
@@ -1255,7 +1256,6 @@ void SCR_SetUpToDrawConsole (void)
 	
 	if (clearconsole++ < vid.numpages)
 	{
-		Sbar_Changed ();
 	}
 	else if (clearnotify++ < vid.numpages)
 	{
@@ -1387,7 +1387,6 @@ void SCR_BeginLoadingPlaque (void)
 
 	scr_drawloading = true;
 	scr_fullupdate = 0;
-	Sbar_Changed ();
 	SCR_UpdateScreen ();
 	scr_drawloading = false;
 

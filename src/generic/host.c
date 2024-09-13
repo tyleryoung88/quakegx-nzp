@@ -923,7 +923,6 @@ void Host_Init (quakeparms_t *parms)
 		S_Init ();
 		// init mp3/(ogg?)
 		//CDAudio_Init ();
-		Sbar_Init ();
 		HUD_Init ();
 		CL_Init ();
 		IN_Init ();
