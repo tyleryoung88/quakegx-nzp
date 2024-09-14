@@ -418,6 +418,7 @@ static void Mod_ParseWadsFromEntityLump(char *data)
 Mod_LoadTextures
 =================
 */
+byte *WAD3_LoadTexture(miptex_t *mt);
 void Mod_LoadTextures (lump_t *l)
 {
 	int		i, j,/* pixels, */num, max, altmax;

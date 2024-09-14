@@ -826,3 +826,17 @@ void IN_Move (usercmd_t *cmd)
 	}
 	
 }
+
+extern double time_wpad_off;
+extern int rumble_on;
+void Wiimote_Rumble (int low_frequency, int high_frequency, int duration) {
+	if (!rumble.value) return;
+	double rumble_time;
+	rumble_time = duration / 1000.0;
+	//low frequency and high frequency not used for wiimote. read them anyways
+	
+	//it switches rumble on for rumble_time milliseconds  
+	WPAD_Rumble(0, true);
+	rumble_on=1;
+	time_wpad_off = Sys_FloatTime() + rumble_time;
+}

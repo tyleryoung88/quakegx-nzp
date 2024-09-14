@@ -8,7 +8,7 @@ of the License, or (at your option) any later version.
 
 This program is distributed in the hope that it will be useful,
 but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 See the GNU General Public License for more details.
 
@@ -27,16 +27,16 @@ extern float v_blend[4];
 
 extern cvar_t lcd_x;
 
+#ifdef __WII__
 #define IR_YAWRANGE	30.0f
 #define IR_PITCHRANGE	20.0f
+#endif
 
-extern vec3_t CWeaponRot;
 extern vec3_t CWeaponOffset;//blubs declared this
+extern vec3_t CWeaponRot;
 
 void V_Init (void);
 void V_RenderView (void);
 float V_CalcRoll (vec3_t angles, vec3_t velocity);
-void V_CalcPowerupCshift (void);
-qboolean V_CheckGamma (void);
 void V_UpdatePalette (void);
 
