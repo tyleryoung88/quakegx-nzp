@@ -27,7 +27,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ogc/system.h>
 #include <ogc/cache.h>
 
-#include "../../generic/quakedef.h"
+#include "../../quakedef.h"
 #include <gccore.h>
 
 byte		*draw_chars;				// 8*8 graphic characters
@@ -363,6 +363,7 @@ void Draw_CharacterRGBA(int x, int y, int num, float r, float g, float b, float 
 	
 	glTexCoord2f (fcol, frow + (float)(size/(float)scale));
 	glVertex2f (x, y+(8*(scale)));
+	
 	*/
 	
 	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);

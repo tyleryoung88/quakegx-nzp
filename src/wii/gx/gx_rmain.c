@@ -20,7 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // r_main.c
 
-#include "../../generic/quakedef.h"
+#include "../../quakedef.h"
 
 extern vec3_t lightcolor; // LordHavoc: .lit support to the definitions at the top
 
@@ -344,7 +344,7 @@ void R_DrawSpriteModel (entity_t *e)
 #define NUMVERTEXNORMALS	162
 
 float	r_avertexnormals[NUMVERTEXNORMALS][3] = {
-#include "../../generic/anorms.h"
+#include "../../anorms.h"
 };
 
 vec3_t	shadevector;

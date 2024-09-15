@@ -18,10 +18,10 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#include "../generic/quakedef.h"
+#include "../quakedef.h"
 
-#include "../generic/net_loop.h"
-#include "../generic/net_dgrm.h"
+#include "../net_loop.h"
+#include "net_dgrm.h"
 
 net_driver_t net_drivers[MAX_NET_DRIVERS] =
 {

@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
 
-#include "../../generic/quakedef.h"
+#include "../../quakedef.h"
 
 #define MAX_PARTICLES			6144	// default max # of particles at one
 										//  time

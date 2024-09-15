@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // screen.c -- master for refresh, status bar, console, chat, notify, etc
 
-#include "../../generic/quakedef.h"
+#include "../../quakedef.h"
 #include <limits.h>
 
 /*

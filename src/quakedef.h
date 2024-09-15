@@ -21,17 +21,29 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 //#define	GLTEST			// experimental stuff
 
-#ifndef QUAKEDEF_H
-#define QUAKEDEF_H
+#ifndef __PSP__
+#define qtrue 1
+#define qfalse 0
+#endif // __PSP__
+
+#ifdef __PSP__
+#define PSP_MODEL_PHAT		0
+#define PSP_MODEL_SLIM 		1
+#define PSP_MODEL_PSVITA 	2
+
+extern int psp_system_model;
+#endif // __PSP__
 
 #define	QUAKE_GAME			// as opposed to utilities
 
-#define	VERSION				1.09
+#define	VERSION				2.0
+#define	GLQUAKE_VERSION		1.00
+#define	D3DQUAKE_VERSION	0.01
+#define	WINQUAKE_VERSION	0.996
+#define	LINUX_VERSION		1.30
+#define	X11_VERSION			1.10
 #define WIIGX_VERSION			0.09
-
 #define QUAKE_WII_BASEDIR "/apps/nzportable"
-
-//define	PARANOID			// speed sapping error checking
 
 #define	GAMENAME	"nzp"
 
@@ -41,12 +53,23 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <stdio.h>
 #include <stdlib.h>
 #include <setjmp.h>
-#include <limits.h>
+#include <stdbool.h>
+#include <ctype.h>
 
 #define	VID_LockBuffer()
 #define	VID_UnlockBuffer()
 
+#if defined __i386__
+#define id386	1
+#else
+#define id386	0
+#endif
+
+#if id386
+#define UNALIGNED_OK	1	// set to 0 if unaligned accesses are not supported
+#else
 #define UNALIGNED_OK	0
+#endif
 
 // !!! if this is changed, it must be changed in d_ifacea.h too !!!
 #define CACHE_SIZE	32		// used to align key data structures
@@ -71,18 +94,17 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define	MAX_QPATH		64			// max length of a quake game pathname
 #define	MAX_OSPATH		128			// max length of a filesystem pathname
 
-#define	ON_EPSILON		0.1f			// point on plane side epsilon
+#define	ON_EPSILON		0.1			// point on plane side epsilon
 
-#define	MAX_MSGLEN		64000		// max length of a reliable message
-#define	MAX_DATAGRAM	8000		// max length of unreliable message
+#define	MAX_MSGLEN		64000		// max length of a reliable message Crow_Bar. UP for PSP
+#define	MAX_DATAGRAM	8000		// max length of unreliable message Crow_Bar. UP for PSP
 
 //
 // per-level limits
 //
-#define	MAX_EDICTS		800			// FIXME: ouch! ouch! ouch!
+#define	MAX_EDICTS		600			// FIXME: ouch! ouch! ouch!
 #define	MAX_LIGHTSTYLES	64
-// MAX_MODELS increase from 300 to 512 to support shitty maps..
-#define	MAX_MODELS		512			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
+#define	MAX_MODELS		300			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
 
 #define	SAVEGAME_COMMENT_LENGTH	39
@@ -185,20 +207,25 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #define	SOUND_CHANNELS		8
 
-// This makes anyone on id's net privileged
-// Use for multiplayer testing only - VERY dangerous!!!
-// #define IDGODS
 
+#ifdef _3DS
+#include "ctr/common.h"
+#include "ctr/vid.h"
+#include "ctr/sys.h"
+#elif __PSP__
+#include "psp/common.h"
+#include "psp/vid.h"
+#include "psp/sys.h"
+#elif __WII__
 #include <ogcsys.h>
-
+#include "wii/common.h"
+#include "wii/vid.h"
+#include "wii/sys.h"
 extern u32 MALLOC_MEM2;
-
-#include "common.h"
-#include "bspfile.h"
-#include "vid.h"
-#include "sys.h"
+#endif // _3DS, __PSP__, __WII__
 #include "zone.h"
 #include "mathlib.h"
+#include "bspfile.h"
 
 typedef struct
 {
@@ -220,29 +247,81 @@ typedef struct
 #include "wad.h"
 #include "draw.h"
 #include "cvar.h"
-#include "screen.h"
-#include "net.h"
+#ifdef _3DS
+#include "ctr/screen.h"
+#include "ctr/net.h"
+#elif __PSP__
+#include "psp/screen.h"
+#include "psp/net.h"
+#elif __WII__ //sBTODO change paths in quakedef.h
+#include "wii/screen.h"
+#include "wii/net.h"
+#endif // _3DS
 #include "protocol.h"
 #include "cmd.h"
+#ifdef _3DS
+#include "ctr/sbar.h"
+#elif __WII__
+#include "wii/sbar.h"
+#endif // _3DS
 #include "cl_hud.h"
-#include "sbar.h"
 #include "sound.h"
-#include "render.h"
-#include "client.h"
+#ifdef _3DS
+#include "ctr/render.h"
+#include "ctr/client.h"
+#elif __PSP__
+#include "psp/render.h"
+#include "psp/client.h"
+#elif __WII__
+#include "wii/render.h"
+#include "wii/client.h"
+#endif // _3DS
 #include "progs.h"
-#include "server.h"
+#ifdef _3DS
+#include "ctr/server.h"
+#elif __PSP__
+#include "psp/server.h"
+#elif __WII__
+#include "wii/server.h"
+#endif // _3DS
 
-#include "../wii/gx/gx_model.h"
-#include "../wii/gx/gxquake.h"
+#ifdef _3DS
+#include "ctr/gl/gl_model.h"
+#include "ctr/gl/gl_decal.h"
+#elif __WII__
+#include "wii/gx/gx_model.h"
+#else
+#include "psp/gu/gu_model.h"
+#endif
 
 #include "input.h"
 #include "world.h"
-#include "keys.h"
+#ifdef _3DS
+#include "ctr/keys.h"
+#elif __PSP__
+#include "psp/keys.h"
+#elif __WII__
+#include "wii/keys.h"
+#endif
 #include "console.h"
 #include "view.h"
-#include "menu.h"
+#ifdef _3DS
+#include "ctr/menu.h"
+#elif __PSP__
+#include "psp/menu.h"
+#elif __WII__
+#include "wii/menu.h"
+#endif
 #include "crc.h"
 #include "cdaudio.h"
+
+#ifdef _3DS
+#include "ctr/glquake.h"
+#elif __WII__
+#include "wii/gx/gxquake.h"
+#else
+#include "psp/gu/gu_psp.h"
+#endif
 
 //=============================================================================
 
@@ -281,6 +360,10 @@ extern	qboolean	host_initialized;		// true if into command execution
 extern	double		host_frametime;
 extern	byte		*host_basepal;
 extern	byte		*host_colormap;
+#ifdef __PSP__
+extern	byte		*host_q2pal;
+extern	byte		*host_h2pal;
+#endif // __PSP__
 extern	int			host_framecount;	// incremented every frame, never reset
 extern	double		realtime;			// not bounded in any way, changed at
 										// start of every frame, never reset
@@ -307,6 +390,13 @@ extern qboolean		isDedicated;
 
 extern int			minimum_memory;
 
+extern	vec3_t	NULLVEC;
+
+#define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
+
+int SV_HullPointContents (hull_t *hull, int num, vec3_t p);
+#define TruePointContents(p) SV_HullPointContents(&cl.worldmodel->hulls[0], 0, p)
+
 //
 // chase
 //
@@ -315,23 +405,6 @@ extern	cvar_t	chase_active;
 void Chase_Init (void);
 void Chase_Reset (void);
 void Chase_Update (void);
-
-void Build_Gamma_Table (void);
-
-void Sky_Init (void);
-void Sky_NewMap (void);
-void R_DrawSkyBox (void);
-void R_ClearSkyBox (void);
-void EmitBothSkyLayers (msurface_t *fa);
-
-int loadtextureimage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap, qboolean keep);
-byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, int reverseRGBA);
-int loadskyboximage (char* filename, int matchwidth, int matchheight, qboolean complain, qboolean mipmap);
-
-#define ISUNDERWATER(x) ((x) == CONTENTS_WATER || (x) == CONTENTS_SLIME || (x) == CONTENTS_LAVA)
-
-int SV_HullPointContents (hull_t *hull, int num, vec3_t p);
-#define TruePointContents(p) SV_HullPointContents(&cl.worldmodel->hulls[0], 0, p)
 
 //ZOMBIE AI STUFF
 #define MAX_WAYPOINTS 256 //max waypoints
@@ -358,6 +431,16 @@ extern waypoint_ai waypoints[MAX_WAYPOINTS];
 extern int n_waypoints;
 extern short closest_waypoints[MAX_EDICTS];
 
+// thread structs
+typedef struct
+{
+	vec3_t origin;
+	vec3_t forward;
+	vec3_t right;
+	vec3_t up;
+	qboolean ready;
+} soundstruct_t;
+
 // ----------------------------------------------------------------------------
 // Utils for using cstdlib qsort (Quick sort)
 //
@@ -380,7 +463,12 @@ typedef struct argsort_entry_s {
 extern int argsort_comparator(const void *lhs, const void *rhs);
 // ----------------------------------------------------------------------------
 
-
 extern func_t	EndFrame;
 
-#endif
+
+#ifdef _3DS
+#define VERTEXARRAYSIZE 18360
+extern float gVertexBuffer[VERTEXARRAYSIZE];
+extern float gColorBuffer[VERTEXARRAYSIZE];
+extern float gTexCoordBuffer[VERTEXARRAYSIZE];
+#endif // _3DS

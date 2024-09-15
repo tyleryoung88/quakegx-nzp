@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ogc/lwp_heap.h>
 #include <ogc/lwp_mutex.h>
 
-#include "../../generic/quakedef.h"
+#include "../../quakedef.h"
 
 #include <gccore.h>
 #include <malloc.h>
@@ -580,7 +580,7 @@ void Build_Gamma_Table (void) {
 	float   in_gamma;
 
 	if ((i = COM_CheckParm("-gamma")) != 0 && i+1 < com_argc) {
-		in_gamma = Q_atof(com_argv[i+1]);
+		in_gamma = atof(com_argv[i+1]);
 		if (in_gamma < 0.3) in_gamma = 0.3;
 		if (in_gamma > 1) in_gamma = 1.0;
 	} else {
@@ -1006,7 +1006,7 @@ byte* LoadPCX (char* filename, int matchwidth, int matchheight)
 #define STBI_ONLY_PNG
 #define STBI_ONLY_TGA
 #define STBI_ONLY_PIC
-#include "stb_image.h"
+#include "../../stb_image.h"
 byte* loadimagepixels (char* filename, qboolean complain, int matchwidth, int matchheight, int reverseRGBA)
 {
 	int bpp;

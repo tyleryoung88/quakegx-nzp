@@ -19,7 +19,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 // sbar.c -- status bar code
 
-#include "quakedef.h"
+#include "../quakedef.h"
 
 cvar_t sbar_alpha = {"sbar_alpha", "0.3", true};
 

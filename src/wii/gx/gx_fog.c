@@ -6,7 +6,7 @@ Modified for Wii :)
 
 */
 
-#include "../../generic/quakedef.h"
+#include "../../quakedef.h"
 
 //==============================================================================
 //

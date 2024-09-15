@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#include "quakedef.h"
+#include "../quakedef.h"
 #include <asndlib.h>
 #include <mp3player.h>
 
@@ -95,8 +95,8 @@ int CDAudio_Init(void)
 	/*
 	ASND_Init();
 	MP3Player_Init();
-	return 0;
 	*/
+	return 0;
 }
 
 

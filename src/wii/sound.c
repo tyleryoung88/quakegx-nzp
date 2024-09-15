@@ -23,7 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ogc/audio.h>
 #include <ogc/cache.h>
 
-#include "../generic/quakedef.h"
+#include "../quakedef.h"
 
 // Represents a single sound sample.
 typedef u32 sample;

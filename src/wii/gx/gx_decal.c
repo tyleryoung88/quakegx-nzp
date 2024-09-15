@@ -1,4 +1,4 @@
-#include "../../generic/quakedef.h"
+#include "../../quakedef.h"
 
 #define DEFAULT_NUM_DECALS      1024 //*4
 #define ABSOLUTE_MIN_DECALS		256
@@ -284,7 +284,7 @@ void R_InitDecals (void)
 
 	if ((i = COM_CheckParm("-decals")) && i + 1 < com_argc)
 	{
-		r_numdecals = Q_atoi(com_argv[i+1]);
+		r_numdecals = atoi(com_argv[i+1]);
 		r_numdecals = bound(ABSOLUTE_MIN_DECALS, r_numdecals, ABSOLUTE_MAX_DECALS);
 	}
 	else

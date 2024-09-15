@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#include "quakedef.h"
+#include "../quakedef.h"
 
 enum 
 {
@@ -731,7 +731,7 @@ void M_Main_Draw (void)
 	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)) - 10, 6, game_build_date, 255, 255, 255, 255, 1.5);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)), 6, game_build_date, 255, 255, 255, 255, 1.5);
 
 	// Header
 	Draw_ColoredString(6, 6, "MAIN MENU", 255, 255, 255, 255, 3.5);
@@ -878,7 +878,7 @@ void M_SinglePlayer_Draw (void)
 	Draw_ColoredString(6, 6, "SOLO", 255, 255, 255, 255, 3);
 	
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)) - 10, 6, game_build_date, 255, 255, 255, 255, 1.5);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)), 6, game_build_date, 255, 255, 255, 255, 1.5);
 
 	// Nacht der Untoten
 	if (m_singleplayer_cursor == 0)
@@ -1232,7 +1232,7 @@ void M_Menu_CustomMaps_Draw (void)
 	Draw_ColoredString(6, 6, "CUSTOM MAPS", 255, 255, 255, 255, 3);
 	
 	// Version String
-	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)) - 5, 6, game_build_date, 255, 255, 255, 255, 1.5);
+	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)), 6, game_build_date, 255, 255, 255, 255, 1.5);
 
 	int 	line_increment;
 	line_increment = 0;

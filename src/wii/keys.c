@@ -17,7 +17,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 */
-#include "quakedef.h"
+#include "../quakedef.h"
 #include <wiiuse/wpad.h>
 
 /*
@@ -241,6 +241,8 @@ Interactive line editing and console scrollback
 ====================
 */
 extern qboolean console_enabled;
+qboolean Con_isSetOSKActive(void);
+void Con_SetOSKActive(qboolean active);
 void Key_Console (int key)
 {
 	char	*cmd;
@@ -249,8 +251,8 @@ void Key_Console (int key)
 	//size_t		len;
 	char *workline = key_lines[edit_line];
 	
-	// dpad left is to open console
-	if (in_osk)
+	// minus is to open console
+	if (Con_isSetOSKActive())
 	{	
 		switch(key) {
 			case K_JOY0:
@@ -271,10 +273,11 @@ void Key_Console (int key)
 			case K_JOY17:
 				strncpy(workline,osk_buffer,MAX_CHAR_LINE);
 				//strcpy(key_lines[edit_line],workline);
-				in_osk = false;
+				Con_SetOSKActive(false);
 				break;
 
 			case K_JOY1:
+				Con_SetOSKActive(false);
 				if (strlen(osk_buffer) > 1) {
 					osk_buffer[strlen(osk_buffer)-1] = '\0';
 				}
@@ -329,7 +332,7 @@ void Key_Console (int key)
 				cmd = Cvar_CompleteVariable (key_lines[edit_line]+1);
 			if (cmd)
 			{
-				Q_strcpy (key_lines[edit_line]+1, cmd);
+				strcpy (key_lines[edit_line]+1, cmd);
 				key_linepos = Q_strlen(cmd)+1;
 				key_lines[edit_line][key_linepos] = ' ';
 				key_linepos++;
@@ -339,8 +342,8 @@ void Key_Console (int key)
 		}
 		
 		if (key == K_JOY17) {
-			in_osk = !in_osk;
-			strcpy(osk_buffer, workline);
+			Con_SetOSKActive(true);
+			//strcpy(osk_buffer, workline);
 			return;
 		}
 		
@@ -360,7 +363,7 @@ void Key_Console (int key)
 					&& !key_lines[history_line][1]);
 			if (history_line == edit_line)
 				history_line = (edit_line+1)&31;
-			Q_strcpy(key_lines[edit_line], key_lines[history_line]);
+			strcpy(key_lines[edit_line], key_lines[history_line]);
 			key_linepos = Q_strlen(key_lines[edit_line]);
 			return;
 		}
@@ -381,7 +384,7 @@ void Key_Console (int key)
 			}
 			else
 			{
-				Q_strcpy(key_lines[edit_line], key_lines[history_line]);
+				strcpy(key_lines[edit_line], key_lines[history_line]);
 				key_linepos = Q_strlen(key_lines[edit_line]);
 			}
 			return;
@@ -571,7 +574,7 @@ void Key_SetBinding (key_id_t keynum, char *binding)
 // allocate memory for new binding
 	l = Q_strlen (binding);	
 	new = Z_Malloc (l+1);
-	Q_strcpy (new, binding);
+	strcpy (new, binding);
 	new[l] = 0;
 	keybindings[keynum] = new;	
 }
@@ -597,9 +600,9 @@ void Key_SetDTBinding (int keynum, char *binding)
 	}
 
 // allocate memory for new binding
-	l = Q_strlen (binding);
+	l = strlen (binding);
 	new = Z_Malloc (l+1);
-	Q_strcpy (new, binding);
+	strcpy (new, binding);
 	new[l] = 0;
 	dtbindings[keynum] = new;
 }

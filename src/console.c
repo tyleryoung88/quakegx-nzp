@@ -42,7 +42,7 @@ int			con_current;		// where next message will be printed
 int			con_x;				// offset in current line for next print
 char		*con_text=0;
 
-cvar_t		con_notifytime = {"con_notifytime","2"};		//seconds
+cvar_t		con_notifytime = {"con_notifytime","3"};		//seconds
 
 #define	NUM_CON_TIMES 4
 float		con_times[NUM_CON_TIMES];	// realtime time the line was generated
@@ -62,10 +62,19 @@ qboolean	con_initialized;
 
 int			con_notifylines;		// scan lines to clear for notify lines
 
-qboolean console_enabled;
-
 extern void M_Menu_Main_f (void);
 
+#define MAXGAMEDIRLEN	1000
+char debuglogfile[MAXGAMEDIRLEN + 1];
+
+#ifndef _3DS
+void M_OSK_Draw (void);
+void Con_OSK_f (char *input, char *output, int outlen);
+void Con_OSK_Key(int key);
+void Con_DrawOSK(void);
+#endif // __PSP__, __WII__
+
+extern qboolean console_enabled;
 /*
 ================
 Con_ToggleConsole_f
@@ -88,9 +97,8 @@ void Con_ToggleConsole_f (void)
 			M_Menu_Main_f ();
 		}
 	}
-	else {
+	else
 		key_dest = key_console;
-	}
 	
 	SCR_EndLoadingPlaque ();
 	memset (con_times, 0, sizeof(con_times));
@@ -104,7 +112,7 @@ Con_Clear_f
 void Con_Clear_f (void)
 {
 	if (con_text)
-		memset (con_text, ' ', CON_TEXTSIZE);
+		Q_memset (con_text, ' ', CON_TEXTSIZE);
 }
 
 						
@@ -160,7 +168,7 @@ void Con_CheckResize (void)
 	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
 	char	tbuf[CON_TEXTSIZE];
 
-	width = (vid.conwidth >> 3) - 2;
+	width = (vid.width >> 3) - 2;
 
 	if (width == con_linewidth)
 		return;
@@ -170,7 +178,7 @@ void Con_CheckResize (void)
 		width = 38;
 		con_linewidth = width;
 		con_totallines = CON_TEXTSIZE / con_linewidth;
-		memset (con_text, ' ', CON_TEXTSIZE);
+		Q_memset (con_text, ' ', CON_TEXTSIZE);
 	}
 	else
 	{
@@ -188,8 +196,8 @@ void Con_CheckResize (void)
 		if (con_linewidth < numchars)
 			numchars = con_linewidth;
 
-		memcpy (tbuf, con_text, CON_TEXTSIZE);
-		memset (con_text, ' ', CON_TEXTSIZE);
+		Q_memcpy (tbuf, con_text, CON_TEXTSIZE);
+		Q_memset (con_text, ' ', CON_TEXTSIZE);
 
 		for (i=0 ; i<numlines ; i++)
 		{
@@ -216,23 +224,21 @@ Con_Init
 */
 void Con_Init (void)
 {
-#define MAXGAMEDIRLEN	1000
-	char	temp[MAXGAMEDIRLEN+1];
-	char	*t2 = "/qconsole.log";
+	char	*t2 = "/condebug.log";
 
 	con_debuglog = COM_CheckParm("-condebug");
 
-	//if (con_debuglog)
-	//{
+	if (con_debuglog)
+	{
 		if (strlen (com_gamedir) < (MAXGAMEDIRLEN - strlen (t2)))
 		{
-			sprintf (temp, "%s%s", com_gamedir, t2);
-			unlink (temp);
+			sprintf (debuglogfile, "%s%s", com_gamedir, t2);
+			unlink (debuglogfile);
 		}
-	//}
+	}
 
 	con_text = Hunk_AllocName (CON_TEXTSIZE, "context");
-	memset (con_text, ' ', CON_TEXTSIZE);
+	Q_memset (con_text, ' ', CON_TEXTSIZE);
 	con_linewidth = -1;
 	Con_CheckResize ();
 	
@@ -260,7 +266,7 @@ void Con_Linefeed (void)
 {
 	con_x = 0;
 	con_current++;
-	memset (&con_text[(con_current%con_totallines)*con_linewidth]
+	Q_memset (&con_text[(con_current%con_totallines)*con_linewidth]
 	, ' ', con_linewidth);
 }
 
@@ -285,7 +291,7 @@ void Con_Print (char *txt)
 	if (txt[0] == 1)
 	{
 		mask = 128;		// go to colored text
-		//S_LocalSound ("misc/talk.wav");
+		S_LocalSound ("misc/talk.wav");
 	// play talk wav
 		txt++;
 	}
@@ -377,7 +383,7 @@ Con_Printf
 Handles cursor positioning, line wrapping, etc
 ================
 */
-#define	MAXPRINTMSG	1024
+#define	MAXPRINTMSG	4096
 // FIXME: make a buffer size safe vsprintf?
 void Con_Printf (char *fmt, ...)
 {
@@ -392,9 +398,9 @@ void Con_Printf (char *fmt, ...)
 // also echo to debugging console
 	Sys_Printf ("%s", msg);	// also echo to debugging console
 
-	// log all messages to file
-	//if (con_debuglog)
-		Con_DebugLog(va("%s/qconsole.log",com_gamedir), "%s", msg);
+// log all messages to file
+	if (con_debuglog)
+		Con_DebugLog(debuglogfile, "%s", msg);
 
 	if (!con_initialized)
 		return;
@@ -484,11 +490,11 @@ The input line scrolls horizontally if typing goes beyond the right edge
 */
 void Con_DrawInput (void)
 {
-	//int		y;
+	int		y;
 	int		i;
 	char	*text;
 
-	if (key_dest != key_console)
+	if (key_dest != key_console && !con_forcedup)
 		return;		// don't draw anything
 
 	text = key_lines[edit_line];
@@ -505,10 +511,10 @@ void Con_DrawInput (void)
 		text += 1 + key_linepos - con_linewidth;
 		
 // draw it
-	//y = con_vislines-16;
+	y = con_vislines-16;
 
 	for (i=0 ; i<con_linewidth ; i++)
-		Draw_Character ( (i+2)<<3, con_vislines - 24, text[i]);
+		Draw_Character ( (i+1)<<3, con_vislines - 16, text[i]);
 
 // remove cursor
 	key_lines[edit_line][key_linepos] = 0;
@@ -582,8 +588,7 @@ Draws the console with the solid background
 The typing input line at the bottom should only be drawn if typing is allowed
 ================
 */
-extern qboolean in_osk;
-void M_OSK_Draw (void);
+qboolean console_enabled;
 void Con_DrawConsole (int lines, qboolean drawinput)
 {
 	int				i, x, y;
@@ -615,17 +620,36 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 		for (x=0 ; x<con_linewidth ; x++)
 			Draw_Character ( (x+1)<<3, y, text[x]);
 	}
-	
-	if (in_osk == true) {
-		//GX_DrawOSK();
-		M_OSK_Draw ();
-	}
 
 // draw the input prompt, user text, and cursor if desired
-	//if (drawinput)
-		//Con_DrawInput ();
+	if (drawinput)
+		Con_DrawInput ();
+
+#ifndef _3DS
+	Con_DrawOSK();	
+#endif // __PSP__
 }
 
+#ifndef _3DS
+static qboolean	scr_osk_active = false;
+
+
+void Con_SetOSKActive(qboolean active) 
+{
+	scr_osk_active = active;	
+}
+
+qboolean Con_isSetOSKActive(void) 
+{
+	return scr_osk_active;
+}
+
+void Con_DrawOSK(void) {
+	if (scr_osk_active) {
+		M_OSK_Draw();
+	}
+}
+#endif // __PSP__
 
 /*
 ==================
@@ -652,7 +676,9 @@ void Con_NotifyBox (char *text)
 		t1 = Sys_FloatTime ();
 		SCR_UpdateScreen ();
 		Sys_SendKeyEvents ();
+#ifdef __WII__
 		IN_Commands ();
+#endif
 		t2 = Sys_FloatTime ();
 		realtime += t2-t1;		// make the cursor blink
 	} while (key_count < 0);
