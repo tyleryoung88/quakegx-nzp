@@ -240,6 +240,7 @@ Key_Console
 Interactive line editing and console scrollback
 ====================
 */
+extern qboolean console_enabled;
 void Key_Console (int key)
 {
 	char	*cmd;
@@ -410,6 +411,7 @@ void Key_Console (int key)
 
 		if (key == K_END)
 		{
+			console_enabled = false;
 			con_backscroll = 0;
 			return;
 		}
@@ -424,7 +426,9 @@ void Key_Console (int key)
 			key_lines[edit_line][key_linepos] = 0;
 		}
 		if (key == K_JOY1) {
-			
+			console_enabled = false;
+			con_backscroll = 0;
+			return;
 		}
 	
 	}
@@ -457,6 +461,7 @@ void Key_Message (key_id_t key)
 
 	if (key == K_ESCAPE)
 	{
+		console_enabled = false;
 		key_dest = key_game;
 		chat_bufferlen = 0;
 		chat_buffer[0] = 0;
@@ -890,9 +895,17 @@ void Key_Event (key_id_t key, qboolean down)
 			return;
 		switch (key_dest)
 		{
-		//case key_game:
-		// always able to break out of console
+		case key_message:
+			Key_Message (key);
+			break;
+		case key_menu:
+		case key_menu_pause:
+			M_Keydown (key);
+			break;
+		case key_game:
+			break;
 		case key_console:
+			console_enabled = false;
 			M_ToggleMenu_f ();
 			break;
 		default:

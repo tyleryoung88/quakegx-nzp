@@ -62,6 +62,8 @@ qboolean	con_initialized;
 
 int			con_notifylines;		// scan lines to clear for notify lines
 
+qboolean console_enabled;
+
 extern void M_Menu_Main_f (void);
 
 /*
@@ -76,11 +78,13 @@ void Con_ToggleConsole_f (void)
 		if (cls.state == ca_connected)
 		{
 			key_dest = key_game;
+			console_enabled = false;
 			key_lines[edit_line][1] = 0;	// clear any typing
 			key_linepos = 1;
 		}
 		else
 		{
+			console_enabled = false;
 			M_Menu_Main_f ();
 		}
 	}
@@ -592,6 +596,8 @@ void Con_DrawConsole (int lines, qboolean drawinput)
 
 // draw the background
 	Draw_ConsoleBackground (lines);
+	if (!console_enabled && !developer.value)
+		return;
 
 // draw the text
 	con_vislines = lines;

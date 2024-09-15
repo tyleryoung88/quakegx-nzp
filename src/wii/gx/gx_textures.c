@@ -589,7 +589,7 @@ void Build_Gamma_Table (void) {
 
 	if (in_gamma != 1) {
 		for (i=0 ; i<256 ; i++) {
-			inf = min(255 * pow((i + 0.5) / 255.5, in_gamma) + 0.5, 255);
+			inf = MIN(255 * pow((i + 0.5) / 255.5, in_gamma) + 0.5, 255);
 			vid_gamma_table[i] = inf;
 		}
 	} else {

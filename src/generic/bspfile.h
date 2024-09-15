@@ -53,8 +53,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 //=============================================================================
 
 
-#define Q1_BSPVERSION	29
-#define HL_BSPVERSION	30 //HLSBP SUPPORT
+#define BSPVERSION	29
+#define HL_BSPVERSION 30
 #define	TOOLVERSION	2
 
 typedef struct
@@ -152,7 +152,6 @@ typedef struct
 #define	CONTENTS_CURRENT_DOWN	-14
 
 
-// !!! if this is changed, it must be changed in asm_i386.h too !!!
 typedef struct
 {
 	int			planenum;

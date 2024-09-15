@@ -420,37 +420,37 @@ void SCR_UsePrint (int type, int cost, int weapon)
 		case 1://door
 			strcpy(s, va("Hold  %s  to open Door\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 2://debris
 			strcpy(s, va("Hold  %s  to remove Debris\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 3://ammo
 			strcpy(s, va("Hold  %s  to buy Ammo for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 4://weapon
 			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 5://window
 			strcpy(s, va("Hold  %s  to Rebuild Barrier\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 6://box
 			strcpy(s, va("Hold  %s  to for Mystery Box\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 7://box take
 			strcpy(s, va("Hold  %s  for %s\n", GetUseButtonL(), pr_strings+sv_player->v.Weapon_Name_Touch));
 			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 8://power
 			strcpy(s, "The Power must be Activated first\n");
@@ -460,37 +460,37 @@ void SCR_UsePrint (int type, int cost, int weapon)
 		case 9://perk
 			strcpy(s, va("Hold  %s  to buy %s\n", GetUseButtonL(), GetPerkName(weapon)));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 10://turn on power
 			strcpy(s, va("Hold  %s  to Turn On the Power\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 11://turn on trap
 			strcpy(s, va("Hold  %s  to Activate the Trap\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 12://PAP
 			strcpy(s, va("Hold  %s  to Pack-a-Punch\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 13://revive
 			strcpy(s, va("Hold  %s  to Fix your Code.. :)\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 14://use teleporter (free)
 			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 15://use teleporter (cost)
 			strcpy(s, va("Hold  %s  to use Teleporter\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 16://tp cooldown
 			strcpy(s, "Teleporter is cooling down\n");
@@ -500,7 +500,7 @@ void SCR_UsePrint (int type, int cost, int weapon)
 		case 17://link
 			strcpy(s, va("Hold  %s  to initiate link to pad\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 18://no link
 			strcpy(s, "Link not active\n");
@@ -510,12 +510,12 @@ void SCR_UsePrint (int type, int cost, int weapon)
 		case 19://finish link
 			strcpy(s, va("Hold  %s  to link pad with core\n", GetUseButtonL()));
 			strcpy(c, "");
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		case 20://buyable ending
 			strcpy(s, va("Hold  %s  to End the Game\n", GetUseButtonL()));
 			strcpy(c, va("[Cost: %i]\n", cost));
-			button_pic_x = getTextWidth("Hold", 1) - 1;
+			button_pic_x = getTextWidth("Hold", 1.5) - 1;
 			break;
 		default:
 			Con_Printf ("No type defined in engine for useprint\n");
@@ -539,18 +539,18 @@ void SCR_DrawUseString (void)
 	y = vid.height/2 + 30;
 	//l = strlen (scr_usestring);
 	//x = (vid.width - l*12)/2;
-	x = (vid.width - getTextWidth(scr_usestring, 1))/2;
+	x = (vid.width - getTextWidth(scr_usestring, 1.5))/2;
 
 	//l2 = strlen (scr_usestring2);
 	//x2 = (vid.width - l2*12)/2;
 
     //Draw_String (x, y, scr_usestring);
 	//Draw_String (x2, y + 20, scr_usestring2);
-	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, 1);
-	Draw_ColoredStringCentered(y + 15, scr_usestring2, 255, 255, 255, 255, 1);
+	Draw_ColoredStringCentered(y, scr_usestring, 255, 255, 255, 255, 1.5);
+	Draw_ColoredStringCentered(y + 15, scr_usestring2, 255, 255, 255, 255, 1.5);
 	
 	if (button_pic_x != 100) {
-		Draw_StretchPic (x + button_pic_x + 4, y - 2, GetButtonIcon("+use"), 12, 12);
+		Draw_StretchPic (x + (button_pic_x*8) + 18, y - 3, GetButtonIcon("+use"), 18, 18);
 	}
 }
 

@@ -448,7 +448,7 @@ void Draw_Character (int x, int y, int num)
 	Draw_CharacterRGBA(x, y, num, 255, 255, 255, 255, 1);
 }
 
-void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, int scale) 
+void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, float a, float scale) 
 {
 	while (*str)
 	{
@@ -456,9 +456,17 @@ void Draw_ColoredString(int x, int y, char *str, float r, float g, float b, floa
 		
 		// Hooray for variable-spacing!
 		if (*str == ' ')
-			x += 4 * scale;
+			if (scale == 1.5) {
+				x += 6 * scale;
+			} else {
+				x += 4 * scale;
+			}
         else if ((int)*str < 33 || (int)*str > 126)
-            x += 8 * scale;
+            if (scale == 1.5) {
+				x += 12 * scale;
+			} else {
+				x += 8 * scale;
+			}
         else
             x += (font_kerningamount[(int)(*str - 33)] + 1) * scale;
 		
@@ -477,25 +485,33 @@ void Draw_String (int x, int y, char *str)
 	Draw_ColoredString(x, y, str, 255, 255, 255, 255, 1); 
 }
 
-int getTextWidth(char *str, int scale)
+int getTextWidth(char *str, float scale)
 {
-	int width = 0;
+	float width = 0;
 
     for (int i = 0; i < strlen(str); i++) {
         // Hooray for variable-spacing!
 		if (str[i] == ' ')
-			width += 4 * scale;
+			if (scale == 1.5) {
+				width += 6 * scale;
+			} else {
+				width += 4 * scale;
+			}
         else if ((int)str[i] < 33 || (int)str[i] > 126)
-            width += 8 * scale;
+			if (scale == 1.5) {
+				width += 12 * scale;
+			} else {
+				width += 8 * scale;
+			}
         else
             width += (font_kerningamount[(int)(str[i] - 33)] + 1) * scale;
     }
 
-	return width;
+	return (int)width;
 }
 
 
-void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, int scale)
+void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
 {
 	Draw_ColoredString((vid.width - getTextWidth(str, (int)scale))/2, y, str, r, g, b, a, scale);
 }
@@ -795,7 +811,7 @@ void Draw_LoadingFill(void)
 
 	//l = strlen (text);
 	//Draw_String((vid.width - l*12)/2, y+2, text);
-	Draw_ColoredStringCentered(y + 2, text, 255, 255, 255, 255, 1);
+	Draw_ColoredStringCentered(y + 6, text, 255, 255, 255, 255, 2);
 
 	loading_cur_step_bk = loading_cur_step;
 }
@@ -808,39 +824,6 @@ void Clear_LoadingFill (void)
 	loading_num_step = 0;
 	loading_step = -1;
 	memset(loading_name, 0, sizeof(loading_name));
-}
-
-
-/*
-=============
-Draw_TileClear
-
-This repeats a 64*64 tile graphic to fill the screen around a sized down
-refresh window.
-=============
-*/
-void Draw_TileClear (int x, int y, int w, int h)
-{
-	GL_Bind0 (*(int *)draw_backtile->data);
-	//GX_SetMinMag (GX_NEAR, GX_NEAR);
-	GX_Begin(GX_QUADS, GX_VTXFMT0, 4);
-
-	GX_Position3f32(x, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(x / 64.0, y / 64.0);
-
-	GX_Position3f32(x + w, y, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32((x + w) / 64.0, y / 64.0);
-
-	GX_Position3f32(x + w, y + h, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32((x + w) / 64.0, (y + h) / 64.0);
-
-	GX_Position3f32(x, y + h, 0.0f);
-	GX_Color4u8(0xff, 0xff, 0xff, 0xff);
-	GX_TexCoord2f32(x / 64.0, (y + h) / 64.0);
-	GX_End();
 }
 
 /*
