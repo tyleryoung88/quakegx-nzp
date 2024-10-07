@@ -650,7 +650,7 @@ void IN_Move (usercmd_t *cmd)
 			Cvar_SetValue("cl_crossx", vid.width / 2 * x2);
 			Cvar_SetValue("cl_crossy", vid.height / 2 * y2);
 			
-			Con_Printf ("crossx: %f crossy %f\n", scr_vrect.width / 2 * x2, scr_vrect.height / 2 * y2);
+			//Con_Printf ("crossx: %f crossy %f\n", scr_vrect.width / 2 * x2, scr_vrect.height / 2 * y2);
 		}
 	}
 		

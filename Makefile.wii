@@ -16,11 +16,11 @@ include $(DEVKITPPC)/wii_rules
 # INCLUDES is a list of directories containing extra header files
 #---------------------------------------------------------------------------------
 TARGET		:=	boot
-TARGETDIR   	:=  	dist/wii/apps/nzportable
+TARGETDIR   :=  dist/wii/apps/nzportable
 BUILD		:=	obj
-SOURCES		:=	src/wii\
-			src/wii/gx\
-			src/generic
+SOURCES		:=	source/wii\
+			source/wii/gx\
+			source\
 
 INCLUDES	:=
 
@@ -31,7 +31,7 @@ INCLUDES	:=
 
 CFLAGS	=		$(MACHDEP) $(INCLUDE) \
 			-g -Wall -O2 -Wcast-align -fno-merge-constants -fstrict-aliasing -fsingle-precision-constant -fno-aggressive-loop-optimizations \
-			-DGXQUAKE -DNQ_HACK -Wtrigraphs -DHW_RVL
+			-DGXQUAKE -DNQ_HACK -Wtrigraphs -D__WII__
 
 CXXFLAGS = $(CFLAGS)
 

@@ -364,7 +364,6 @@ void HUD_Sortpoints (void)
 			}
 }
 
-#ifdef __WII__
 qboolean showscoreboard = false;
 void HUD_Scoreboard_Down (void) 
 {
@@ -376,7 +375,6 @@ void HUD_Scoreboard_Up (void)
 {
 	showscoreboard = false;
 }
-#endif // __WII__
 
 /*
 ===============
@@ -393,37 +391,6 @@ void HUD_EndScreen (void)
 	HUD_Sortpoints ();
 
 	l = scoreboardlines;
-
-#ifndef __WII__
-
-	Draw_ColoredStringCentered(40, "GAME OVER", 255, 0, 0, 255, 1);
-
-	sprintf (str,"You survived %3i rounds", cl.stats[STAT_ROUNDS]);
-	Draw_String ((vid.width - strlen (str)*8)/2, 52, str);
-
-	sprintf (str,"Name           Kills     Points");
-	x = (vid.width - strlen (str)*8)/2;
-
-	Draw_String (x, 68, str);
-	y = 0;
-	for (i=0; i<l ; i++)
-	{
-		k = pointsort[i];
-		s = &cl.scores[k];
-		if (!s->name[0])
-			continue;
-
-		Draw_String (x, 78 + y, s->name);
-
-		d = strlen (va("%i",s->kills));
-		Draw_String (x + (20 - d)*8, 78 + y, va("%i",s->kills));
-
-		d = strlen (va("%i",s->points));
-		Draw_String (x + (31 - d)*8, 78 + y, va("%i",s->points));
-		y += 10;
-	}
-
-#else
 
 	if (!showscoreboard) {
 		Draw_ColoredStringCentered(65, "GAME OVER", 255, 0, 0, 255, hud_scale_factor);
@@ -475,9 +442,6 @@ void HUD_EndScreen (void)
 			y += 20;
 		}
 	}
-
-#endif // __WII__
-
 }
 
 
@@ -947,7 +911,7 @@ void HUD_Rounds (void)
 				else
 					icon_num = i;
 
-				Draw_ColoredStretchPic (5 * hud_scale_factor + (x_offset * hud_scale_factor), vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
+				Draw_ColoredStretchPic (5 * hud_scale_factor + x_offset, vid.height - (sb_round[icon_num]->height * hud_scale_factor) - 4, 
 				sb_round[icon_num], sb_round[icon_num]->width * hud_scale_factor, sb_round[icon_num]->height * hud_scale_factor, (int)color_shift[0], (int)color_shift[1], (int)color_shift[2], 255);
 
 				x_offset = x_offset + (sb_round[icon_num]->width * hud_scale_factor) + 3;
@@ -1067,7 +1031,7 @@ void HUD_Rounds (void)
 				{
 					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
 					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
-					savex = x_offset + 10;
+					savex = x_offset + 10 * hud_scale_factor;
 					x_offset = (x_offset * hud_scale_factor) + 10;
 					continue;
 				}
@@ -1135,7 +1099,7 @@ void HUD_Rounds (void)
 				{
 					Draw_ColoredStretchPic (5 * hud_scale_factor, vid.height - (sb_round[4]->height * hud_scale_factor) - 4, 
 					sb_round[4], sb_round[4]->width * hud_scale_factor, sb_round[4]->height * hud_scale_factor, 255, 255, 255, blinking);
-					savex = x_offset + 10;
+					savex = x_offset + 10 * hud_scale_factor;
 					x_offset = x_offset + 10 * hud_scale_factor;
 					continue;
 				}
@@ -1351,7 +1315,7 @@ void HUD_Perks (void)
 {
 	int x, y, scale;
 
-	x = 18 * hud_scale_factor + 6;
+	x = 18 * hud_scale_factor;
 	y = 2 * hud_scale_factor;
 	scale = 22 * hud_scale_factor;
 
@@ -1419,13 +1383,13 @@ void HUD_Powerups (void)
 
 	// both are avail draw fixed order
 	if (count == 2) {
-		Draw_StretchPic((vid.width/2) - (27 * hud_scale_factor), vid.height - 29, x2pic, scale, scale);
-		Draw_StretchPic((vid.width/2) + (3 * hud_scale_factor), vid.height - 29, instapic, scale, scale);
+		Draw_StretchPic((vid.width/2) - (27 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
+		Draw_StretchPic((vid.width/2) + (3 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
 	} else {
 		if (cl.stats[STAT_X2])
-			Draw_StretchPic((vid.width/2) - (13 * hud_scale_factor), vid.height - 29, x2pic, scale, scale);
+			Draw_StretchPic((vid.width/2) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), x2pic, scale, scale);
 		if(cl.stats[STAT_INSTA])
-			Draw_StretchPic ((vid.width/2) - (13 * hud_scale_factor), vid.height - 29, instapic, scale, scale);
+			Draw_StretchPic ((vid.width/2) - (13 * hud_scale_factor), vid.height - (29 * hud_scale_factor), instapic, scale, scale);
 	}
 }
 
@@ -1826,11 +1790,7 @@ void HUD_Draw (void)
 		return;
 	}
 
-#ifdef __WII__
 	if (cl.stats[STAT_HEALTH] <= 0 || showscoreboard == true)
-#else
-	if (cl.stats[STAT_HEALTH] <= 0)
-#endif // __WII__
 	{
 		HUD_EndScreen ();
 		
@@ -1838,10 +1798,7 @@ void HUD_Draw (void)
 		if (screenflash_duration > sv.time)
 			HUD_Screenflash();
 
-#ifdef __WII__
-		if (cl.stats[STAT_HEALTH] <= 0)
-#endif // __WII__
-			return;
+		return;
 	}
 
 	if (bettyprompt_time > sv.time)
