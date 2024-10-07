@@ -414,8 +414,8 @@ void Key_Console (int key)
 
 		if (key == K_END)
 		{
-			console_enabled = false;
-			con_backscroll = 0;
+			//console_enabled = false;
+			//con_backscroll = 0;
 			return;
 		}
 		
@@ -429,8 +429,8 @@ void Key_Console (int key)
 			key_lines[edit_line][key_linepos] = 0;
 		}
 		if (key == K_JOY1) {
-			console_enabled = false;
-			con_backscroll = 0;
+			//console_enabled = false;
+			//con_backscroll = 0;
 			return;
 		}
 	

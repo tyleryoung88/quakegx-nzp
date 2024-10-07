@@ -514,7 +514,7 @@ int getTextWidth(char *str, float scale)
 
 void Draw_ColoredStringCentered(int y, char *str, float r, float g, float b, float a, float scale)
 {
-	Draw_ColoredString((vid.width - getTextWidth(str, (int)scale))/2, y, str, r, g, b, a, scale);
+	Draw_ColoredString((vid.width - getTextWidth(str, scale))/2, y, str, r, g, b, a, scale);
 }
 
 /*
@@ -812,7 +812,7 @@ void Draw_LoadingFill(void)
 
 	//l = strlen (text);
 	//Draw_String((vid.width - l*12)/2, y+2, text);
-	Draw_ColoredStringCentered(y + 6, text, 255, 255, 255, 255, 2);
+	Draw_ColoredStringCentered(y, text, 255, 255, 255, 255, 2);
 
 	loading_cur_step_bk = loading_cur_step;
 }
@@ -1267,7 +1267,7 @@ void Draw_Crosshair (void)
 	
 	//Draw_CharacterRGBA((scr_vrect.x + scr_vrect.width/2 + cl_crossx.value) * vid.conwidth/vid.width - 4, (scr_vrect.y + scr_vrect.height/2 + cl_crossy.value) * vid.conheight/vid.height - 8, '.', 255, (int)col, (int)col, 255, 1.4);
 	if (aimsnap == true)
-			Draw_FillByColor(cl_crossx.value - 2, cl_crossy.value - 2, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
+			Draw_FillByColor(vid.width/2 - 4, vid.height/2 - 4, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 		else
 			Draw_FillByColor(((scr_vrect.x + scr_vrect.width - 4)/2 + cl_crossx.value) * vid.conwidth/vid.width, ((scr_vrect.y + scr_vrect.height - 4)/2 + cl_crossy.value) * vid.conheight/vid.height, 4, 4, 255, (int)col, (int)col, (int)crosshair_opacity);
 
