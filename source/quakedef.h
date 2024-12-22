@@ -42,8 +42,6 @@ extern int psp_system_model;
 #define	WINQUAKE_VERSION	0.996
 #define	LINUX_VERSION		1.30
 #define	X11_VERSION			1.10
-#define WIIGX_VERSION			0.09
-#define QUAKE_WII_BASEDIR "/apps/nzportable"
 
 #define	GAMENAME	"nzp"
 
@@ -102,7 +100,7 @@ extern int psp_system_model;
 //
 // per-level limits
 //
-#define	MAX_EDICTS		600			// FIXME: ouch! ouch! ouch!
+#define	MAX_EDICTS		1024			// note to myself: don't increase this further, 1024 is more than enough. :P
 #define	MAX_LIGHTSTYLES	64
 #define	MAX_MODELS		300			// motolegacy -- nzp protocol(115), uses memory inefficient shorts for model indexes, yay!
 #define	MAX_SOUNDS		256			// so they cannot be blindly increased
@@ -217,11 +215,9 @@ extern int psp_system_model;
 #include "psp/vid.h"
 #include "psp/sys.h"
 #elif __WII__
-#include <ogcsys.h>
 #include "wii/common.h"
 #include "wii/vid.h"
 #include "wii/sys.h"
-extern u32 MALLOC_MEM2;
 #endif // _3DS, __PSP__, __WII__
 #include "zone.h"
 #include "mathlib.h"
@@ -253,7 +249,7 @@ typedef struct
 #elif __PSP__
 #include "psp/screen.h"
 #include "psp/net.h"
-#elif __WII__ //sBTODO change paths in quakedef.h
+#elif __WII__
 #include "wii/screen.h"
 #include "wii/net.h"
 #endif // _3DS

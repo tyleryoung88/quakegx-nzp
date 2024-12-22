@@ -21,6 +21,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 #include <ogc/gx.h>
 
+#define QUAKE_WII_BASEDIR "/apps/nzportable"
+
 void GL_BeginRendering (int *x, int *y, int *width, int *height);
 void GL_EndRendering (void);
 void VID_ConModeUpdate(void);

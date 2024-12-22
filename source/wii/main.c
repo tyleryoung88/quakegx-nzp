@@ -67,7 +67,7 @@ double current_time = 0;
 int rumble_on = 0;
 
 // Set up the heap.
-static size_t	heap_size	= 39 * 1024 * 1024;
+static size_t	heap_size	= 37 * 1024 * 1024;
 static char		*heap;
 static u32		real_heap_size;
 float sys_frame_length;

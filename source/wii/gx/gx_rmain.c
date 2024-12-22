@@ -173,11 +173,48 @@ void R_RotateForEntity (entity_t *e, unsigned char scale)
 	Mtx temp;
 
 	// ELUTODO: change back to asm when ALL functions have been corrected
-	
 	// sB changed back to asm.
+	/*
+	vec3_t		start, smokeorg, v_forward, v_right, v_up;
+	vec3_t tempangles;
+	float forward_offset, up_offset, right_offset;
 	
-	guMtxTrans(temp, e->origin[0],  e->origin[1],  e->origin[2]);
-	guMtxConcat(model, temp, model);
+	AngleVectors (tempangles, v_forward, v_right, v_up);
+	VectorCopy (cl_entities[cl.viewentity].origin, smokeorg);
+	smokeorg[2] += cl.viewheight; // account for beta maps
+	VectorCopy(smokeorg,start);
+
+	right_offset	 = sv_player->v.Flash_Offset[0];
+	up_offset		 = sv_player->v.Flash_Offset[1];
+	forward_offset 	 = sv_player->v.Flash_Offset[2];
+	 
+	right_offset	= right_offset/1000;
+	up_offset		= up_offset/1000;
+	forward_offset  = forward_offset/1000;
+	
+	VectorMA (start, forward_offset, v_forward ,smokeorg);
+	VectorMA (smokeorg, up_offset, v_up ,smokeorg);
+	VectorMA (smokeorg, right_offset, v_right ,smokeorg);
+	VectorAdd(smokeorg,CWeaponOffset,smokeorg);
+	
+	//Con_Printf ("smokeorg: %f %f %f\n", smokeorg[0], smokeorg[1], smokeorg[2]);
+	//Con_Printf ("gunorg: %f %f %f\n", e->origin[0], e->origin[1], e->origin[2]);
+	
+	float org1, org2, org3;
+	
+	org1 = smokeorg[0] - e->origin[0];
+	org2 = smokeorg[1] - e->origin[1];
+	org3 = smokeorg[2] - e->origin[2];
+	
+	//Con_Printf ("orgdiff: %f %f %f\n", org1, org2, org3);
+	*/
+	//if ((e == &cl.viewent || e == &cl.viewent2)) {
+	//	guMtxTrans (temp, e->origin[0] - org1, e->origin[1] - org2, e->origin[2]);
+	//	guMtxConcat(model, temp, model);
+	//} else {
+		guMtxTrans(temp, e->origin[0],  e->origin[1],  e->origin[2]);
+		guMtxConcat(model, temp, model);
+	//}
 
 	guMtxRotAxisRad(temp, &axis2, DegToRad(e->angles[1]));
 	guMtxConcat(model, temp, model);
@@ -947,6 +984,7 @@ R_DrawAliasModel
 =================
 */
 int doZHack;
+extern qboolean update_weap_pos;
 void R_DrawAliasModel (entity_t *e)
 {
 	char		specChar;
@@ -1115,16 +1153,15 @@ void R_DrawAliasModel (entity_t *e)
 		|| !strcmp (clmodel->name, "progs/bolt.mdl")
 	    || !strcmp (clmodel->name, "models/misc/bolt2.mdl")
 	    || !strcmp (clmodel->name, "progs/bolt3.mdl") ) {
-			lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
-		}
-
+		lightcolor[0] = lightcolor[1] = lightcolor[2] = 255;
+	}
 	guMtxIdentity(model);
 	R_RotateForEntity (e, ENTSCALE_DEFAULT);
 
 	if ((e == &cl.viewent || e == &cl.viewent2)/* && scr_fov_viewmodel.value*/) {
 		float scale = 1.0f / tan (DEG2RAD (scr_fov.value / 2.0f)) * scr_fov_viewmodel.value / 90.0f;
 		if (e->scale != ENTSCALE_DEFAULT && e->scale != 0) 
-			scale *= ENTSCALE_DECODE(e->scale);
+			scale *= ENTSCALE_DECODE(e->scale);	
 		//glTranslatef (paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
 		//glScalef (paliashdr->scale[0] * scale, paliashdr->scale[1], paliashdr->scale[2]);
 		guMtxTrans (temp, paliashdr->scale_origin[0] * scale, paliashdr->scale_origin[1], paliashdr->scale_origin[2]);
@@ -1236,7 +1273,7 @@ void R_DrawAliasModel (entity_t *e)
 			R_DrawZombieLimb(e,2);
 		if(e->z_rarm)
 			R_DrawZombieLimb(e,3);
-	}	
+	}
 
 /* ELUTODO
 	glShadeModel (GL_FLAT);
