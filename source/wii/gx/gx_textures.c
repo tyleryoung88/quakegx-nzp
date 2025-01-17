@@ -21,7 +21,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <ogc/cache.h>
 #include <ogc/system.h>
 #include <ogc/lwp_heap.h>
-#include <ogc/lwp_mutex.h>
+#include <ogc/machine/processor.h>
 
 #include "../../quakedef.h"
 
@@ -416,8 +416,10 @@ void GL_Upload32 (gltexture_t *destination, unsigned *data, int width, int heigh
 	texbuffs = GX_GetTexBufferSize (scaled_width, scaled_height, GX_TF_RGB5A3, mipmap ? GX_TRUE : GX_FALSE, max_mip_level);
 	destination->data = __lwp_heap_allocate(&texture_heap, texbuffs/*scaled_width * scaled_height * 2*/);	
 	__lwp_heap_getinfo(&texture_heap, &info);
-	Con_Printf ("tex buff size %d\n", texbuffs);
-	Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
+	if (developer.value) {
+		Con_Printf ("tex buff size %d\n", texbuffs);
+		Con_Printf("Used Heap: %dM\n", info.used_size / (1024*1024));
+	}
 	
 	if (!destination->data)
 		Sys_Error("GL_Upload32: Out of memory.");

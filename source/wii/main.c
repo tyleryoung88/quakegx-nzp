@@ -32,7 +32,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 // OGC includes.
 #include <ogc/lwp.h>
-#include <ogc/lwp_mutex.h>
+#include <ogc/machine/processor.h>
 #include <ogc/lwp_watchdog.h>
 #include <ogcsys.h>
 #include <wiiuse/wpad.h>
@@ -49,8 +49,6 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <unistd.h>
 
 #include "../quakedef.h"
-
-//u32 MALLOC_MEM2 = 0;
 
 extern void Sys_Reset(void);
 extern void Sys_Shutdown(void);
@@ -141,18 +139,14 @@ static void init()
 
 	// Initialise the controller library.
 	PAD_Init();
-	// Initialise the keyboard library
-	KEYBOARD_Init(NULL);
 
 	if(!fatInitDefault())
 		printf("Error initializing filesystem\n");
 			
 	Sys_Init_Logfile();
 
-#ifndef DISABLE_WIIMOTE
 	if (WPAD_Init() != WPAD_ERR_NONE)
 		Sys_Error("WPAD_Init() failed.\n");
-#endif
 
 	wiimote_ir_res_x = rmode->fbWidth;
 	wiimote_ir_res_y = rmode->xfbHeight;
