@@ -78,7 +78,12 @@ SinCos
 void SinCos( float radians, float *sine, float *cosine )
 {
 #ifndef __PSP__
-	sincos(radians, sine, cosine);
+	#ifdef __WII__
+	    *sine = sin(radians);
+	    *cosine = cos(radians);
+	#else
+		sincos(radians, sine, cosine);
+	#endif
 #else
 
 #ifdef PSP_VFPU

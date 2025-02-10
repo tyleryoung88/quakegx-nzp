@@ -28,6 +28,10 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <pspsysevent.h>
 #endif // __PSP__
 
+#ifdef __WII__
+#include <ogc/video.h>
+#endif
+
 /*
 
 A server can allways be started, even if the system started out as a client
