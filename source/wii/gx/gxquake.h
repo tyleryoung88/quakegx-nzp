@@ -176,7 +176,6 @@ extern	int		d_lightstylevalue[256];	// 8.8 fraction of base light value
 
 extern	qboolean	envmap;
 extern	int	currenttexture0;
-extern	int	currenttexture1;
 extern	int	cnttextures[2];
 extern	int	particletexture;
 extern	int	playertextures[MAX_SCOREBOARD];

@@ -41,7 +41,6 @@ int			c_brush_polys, c_alias_polys;
 qboolean	envmap;				// true during envmap command capture 
 
 int			currenttexture0 = -1;		// to avoid unnecessary texture sets
-int			currenttexture1 = -1;		// to avoid unnecessary texture sets
 
 int			cnttextures[2] = {-1, -1};     // cached
 
@@ -165,61 +164,97 @@ qboolean R_CullBox (vec3_t mins, vec3_t maxs)
 	return false;
 }
 
-extern cvar_t cl_crossx;
-extern cvar_t cl_crossy;
-extern int lock_viewmodel;
-
-extern float goal_crosshair_pitch;
-extern float goal_crosshair_yaw;
-extern float cur_crosshair_pitch;
-extern float cur_crosshair_yaw;
-
 guVector axis2 = {0,0,1};
 guVector axis1 = {0,1,0};
 guVector axis0 = {1,0,0};
+
+vec3_t ADSOffset;
+
+extern cvar_t cl_crossx;
+extern cvar_t cl_crossy;
+extern int lock_viewmodel;
+extern float goal_crosshair_pitch;
+extern float goal_crosshair_yaw;
+void wii_apply_weapon_offset (Mtx in, Mtx rot) {
+	
+	float rotTransX, rotTransY, rotTransZ, adsTransX, adsTransY, adsTransZ;
+	
+	if(cl.stats[STAT_ZOOM] == 1 || cl.stats[STAT_ZOOM] == 2)
+	{
+		ADSOffset[0] = sv_player->v.ADS_Offset[0];
+		ADSOffset[1] = sv_player->v.ADS_Offset[1];
+		ADSOffset[2] = sv_player->v.ADS_Offset[2];
+		
+		ADSOffset[0] = ADSOffset[0]/1000;
+		ADSOffset[1] = ADSOffset[1]/1000;
+		ADSOffset[2] = ADSOffset[2]/1000;
+	}
+	
+	// rough center for all weapons
+	rotTransX = 0; // up/down
+	rotTransY = -4; // left/right
+	rotTransZ = 12; // forward/backward
+	
+	// only need to adjust Z axis on ADS translation
+	adsTransX = 0;
+	adsTransY = 0;
+	adsTransZ = (ADSOffset[2]*-1);
+	
+	Con_Printf("Cur ADS ofs: %f\n", adsTransZ);
+	
+	if (cl.stats[STAT_ZOOM] == 1) {
+		// apply weapon offset (move origin)
+		//guMtxTrans(in, adsTransZ, adsTransY,  adsTransX);
+		//guMtxConcat(model, in, model);
+		
+		guMtxTransApply(model, model, adsTransX, adsTransY, adsTransZ);
+		
+		// new rotation matrix rotates towards wiimote pointer
+		guMtxRotAxisDeg(rot, &axis2, -goal_crosshair_yaw);
+		guMtxConcat(model, rot, model);
+		guMtxRotAxisDeg(rot, &axis1, goal_crosshair_pitch);
+		guMtxConcat(model, rot, model);	
+		
+		// undo weapon offset (move origin back to original pos)
+		//guMtxTrans(in, adsTransZ*-1, adsTransY*-1,  adsTransX*-1);
+		//guMtxConcat(model, in, model);
+		
+		// if we're not ads and the viewmodel isn't locked
+	} else if (lock_viewmodel != 1) {
+		// apply weapon offset (move origin)
+		guMtxTrans(in, rotTransZ, rotTransY,  rotTransX);
+		guMtxConcat(model, in, model);
+		
+		// new rotation matrix rotates towards wiimote pointer
+		guMtxRotAxisDeg(rot, &axis2, -goal_crosshair_yaw);
+		guMtxConcat(model, rot, model);
+		guMtxRotAxisDeg(rot, &axis1, goal_crosshair_pitch);
+		guMtxConcat(model, rot, model);
+		
+		// undo weapon offset (move origin back to original pos)
+		guMtxTrans(in, rotTransZ*-1, rotTransY*-1,  rotTransX*-1);
+		guMtxConcat(model, in, model);
+	}
+}
+
 void R_RotateForEntity (entity_t *e, unsigned char scale)
 {
 	Mtx temp;
 	Mtx rot;
-	float transX, transY, transZ;
-	
-	//colt offset for testing
-	transZ = -12; //2
-	transY = -2; //0
-	transX = 13; //1
 	
 	// setup transform
 	guMtxTrans(temp, e->origin[0],  e->origin[1], e->origin[2]);
 	guMtxConcat(model, temp, model);
 	// perform standard rotation
-	guMtxRotAxisRad(temp, &axis2, DegToRad(e->angles[1]));
+	guMtxRotAxisDeg(temp, &axis2, e->angles[1]);
 	guMtxConcat(model, temp, model);
-	guMtxRotAxisRad(temp, &axis1, DegToRad(-e->angles[0]));
+	guMtxRotAxisDeg(temp, &axis1, -e->angles[0]);
 	guMtxConcat(model, temp, model);
-	guMtxRotAxisRad(temp, &axis0, DegToRad(e->angles[2]));
+	guMtxRotAxisDeg(temp, &axis0, e->angles[2]);
 	guMtxConcat(model, temp, model);
 	
-	if ((e == &cl.viewent || e == &cl.viewent2) && lock_viewmodel != 1) {
-		
-		if (cl.stats[STAT_ZOOM] == 1) {
-			
-			
-			
-		} else {
-			// apply weapon offset (move origin)
-			guMtxTrans(temp, transX, transY,  transZ);
-			guMtxConcat(model, temp, model);
-			// new rotation matrix rotates towards wiimote pointer
-			guMtxRotAxisRad(rot, &axis2, DegToRad(goal_crosshair_yaw*-1));
-			guMtxConcat(model, rot, model);
-			guMtxRotAxisRad(rot, &axis1, DegToRad(goal_crosshair_pitch));
-			guMtxConcat(model, rot, model);
-			guMtxRotAxisRad(rot, &axis0, DegToRad(e->angles[2]));
-			guMtxConcat(model, rot, model);
-			// undo weapon offset (move origin back to original pos)
-			guMtxTrans(temp, transX*-1, transY*-1,  transZ*-1);
-			guMtxConcat(model, temp, model);
-		}
+	if (e == &cl.viewent || e == &cl.viewent2) {
+		wii_apply_weapon_offset(temp, rot);
 	}
 	
 	if (scale != ENTSCALE_DEFAULT) {

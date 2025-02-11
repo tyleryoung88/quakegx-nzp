@@ -26,6 +26,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <malloc.h>
 #include <gccore.h>
 
+// OGC includes.
+#include <ogc/conf.h>
+
 // ELUTODO: blank all the framebuffers to prevent artifacts before rendering takes place. Happens between the frontend ending and the quake console showing up
 
 #include "../../quakedef.h"
@@ -187,7 +190,7 @@ void GL_Init (void)
 	GX_SetScissor(0,0,rmode->fbWidth,rmode->efbHeight);
 	GX_SetDispCopySrc(0,0,rmode->fbWidth,rmode->efbHeight);
 	GX_SetDispCopyDst(rmode->fbWidth,xfbHeight);
-	GX_SetCopyFilter(rmode->aa,rmode->sample_pattern,GX_TRUE,rmode->vfilter);
+	GX_SetCopyFilter(GX_FALSE,rmode->sample_pattern,GX_FALSE,rmode->vfilter);
 	GX_SetFieldMode(rmode->field_rendering,((rmode->viHeight==2*rmode->xfbHeight)?GX_ENABLE:GX_DISABLE));
 	
 	if (rmode->aa)
@@ -219,7 +222,6 @@ void GL_Init (void)
 	GX_SetTevOp(GX_TEVSTAGE0, GX_PASSCLR);
 
 	GX_SetTexCoordGen(GX_TEXCOORD0, GX_TG_MTX2x4, GX_TG_TEX0, GX_IDENTITY);
-	//GX_SetTexCoordGen(GX_TEXCOORD1, GX_TG_MTX2x4, GX_TG_TEX1, GX_IDENTITY);
 
 	GX_InvVtxCache();
 	GX_InvalidateTexAll();
@@ -236,14 +238,10 @@ void GL_BeginRendering (int *x, int *y, int *width, int *height)
 	// ELUTODO: lol at the * 2 on height
 	*x = 0;
 	*y = vid_tvborder.value * 200;
-	*width = scr_width;
+	*width = scr_width > 640 ? 640 : scr_width;
 	*height = scr_height - (vid_tvborder.value * 400);
 
 	GX_SetScissor(*x,*y,*width,*height);
-	
-	// ELUTODO: really necessary?
-	//GX_InvVtxCache();
-	//GX_InvalidateTexAll();
 }
 
 void GL_EndRendering (void)
@@ -313,7 +311,13 @@ void VID_Init(unsigned char *palette)
 	scr_width = rmode->fbWidth;
 	scr_height = rmode->efbHeight;
 
-	vid.width = 640; //640
+	//vid.width = 640; //640
+	
+	if(CONF_GetAspectRatio() == CONF_ASPECT_16_9)
+        vid.width = 854; //854
+	else
+        vid.width = 640; //640
+	
 	vid.height = 480; //480
 
 	if (vid.height > scr_height)

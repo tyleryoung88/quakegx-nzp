@@ -728,7 +728,6 @@ static float OldYawTheta;
 static float OldPitchTheta;
 
 #ifdef __WII__
-int lock_viewmodel; 
 extern float centerdrift_offset_yaw;
 extern float centerdrift_offset_pitch;
 extern qboolean aimsnap;
@@ -742,7 +741,7 @@ float goal_roll = 0;
 #endif
 
 static vec3_t cADSOfs;
-
+int lock_viewmodel; 
 void CalcGunAngle (void)
 {
 	float	yaw, pitch, move;
@@ -823,8 +822,6 @@ void CalcGunAngle (void)
 	goal_crosshair_yaw += (cur_crosshair_yaw - goal_crosshair_yaw) * 0.22;
 	goal_crosshair_pitch += (cur_crosshair_pitch - goal_crosshair_pitch) * 0.22;
 	
-	//Con_Printf ("cp %f cy %f gp %f gy %f\n", cur_crosshair_pitch, cur_crosshair_yaw, goal_crosshair_pitch, goal_crosshair_yaw);
-	
 	if (aimsnap == false && !(cl.stats[STAT_ZOOM] == 1 && ads_center.value) && lock_viewmodel != 1 && !(cl.stats[STAT_ZOOM] == 2 && sniper_center.value))
 	{
 		// change viewmodel rotation based on wiimote position inside of screen space. 
@@ -837,12 +834,12 @@ void CalcGunAngle (void)
 			if (cl.stats[STAT_ZOOM] == 0) {	
 				
 				cur_roll = in_rollangle;
-				goal_roll += (cur_roll - goal_roll) * 0.05;	
+				goal_roll += (cur_roll - goal_roll) * 0.07;	
 				
-				if(goal_roll > 20.5f)
-					goal_roll = 20.5f;
-				else if(goal_roll < -20.5f)
-					goal_roll = -20.5f;
+				if(goal_roll > 16.5f)
+					goal_roll = 16.5f;
+				else if(goal_roll < -16.5f)
+					goal_roll = -16.5f;
 			
 				cl.viewent.angles[ROLL] = goal_roll;
 			}
