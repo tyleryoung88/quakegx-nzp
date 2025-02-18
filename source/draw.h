@@ -23,6 +23,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 void Draw_Init (void);
 void Draw_Character (int x, int y, int num);
+void Draw_CharacterRGBA (int x, int y, int num, float r, float g, float b, float a, float scale);
 void Draw_DebugChar (char num);
 void Draw_Pic (int x, int y, qpic_t *pic);
 #ifdef __PSP__
@@ -36,11 +37,11 @@ void Draw_ColoredStringCentered(int y, char *text, float r, float g, float b, fl
 void Draw_TransPic (int x, int y, qpic_t *pic);
 void Draw_TransPicTranslate (int x, int y, qpic_t *pic, byte *translation);
 void Draw_ConsoleBackground (int lines);
-#ifdef __PSP__
 void Draw_AlphaPic (int x, int y, qpic_t *pic, float alpha);
+#ifdef __PSP__
 void Draw_Fill (int x, int y, int w, int h, int c);
-void Draw_LoadingFill(void);
 #endif
+void Draw_LoadingFill(void);
 void Draw_FillByColor (int x, int y, int w, int h, int r, int g, int b, int a);
 void Draw_FadeScreen (void);
 void Draw_String (int x, int y, char *str);
@@ -49,7 +50,7 @@ int getTextWidth(char *str, float scale);
 //other
 void Clear_LoadingFill (void);
 #ifdef __PSP__
-byte *StringToRGB (const char *s);
+byte *StringToRGB (char *s);
 #endif // __PSP__
 
 extern float loading_cur_step;

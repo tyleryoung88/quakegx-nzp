@@ -200,6 +200,21 @@ void M_Print (int cx, int cy, char *str)
 	}
 }
 
+void M_DrawCharacterScaled (int cx, int line, int num)
+{
+	Draw_CharacterRGBA(cx*2 + ((vid.conwidth - 320*2)>>1), (line*2)-32, num, 255, 255, 255, 255, 2);
+}
+
+void M_PrintScaled (int cx, int cy, char *str)
+{
+	Draw_ColoredString(cx*2 + ((vid.conwidth - 320*2)>>1), (cy*2)-32, str, 255, 0, 0, 255, 2);
+}
+
+void M_PrintWhiteScaled (int cx, int cy, char *str)
+{
+	Draw_ColoredString(cx*2 + ((vid.conwidth - 320*2)>>1), (cy*2)-32, str, 255, 255, 255, 255, 2);
+}
+
 void M_PrintWhite (int cx, int cy, char *str)
 {
 	while (*str)
@@ -377,7 +392,7 @@ void M_Paused_Menu_f ()
 static void M_Paused_Menu_Draw ()
 {
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 680, 340, 0, 0, 0, 80);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 80);
 
 	// Header
 	Draw_ColoredString(30, 20, "PAUSED", 255, 255, 255, 255, 3);
@@ -489,33 +504,34 @@ void M_Credits_Draw (void)
 	Draw_StretchPic(0, 0, menu_bk, vid.width, vid.height);
 
 	// Fill black to make everything easier to see
-	Draw_FillByColor(0, 0, 400, 240, 0, 0, 0, 102);
+	Draw_FillByColor(0, 0, vid.width, vid.height, 0, 0, 0, 102);
 
 	// Header
 	Draw_ColoredString(5, 5, "CREDITS", 255, 255, 255, 255, 3);
 
-	Draw_ColoredString(5, 30, "Programming:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 40, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 50, "Cypress, ScatterBox", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 30*1.5, "Programming:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 40*1.5, "Blubs, Jukki, DR_Mabuse1981, Naievil", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 50*1.5, "Cypress, ScatterBox", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 70, "Models:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 80, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 70*1.5, "Models:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 80*1.5, "Blubs, Ju[s]tice, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 100, "GFX:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 110, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 100*1.5, "GFX:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 110*1.5, "Blubs, Ju[s]tice, Cypress, Derped_Crusader", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 130, "Sounds/Music:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 140, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 130*1.5, "Sounds/Music:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 140*1.5, "Blubs, Biodude, Cypress, Marty P.", 255, 255, 255, 255, 1.5);
 
-	Draw_ColoredString(5, 160, "Special Thanks:", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 170, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 180, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 190, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 200, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 210, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1.5);
-	Draw_ColoredString(5, 220, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 160*1.5, "Special Thanks:", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 170*1.5, "- Spike, Eukara:     FTEQW", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 180*1.5, "- Shpuld:            CleanQC4FTE", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 190*1.5, "- Crow_Bar, st1x51:  dQuake(plus)", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 200*1.5, "- fgsfdsfgs:         Quakespasm-NX", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 210*1.5, "- MasterFeizz:       ctrQuake", 255, 255, 255, 255, 1.5);
+	Draw_ColoredString(5, 220*1.5, "- Rinnegatamante:    Initial VITA Port & Updater", 255, 255, 255, 255, 1.5);
+	// ELUTODO: Add Credits to sbeed/tyleryoung88 for the Wii Port
 
-	Draw_ColoredString(5, 230, "Back", 255, 0, 0, 255, 1.5);
+	Draw_ColoredString(5, 230*1.5, "Back", 255, 0, 0, 255, 1.5);
 }
 
 
@@ -592,10 +608,10 @@ void M_Restart_Draw (void)
 	M_Draw ();
 	m_state = m_restart;
 
-	M_Print (64, 84,  restartMessage[0]);
-	M_Print (64, 92,  restartMessage[1]);
-	M_Print (64, 100, restartMessage[2]);
-	M_Print (64, 108, restartMessage[3]);
+	M_PrintScaled (64, 84,  restartMessage[0]);
+	M_PrintScaled (64, 92,  restartMessage[1]);
+	M_PrintScaled (64, 100, restartMessage[2]);
+	M_PrintScaled (64, 108, restartMessage[3]);
 }
 
 
@@ -657,10 +673,10 @@ void M_Exit_Draw (void)
 	M_Draw ();
 	m_state = m_exit;
 
-	M_Print (64, 84,  exitMessage[0]);
-	M_Print (64, 92,  exitMessage[1]);
-	M_Print (64, 100, exitMessage[2]);
-	M_Print (64, 108, exitMessage[3]);
+	M_PrintScaled (64, 84,  exitMessage[0]);
+	M_PrintScaled (64, 92,  exitMessage[1]);
+	M_PrintScaled (64, 100, exitMessage[2]);
+	M_PrintScaled (64, 108, exitMessage[3]);
 }
 
 
@@ -733,7 +749,6 @@ void M_Main_Draw (void)
 
 	// Version String
 	Draw_ColoredString((vid.width - (strlen(game_build_date) * 12)), 6, game_build_date, 255, 255, 255, 255, 1.5);
-
 	// Header
 	Draw_ColoredString(6, 6, "MAIN MENU", 255, 255, 255, 255, 3.5);
 
@@ -1130,7 +1145,7 @@ void Map_Finder(void)
 		custom_maps[i].occupied = false;
 	}
 	
-	while(dp=readdir(dir))
+	while((dp = readdir(dir)))
 	{
 		
 		if(dp->d_name[0] == '.')
@@ -1962,11 +1977,11 @@ void M_DrawSlider (int x, int y, float range)
 		range = 0;
 	if (range > 1)
 		range = 1;
-	M_DrawCharacter (x-8, y, 128);
+	M_DrawCharacterScaled (x-8, y, 128);
 	for (i=0 ; i<SLIDER_RANGE ; i++)
-		M_DrawCharacter (x + i*8, y, 129);
-	M_DrawCharacter (x+i*8, y, 130);
-	M_DrawCharacter (x + (SLIDER_RANGE-1)*8 * range, y, 131);
+		M_DrawCharacterScaled (x + i*8, y, 129);
+	M_DrawCharacterScaled (x+i*8, y, 130);
+	M_DrawCharacterScaled (x + (SLIDER_RANGE-1)*8 * range, y, 131);
 }
 
 void M_DrawCheckbox (int x, int y, int on)
@@ -1978,9 +1993,9 @@ void M_DrawCheckbox (int x, int y, int on)
 		M_DrawCharacter (x, y, 129);
 #endif
 	if (on)
-		M_Print (x, y, "ON");
+		M_PrintScaled (x, y, "ON");
 	else
-		M_Print (x, y, "OFF");
+		M_PrintScaled (x, y, "OFF");
 }
 
 void M_Options_Draw (void)
@@ -1990,54 +2005,54 @@ void M_Options_Draw (void)
 	if (key_dest != key_menu_pause)
 		Draw_StretchPic (0, 0, menu_bk, vid.width, vid.height);
 
-	M_Print (16, 40, "    Customize controls");
-	M_Print (16, 52, "         Go to console");
-	M_Print (16, 64, "     Reset to defaults");
+	M_PrintScaled (16, 40, "Customize controls");
+	M_PrintScaled (16, 52, "Go to console");
+	M_PrintScaled (16, 64, "Reset to defaults");
 
-	M_Print (16, 76, "           Screen size");
+	M_PrintScaled (16, 76, "Screen size");
 	r = (scr_viewsize.value - 100) / (120 - 100);
 	M_DrawSlider (220, 76, r);
 
-	M_Print (16, 88, "            Brightness");
+	M_PrintScaled (16, 88, "Brightness");
 	r = (1.0f - v_gamma.value) / 0.5f;
 	M_DrawSlider (220, 88, r);
 
-	M_Print (16, 100, "      	 Sensitivity");
+	M_PrintScaled (16, 100, "Sensitivity");
 	r = (sensitivity.value - 1)/10;
 	M_DrawSlider (220, 100, r);
 
-	M_Print (16, 112, "      CD Music Volume");
+	M_PrintScaled (16, 112, "CD Music Volume");
 	r = bgmvolume.value;
 	M_DrawSlider (220, 112, r);
 
-	M_Print (16, 124, "         Sound Volume");
+	M_PrintScaled (16, 124, "Sound Volume");
 	r = volume.value;
 	M_DrawSlider (220, 124, r);
 
-	M_Print (16, 136,"    NK stick as arrows");
+	M_PrintScaled (16, 136,"NK stick as arrows");
 	M_DrawCheckbox (215, 136, nunchuk_stick_as_arrows.value);
 	
-	M_Print (16, 148,"            Aim Assist");
+	M_PrintScaled (16, 148,"Aim Assist");
 	M_DrawCheckbox (215, 148, in_aimassist.value);
 	
-	M_Print (16, 160,"   ADS Always Centered");
+	M_PrintScaled (16, 160,"ADS Always Centered");
 	M_DrawCheckbox (215, 160, ads_center.value);
 	
-	M_Print (16, 172," Scope Always Centered");
+	M_PrintScaled (16, 172,"Scope Always Centered");
 	M_DrawCheckbox (215, 172, sniper_center.value);
 
-	M_Print (16, 184, "          Weapon Roll");
+	M_PrintScaled (16, 184, "Weapon Roll");
 	M_DrawCheckbox (215, 184, cl_weapon_inrollangle.value);
 
-	M_Print (16, 196, "          TV Overscan");
+	M_PrintScaled (16, 196, "TV Overscan");
 	r = vid_tvborder.value / 0.2f;
 	M_DrawSlider (220, 196, r);
 	
-	M_Print (16, 208, "           Retro Mode");
+	M_PrintScaled (16, 208, "Retro Mode");
 	M_DrawCheckbox (215, 208, vid_retromode.value);
 
 // cursor
-	M_DrawCharacter (200, 40 + options_cursor*12, 12+((int)(realtime*4)&1));
+	M_DrawCharacterScaled (200, 40 + options_cursor*12, 12+((int)(realtime*4)&1));
 }
 
 extern qboolean console_enabled;
@@ -2196,16 +2211,16 @@ void M_Keys_Draw (void)
 	//M_DrawPic ( (320-p->width)/2, 4, p);
 
 	if (bind_grab)
-		M_Print (12, 32, "Press a key or button for this action");
+		M_PrintScaled (12, 32, "Press a key or button for this action");
 	else
-		M_Print (18, 32, "Enter to change, backspace to clear");
+		M_PrintScaled (18, 32, "Enter to change, backspace to clear");
 
 // search for known bindings
 	for (i=0 ; i<NUMCOMMANDS ; i++)
 	{
 		y = 48 + 8*i;
 
-		M_Print (16, y, bindnames[i][1]);
+		M_PrintScaled (16, y, bindnames[i][1]);
 
 		//l = strlen (bindnames[i][0]);
 
@@ -2213,25 +2228,25 @@ void M_Keys_Draw (void)
 
 		if (keys[0] == -1)
 		{
-			M_Print (140, y, "???");
+			M_PrintScaled (140, y, "???");
 		}
 		else
 		{
 			name = Key_KeynumToString (keys[0]);
-			M_Print (140, y, name);
+			M_PrintScaled (140, y, name);
 			x = strlen(name) * 8;
 			if (keys[1] != -1)
 			{
-				M_Print (140 + x + 8, y, "or");
-				M_Print (140 + x + 32, y, Key_KeynumToString (keys[1]));
+				M_PrintScaled (140 + x + 8, y, "or");
+				M_PrintScaled (140 + x + 32, y, Key_KeynumToString (keys[1]));
 			}
 		}
 	}
 
 	if (bind_grab)
-		M_DrawCharacter (130, 48 + keys_cursor*8, '=');
+		M_DrawCharacterScaled (130, 48 + keys_cursor*8, '=');
 	else
-		M_DrawCharacter (130, 48 + keys_cursor*8, 12+((int)(realtime*4)&1));
+		M_DrawCharacterScaled (130, 48 + keys_cursor*8, 12+((int)(realtime*4)&1));
 }
 
 
@@ -2360,20 +2375,23 @@ void M_OSK_Draw (void) {
 	if (selected_char[0] == ' ' || selected_char[0] == '\t')
 		selected_char[0] = 'X';
 
-	y = 150;
-	x = 150;
+	y = 20;
+	x = 20;
 
+	/* Unable to scale these
 	M_DrawTextBox (x-3, y-10, 		     26, 10);
 	M_DrawTextBox ((x-3)+(26*CHAR_SIZE),    y-10,  10, 10);
 	M_DrawTextBox (x-3, (y-10)+(10*CHAR_SIZE),36,  3);
+	*/
+	Draw_FillByColor((x-3)*2 + ((vid.conwidth - 320*2)>>1), (y-30)*2, 580, 220, 57, 57, 57, 255);
 
 	for(i=0;i<=MAX_Y;i++)
 	{
-		M_PrintWhite (x, y+(CHAR_SIZE*i), osk_text[i]);
+		M_PrintWhiteScaled (x, y+(CHAR_SIZE*i), osk_text[i]);
 		if (i == 1 || i == 4 || i == 7)
-			M_Print      (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+			M_PrintScaled      (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
 		else
-			M_PrintWhite (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
+			M_PrintWhiteScaled (x+(27*CHAR_SIZE), y+(CHAR_SIZE*i), osk_help[i]);
 	}
 
 	int text_len = strlen(osk_buffer);
@@ -2383,19 +2401,19 @@ void M_OSK_Draw (void) {
 		strncpy(oneline,osk_buffer,MAX_CHAR_LINE);
 		oneline[MAX_CHAR_LINE] = '\0';
 
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), oneline );
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), oneline );
 
 		strncpy(oneline,osk_buffer+MAX_CHAR_LINE, text_len - MAX_CHAR_LINE);
 		oneline[text_len - MAX_CHAR_LINE] = '\0';
 
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+3)), oneline );
-		M_PrintWhite (x+4+(CHAR_SIZE*(text_len - MAX_CHAR_LINE)), y+4+(CHAR_SIZE*(MAX_Y+3)),"_");
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+3)), oneline );
+		M_PrintWhiteScaled (x+4+(CHAR_SIZE*(text_len - MAX_CHAR_LINE)), y+4+(CHAR_SIZE*(MAX_Y+3)),"_");
 	}
 	else {
-		M_Print (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), osk_buffer );
-		M_PrintWhite (x+4+(CHAR_SIZE*(text_len)), y+4+(CHAR_SIZE*(MAX_Y+2)),"_");
+		M_PrintScaled (x+4, y+4+(CHAR_SIZE*(MAX_Y+2)), osk_buffer );
+		M_PrintWhiteScaled (x+4+(CHAR_SIZE*(text_len)), y+4+(CHAR_SIZE*(MAX_Y+2)),"_");
 	}
-	M_Print      (x+((((osk_pos_x)*2)+1)*CHAR_SIZE), y+(osk_pos_y*CHAR_SIZE), selected_char);
+	M_PrintScaled      (x+((((osk_pos_x)*1.1)+1)*CHAR_SIZE), y+(osk_pos_y*CHAR_SIZE), selected_char);
 }
 
 
@@ -2524,10 +2542,10 @@ void M_Quit_Draw (void)
 	sprintf(yes, "Y or A button: Yes");
 	sprintf(no, "N or B button: No");
 
-	M_Print (64, 84,  "Really quit?");
-	M_Print (64, 92,  "");
-	M_Print (64, 100, yes);
-	M_Print (64, 108, no);
+	M_PrintScaled (64, 84,  "Really quit?");
+	M_PrintScaled (64, 92,  "");
+	M_PrintScaled (64, 100, yes);
+	M_PrintScaled (64, 108, no);
 }
 
 //=============================================================================

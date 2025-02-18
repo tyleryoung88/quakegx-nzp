@@ -577,8 +577,6 @@ CL_RelinkEntities
 ===============
 */
 
-extern cvar_t cl_crossx, cl_crossy;
-
 void CL_RelinkEntities (void)
 {
 	entity_t	*ent;
@@ -731,6 +729,7 @@ void CL_RelinkEntities (void)
 				VectorAdd(cl.viewangles,CWeaponRot,tempangles);
 				VectorAdd(tempangles,cl.gun_kick,tempangles);
 
+
 				AngleVectors (tempangles, v_forward, v_right, v_up);
 				VectorCopy (cl_entities[cl.viewentity].origin, smokeorg);
 				smokeorg[2] += cl.viewheight; // account for beta maps
@@ -739,14 +738,10 @@ void CL_RelinkEntities (void)
 				right_offset	 = sv_player->v.Flash_Offset[0];
 				up_offset		 = sv_player->v.Flash_Offset[1];
 				forward_offset 	 = sv_player->v.Flash_Offset[2];
-				//xcross_scr		 = cl_crossx.value;
-				//ycross_scr		 = cl_crossy.value;
 				 
 				right_offset	= right_offset/1000;
 				up_offset		= up_offset/1000;
 				forward_offset  = forward_offset/1000;
-				
-				//Con_Printf ("right_ofs %f up_ofs %f xcross %f ycross %f\n", right_offset, up_offset);
 				
 				VectorMA (start, forward_offset, v_forward ,smokeorg);
 				VectorMA (smokeorg, up_offset, v_up ,smokeorg);

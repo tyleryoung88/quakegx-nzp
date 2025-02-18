@@ -104,16 +104,22 @@ static void init()
 	
 	fb = 0;
 	
-	// 16:9 and 4:3 Screen Adjustment for Wii
-    if (CONF_GetAspectRatio() == CONF_ASPECT_16_9) {
-        rmode->viWidth = 672;
-    } else {    // 4:3
-        rmode->viWidth = 640;
-    }
-	
-    // This probably needs to consider PAL
-    rmode->viXOrigin = (VI_MAX_WIDTH_NTSC - rmode->viWidth) / 2;
+	// ELUTODO: Add option to adjust the width like the overscan height, can go from 720 to 640
+	// Once that is done set viWidth to 704 by default
 
+	// This is safe to always set to 672, the Homebrew Channel does it for example
+    rmode->viWidth = 672;
+	
+	if (rmode == &TVPal576IntDfScale || rmode == &TVPal576ProgScale) 
+	{
+		rmode->viXOrigin = (VI_MAX_WIDTH_PAL - rmode->viWidth) / 2;
+		rmode->viYOrigin = (VI_MAX_HEIGHT_PAL - rmode->viHeight) / 2;
+	} 
+	else 
+	{
+		rmode->viXOrigin = (VI_MAX_WIDTH_NTSC - rmode->viWidth) / 2;
+		rmode->viYOrigin = (VI_MAX_HEIGHT_NTSC - rmode->viHeight) / 2;
+	}
 	// Set up the video system with the chosen mode.
 	VIDEO_Configure(rmode);
 
@@ -134,8 +140,6 @@ static void init()
 	console_init(framebuffer[fb & 1], 20, 20, rmode->fbWidth, rmode->xfbHeight, rmode->fbWidth * 2);
 	
 	GL_Init();
-	
-	//VIDEO_SetBlack(false);
 
 	// Initialise the controller library.
 	PAD_Init();
@@ -243,14 +247,13 @@ int main(int argc, char* argv[])
 		Host_Frame(current_time - last_time);
 		last_time = current_time;
 		
-		//Con_Printf ("time: %f \n", current_time_millisec);
-		//Con_Printf ("time off: %f \n", time_wpad_off_millisec);
-		
 		if (rumble_on&&(current_time > time_wpad_off)) 
 		{
 			WPAD_Rumble(0, false);
 			rumble_on = 0;
 		}
+		
+		CDAudio_Update();
 	};
 
 	exit(0);

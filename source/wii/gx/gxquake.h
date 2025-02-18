@@ -20,6 +20,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
 #include <ogc/gx.h>
+#include <ogc/video.h>
 
 #define QUAKE_WII_BASEDIR "/apps/nzportable"
 
